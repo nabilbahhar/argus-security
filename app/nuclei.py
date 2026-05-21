@@ -16,10 +16,12 @@ que CyCognito et Censys ratent ou affichent mal (cf. gap analysis).
 
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
-NUCLEI = ROOT / "tools" / "bin" / "nuclei.exe"
+_EXE = ".exe" if sys.platform == "win32" else ""
+NUCLEI = ROOT / "tools" / "bin" / f"nuclei{_EXE}"
 
 # Tags activés par défaut — couverture large mais ciblée "trouvable de l'extérieur"
 DEFAULT_TAGS = [

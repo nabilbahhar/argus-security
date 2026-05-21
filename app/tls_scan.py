@@ -13,11 +13,13 @@ les visiteurs voient "Site dangereux" → perte directe de chiffre d'affaires.
 
 import json
 import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
-TLSX = ROOT / "tools" / "bin" / "tlsx.exe"
+_EXE = ".exe" if sys.platform == "win32" else ""
+TLSX = ROOT / "tools" / "bin" / f"tlsx{_EXE}"
 
 # Protocoles considérés faibles/obsolètes
 DEPRECATED_PROTOCOLS = {"sslv2", "sslv3", "tls10", "tls11"}

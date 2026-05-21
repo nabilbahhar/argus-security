@@ -101,6 +101,12 @@ def _startup():
     init_db()
 
 
+@app.get("/healthz")
+def healthz():
+    """Health check minimal pour Coolify / Traefik / load balancer."""
+    return {"status": "ok", "service": "argus"}
+
+
 # ─────────────────────────────────────────────────────────────────────
 # Helper : contexte commun pour toutes les pages
 # ─────────────────────────────────────────────────────────────────────

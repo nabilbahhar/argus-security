@@ -11,12 +11,14 @@ Sépare la LOGIQUE (= comment scanner) de l'INTERFACE (= terminal vs HTML).
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
 TOOLS_DIR = ROOT / "tools" / "bin"
-SUBFINDER = TOOLS_DIR / "subfinder.exe"
-HTTPX = TOOLS_DIR / "httpx.exe"
+_EXE = ".exe" if sys.platform == "win32" else ""
+SUBFINDER = TOOLS_DIR / f"subfinder{_EXE}"
+HTTPX = TOOLS_DIR / f"httpx{_EXE}"
 
 
 def run_subfinder(domain: str, timeout: int = 600) -> list[str]:
