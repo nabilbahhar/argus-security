@@ -3,12 +3,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}ARGUS Security — Cybersécurité web pour PME{% endblock %}</title>
+  <title>{% block title %}ARGUS Security — Cartographiez et sécurisez votre surface d'attaque web{% endblock %}</title>
+
+  {# ── SEO / Description ─────────────────────────────────────────── #}
+  <meta name="description" content="{% block meta_description %}Découvrez en 60 secondes tous vos actifs web exposés et corrigez les failles avant les hackers. Sans jargon. ARGUS by Exasys.{% endblock %}">
+
+  {# ── Open Graph (Facebook, LinkedIn, WhatsApp, Slack, Discord) ── #}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="ARGUS Security">
+  <meta property="og:url" content="https://argusanalyzer.com{{ request.url.path if request else '/' }}">
+  <meta property="og:title" content="{% block og_title %}ARGUS Security — Cartographiez et sécurisez votre surface d'attaque web{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Découvrez en 60 secondes tous vos actifs web exposés et corrigez les failles avant les hackers. Sans jargon. Plans dès 29€/mois.{% endblock %}">
+  <meta property="og:image" content="https://argusanalyzer.com/static/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="ARGUS Security — Web Attack Surface Management par Exasys">
+  <meta property="og:locale" content="fr_FR">
+
+  {# ── Twitter Card ──────────────────────────────────────────────── #}
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ARGUS Security — Cartographiez votre surface d'attaque">
+  <meta name="twitter:description" content="Découvrez en 60 secondes vos actifs exposés et corrigez les failles avant les hackers.">
+  <meta name="twitter:image" content="https://argusanalyzer.com/static/og-image.png">
+  <meta name="twitter:image:alt" content="ARGUS Security">
+
+  {# ── Theme color (mobile browsers) ─────────────────────────────── #}
+  <meta name="theme-color" content="#0a0e1a">
+  <meta name="application-name" content="ARGUS Security">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='42' fill='none' stroke='%2300d9ff' stroke-width='8'/><circle cx='50' cy='50' r='14' fill='%2300d9ff'/></svg>">
+
+  {# Favicon SVG (animated dans le tab) + PNG fallback Safari/iOS #}
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
 </head>
 <body class="{% block body_class %}{% endblock %}">
   <header>
