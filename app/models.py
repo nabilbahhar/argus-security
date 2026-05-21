@@ -158,7 +158,6 @@ class Scan(Base):
     user = relationship("User", back_populates="scans")
     assets = relationship("Asset", back_populates="scan", cascade="all, delete-orphan")
     vulns = relationship("Vuln", back_populates="scan", cascade="all, delete-orphan")
-    emails = relationship("OutboundEmail", back_populates="scan", cascade="all, delete-orphan")
     tls_findings = relationship("TlsFinding", back_populates="scan", cascade="all, delete-orphan")
 
 
@@ -232,17 +231,3 @@ class TlsFinding(Base):
     scan = relationship("Scan", back_populates="tls_findings")
 
 
-class OutboundEmail(Base):
-    __tablename__ = "outbound_emails"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    scan_id = Column(Integer, ForeignKey("scans.id"), nullable=False)
-
-    subject = Column(String(500), nullable=False)
-    body = Column(Text, nullable=False)
-    linkedin_message = Column(Text, nullable=True)
-    objections = Column(JSON, default=list)
-    generated_at = Column(DateTime, default=datetime.utcnow)
-    style = Column(String(50), default="court")
-
-    scan = relationship("Scan", back_populates="emails")

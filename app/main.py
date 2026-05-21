@@ -29,11 +29,11 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from app.database import init_db, get_db, SessionLocal
-from app.models import (Scan, Asset, Vuln, OutboundEmail, TlsFinding, User,
+from app.models import (Scan, Asset, Vuln, TlsFinding, User,
                         PasswordResetToken, EmailVerificationToken,
                         PLAN_LIMITS, PLAN_NAMES)
 from app.email_sender import send_welcome_email, send_password_reset_email, send_email_verification
-from app import scanner, nuclei, outbound, dns_scan, tls_scan, enrichment, risk_score, discovery, pentest
+from app import scanner, nuclei, dns_scan, tls_scan, enrichment, risk_score, discovery, pentest
 from app.auth import (
     hash_password, verify_password,
     get_current_user, get_plan_limits, can_see_full_results,
@@ -194,13 +194,6 @@ def scan_view(scan_id: int, request: Request, db: Session = Depends(get_db)):
         locked_vulns   = total_vulns  - n_vulns
         locked_subs    = total_subs   - n_subs
 
-    last_email = (
-        db.query(OutboundEmail)
-        .filter(OutboundEmail.scan_id == scan_id)
-        .order_by(OutboundEmail.generated_at.desc())
-        .first()
-    )
-
     return templates.TemplateResponse("scan.html", _ctx(
         request, db,
         scan=scan,
@@ -208,7 +201,6 @@ def scan_view(scan_id: int, request: Request, db: Session = Depends(get_db)):
         vulns=visible_vulns,
         visible_subs=visible_subs,
         tls_findings=scan.tls_findings,
-        outbound_email=last_email,
         full_access=full_access,
         locked_assets=locked_assets,
         locked_vulns=locked_vulns,
@@ -970,40 +962,6 @@ def scan_status(scan_id: int, db: Session = Depends(get_db)):
         "current_step": scan.current_step or "",
         "current_detail": scan.current_detail or "",
     }
-
-
-@app.post("/scan/{scan_id}/outbound")
-def scan_outbound(
-    scan_id: int,
-    request: Request,
-    style: str = Form("court"),
-    db: Session = Depends(get_db),
-):
-    user = get_current_user(request, db)
-    if not user:
-        return RedirectResponse("/login", 302)
-
-    scan = db.query(Scan).filter(Scan.id == scan_id).first()
-    if not scan or scan.status != "completed":
-        raise HTTPException(400, "Scan introuvable ou pas encore terminé")
-
-    assets_dicts = [{"url": a.url, "host": a.host, "status_code": a.status_code,
-                     "title": a.title or "", "tech": a.tech or []} for a in scan.assets]
-    vulns_dicts  = [{"name": v.name, "severity": v.severity, "matched_url": v.matched_url,
-                     "cve_id": v.cve_id, "epss_score": v.epss_score, "kev": v.kev} for v in scan.vulns]
-
-    result = outbound.generate_outbound(scan.domain, assets_dicts, vulns_dicts, style=style)
-    email = OutboundEmail(
-        scan_id=scan_id,
-        subject=result["subject"],
-        body=result["body"],
-        linkedin_message=result.get("linkedin_message", ""),
-        objections=result.get("objections", []),
-        style=style,
-    )
-    db.add(email)
-    db.commit()
-    return RedirectResponse(url=f"/scan/{scan_id}#outbound", status_code=303)
 
 
 @app.get("/scan/{scan_id}/export/subs.txt")

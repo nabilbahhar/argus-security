@@ -121,7 +121,6 @@ app/
 ├── enrichment.py              # EPSS + CISA KEV (cache 24h)
 ├── risk_score.py              # ARGUS Risk Score 0-100 → A-F
 ├── pentest.py                 # Mode pentest actif (naabu/ffuf/katana)
-├── outbound.py                # Génération mail prospection (désactivé en UI)
 ├── templates/                 # Jinja2 HTML
 └── static/css/style.css       # CSS unique (dual theme via body.marketing)
 

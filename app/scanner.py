@@ -1,11 +1,7 @@
 """
-scanner.py — Modules réutilisables pour scanner un domaine
+scanner.py — Modules réutilisables pour scanner un domaine.
 
-Ce module est utilisé à la fois par :
-  - le CLI (pupelmet.py)
-  - l'app web (app/main.py)
-
-Sépare la LOGIQUE (= comment scanner) de l'INTERFACE (= terminal vs HTML).
+Sépare la logique (comment scanner) de l'interface (FastAPI routes).
 """
 
 import json

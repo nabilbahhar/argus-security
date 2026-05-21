@@ -606,61 +606,6 @@ table tr:hover td {
   margin-bottom: 14px;
 }
 
-/* === OUTBOUND EMAIL PREVIEW === */
-
-.outbound-card {
-  background: var(--bg-elevated);
-  border: 1px solid var(--neon-cyan);
-  border-radius: 4px;
-  padding: 24px;
-}
-
-.outbound-subject {
-  font-size: 16px;
-  color: var(--neon-green);
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
-}
-
-.outbound-body {
-  white-space: pre-wrap;
-  font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 1.7;
-}
-
-.outbound-linkedin {
-  background: var(--bg-surface);
-  border-left: 3px solid var(--neon-cyan);
-  padding: 16px 20px;
-  margin-top: 24px;
-  font-family: var(--font-sans);
-  font-size: 13px;
-  font-style: italic;
-}
-
-.objection {
-  background: var(--bg-surface);
-  border-radius: 4px;
-  padding: 14px 18px;
-  margin-top: 12px;
-}
-
-.objection-q {
-  color: var(--sev-high);
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.objection-a {
-  font-family: var(--font-sans);
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.6;
-}
-
 /* === SPINNERS === */
 
 .spinner-running {
