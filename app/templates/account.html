@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% set active = "account" %}
+{% block body_class %}marketing{% endblock %}
+{% block title %}Mon compte — ARGUS Security{% endblock %}
+
+{% block content %}
+<div style="max-width:800px; margin:0 auto; padding:48px 24px 80px;">
+
+  {# ── PAGE HEADER ────────────────────────────────────────────────── #}
+  <div style="margin-bottom:40px;">
+    <h1 style="font-size:32px; font-weight:800; letter-spacing:-1px; font-family:var(--font-sans); margin-bottom:6px;">
+      Mon compte
+    </h1>
+    <p style="color:var(--text-dim); font-size:14px; font-family:var(--font-sans);">
+      Gérez votre profil, votre plan et vos préférences ARGUS.
+    </p>
+  </div>
+
+  {# ── PLAN ACTIF — mis en avant en premier ───────────────────────── #}
+  {% if current_user.plan == 'free' %}
+  <div style="background:linear-gradient(135deg, rgba(0,217,255,0.06) 0%, rgba(176,106,255,0.05) 100%); border:1px solid rgba(0,217,255,0.2); border-radius:16px; padding:28px; margin-bottom:24px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;">
+      <div>
+        <div style="font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); margin-bottom:8px; font-family:var(--font-sans);">Plan actuel</div>
+        <div style="font-size:28px; font-weight:800; color:var(--text-primary); font-family:var(--font-sans); letter-spacing:-0.5px; margin-bottom:4px;">{{ plan_name }}</div>
+        <div style="font-size:13px; color:var(--text-dim); font-family:var(--font-sans);">Résultats limités (20%) · Outils passifs uniquement</div>
+      </div>
+      <a href="/pricing" class="mkt-btn-primary" style="white-space:nowrap;">
+        Passer à Essentiel — 29€/mois →
+      </a>
+    </div>
+
+    <div style="margin-top:24px; padding-top:20px; border-top:1px solid rgba(0,217,255,0.15);">
+      <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:12px; font-family:var(--font-sans);">
+        Ce que vous débloquez avec le plan Essentiel :
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:10px;">
+        {% for item in ["✅ 100% des résultats", "✅ Scans illimités", "✅ 3 domaines simultanés", "✅ Analyse SSL complète", "✅ Audit SPF/DKIM/DMARC", "✅ Export des données"] %}
+        <div style="font-size:13px; color:var(--text-secondary); font-family:var(--font-sans);">{{ item }}</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div style="background:var(--bg-surface); border:1px solid rgba(0,217,255,0.15); border-radius:16px; padding:28px; margin-bottom:24px; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;">
+    <div>
+      <div style="font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); margin-bottom:8px; font-family:var(--font-sans);">Plan actuel</div>
+      <div style="font-size:28px; font-weight:800; color:var(--neon-cyan); font-family:var(--font-sans); letter-spacing:-0.5px; margin-bottom:4px;">{{ plan_name }}</div>
+      <div style="font-size:13px; color:var(--neon-cyan); font-family:var(--font-sans);">
+        ✓ Résultats complets ·
+        {% if current_user.plan in ['pro','agency'] %}Mode Pentest inclus{% else %}3 domaines simultanés{% endif %}
+      </div>
+    </div>
+    {% if current_user.plan not in ['agency'] %}
+    <a href="/pricing" class="mkt-btn-secondary" style="white-space:nowrap;">
+      Voir les plans supérieurs
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# ── INFOS UTILISATEUR ──────────────────────────────────────────── #}
+  <div style="background:var(--bg-surface); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:28px; margin-bottom:24px;">
+    <h2 style="font-size:15px; font-weight:700; color:var(--text-primary); font-family:var(--font-sans); margin-bottom:20px; display:flex; align-items:center; gap:8px;">
+      <span>Informations du compte</span>
+    </h2>
+
+    <div style="display:grid; gap:0;">
+      {% set infos = [
+        ("Nom", current_user.name or "—"),
+        ("Email", current_user.email),
+        ("Entreprise", current_user.company or "—"),
+        ("Inscrit le", current_user.created_at.strftime('%d/%m/%Y')),
+      ] %}
+      {% for label, value in infos %}
+      <div style="display:flex; align-items:center; padding:14px 0; border-bottom:1px solid rgba(255,255,255,0.04); gap:20px;">
+        <div style="min-width:120px; font-size:13px; color:var(--text-dim); font-family:var(--font-sans);">{{ label }}</div>
+        <div style="font-size:14px; color:var(--text-primary); font-family:var(--font-sans);">{{ value }}</div>
+      </div>
+      {% endfor %}
+      {% if current_user.phone_whatsapp %}
+      <div style="display:flex; align-items:center; padding:14px 0; gap:20px;">
+        <div style="min-width:120px; font-size:13px; color:var(--text-dim); font-family:var(--font-sans);">WhatsApp</div>
+        <div style="font-size:14px; color:var(--neon-cyan); font-family:var(--font-sans);">✓ {{ current_user.phone_whatsapp }}</div>
+      </div>
+      {% else %}
+      <div style="display:flex; align-items:center; padding:14px 0; gap:20px;">
+        <div style="min-width:120px; font-size:13px; color:var(--text-dim); font-family:var(--font-sans);">WhatsApp</div>
+        <div style="font-size:14px; color:var(--text-dim); font-family:var(--font-sans);">—</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── SCANS RÉCENTS ──────────────────────────────────────────────── #}
+  <div style="background:var(--bg-surface); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:28px; margin-bottom:24px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+      <h2 style="font-size:15px; font-weight:700; color:var(--text-primary); font-family:var(--font-sans); margin:0;">
+        Mes scans récents
+      </h2>
+      <a href="/history" style="font-size:13px; color:var(--neon-cyan); font-family:var(--font-sans);">Voir tout →</a>
+    </div>
+    <p style="color:var(--text-dim); font-size:13px; font-family:var(--font-sans);">
+      <a href="/history" style="color:var(--neon-cyan);">Consultez l'historique complet de vos rapports →</a>
+    </p>
+  </div>
+
+  {# ── SÉCURITÉ / DÉCONNEXION ─────────────────────────────────────── #}
+  <div style="background:var(--bg-surface); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:28px;">
+    <h2 style="font-size:15px; font-weight:700; color:var(--text-primary); font-family:var(--font-sans); margin-bottom:20px;">
+      Sécurité du compte
+    </h2>
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+      <div>
+        <div style="font-size:14px; color:var(--text-secondary); font-family:var(--font-sans); margin-bottom:4px;">Déconnexion de session</div>
+        <div style="font-size:12px; color:var(--text-dim); font-family:var(--font-sans);">Terminer votre session active sur cet appareil.</div>
+      </div>
+      <form action="/logout" method="post">
+        <button type="submit" class="mkt-btn-secondary" style="font-size:13px; padding:10px 20px; cursor:pointer; background:none; font-family:var(--font-sans);">
+          Se déconnecter
+        </button>
+      </form>
+    </div>
+
+    <div style="margin-top:20px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.04);">
+      <div style="font-size:12px; color:var(--text-dim); font-family:var(--font-sans); line-height:1.7;">
+        Pour modifier votre mot de passe, supprimer votre compte ou toute demande concernant vos données :
+        <a href="mailto:contact@argus-security.com" style="color:var(--neon-cyan);">contact@argus-security.com</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

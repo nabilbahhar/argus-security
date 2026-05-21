@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% set active = "login" %}
+{% block body_class %}marketing{% endblock %}
+{% block title %}Connexion — ARGUS Security{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+  <div class="auth-box">
+
+    <div class="auth-logo">
+      <a href="/" style="text-decoration:none; display:inline-block; margin-bottom:4px;">
+        <span style="font-size:40px; color:var(--neon-cyan); display:block; margin-bottom:4px;">◉</span>
+        <div style="font-family:var(--font-sans); font-size:24px; font-weight:800; color:var(--text-primary); letter-spacing:1px;">ARGUS</div>
+      </a>
+      <div style="font-size:12px; color:var(--text-dim); margin-top:4px; font-family:var(--font-sans);">
+        by Exasys · Experts en cybersécurité depuis 2015
+      </div>
+    </div>
+
+    <h1 style="font-size:22px; font-weight:700; text-align:center; margin-bottom:6px; letter-spacing:-0.5px; font-family:var(--font-sans);">
+      Se connecter à votre espace ARGUS
+    </h1>
+    <p style="text-align:center; color:var(--text-dim); font-size:14px; margin-bottom:32px; font-family:var(--font-sans); line-height:1.5;">
+      Accédez à vos rapports d'analyse et à votre tableau de bord.
+    </p>
+
+    {% if error %}
+    <div class="auth-error" style="font-family:var(--font-sans); border-radius:8px;">⚠ {{ error }}</div>
+    {% endif %}
+
+    <form action="/login" method="post" class="auth-form">
+      <div class="form-group">
+        <label class="form-label">Adresse email</label>
+        <input type="email" name="email" class="form-input" placeholder="vous@entreprise.com" required autofocus>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mot de passe</label>
+        <input type="password" name="password" class="form-input" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn-marketing-submit" style="margin-top:8px;">
+        Se connecter →
+      </button>
+    </form>
+
+    <div style="text-align:center; margin-top:16px;">
+      <a href="/forgot-password" style="font-size:13px; color:var(--text-dim); font-family:var(--font-sans);">
+        Mot de passe oublié ?
+      </a>
+    </div>
+
+    <div class="auth-footer" style="margin-top:24px;">
+      Pas encore de compte ?
+      <a href="/register" style="color:var(--neon-cyan); font-weight:600;">Essai gratuit →</a>
+    </div>
+
+    <div style="text-align:center; margin-top:20px; font-size:12px; color:var(--text-dim); font-family:var(--font-sans);">
+      🔒 Chiffrement bout-en-bout · Jamais revendues · Suppression sur demande
+    </div>
+
+  </div>
+</div>
+{% endblock %}

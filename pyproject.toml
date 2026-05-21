@@ -1,0 +1,39 @@
+# pyproject.toml = la "fiche d'identité" de notre projet Python
+
+[project]
+name = "pupelmet"
+version = "0.1.5"
+description = "Le Web ASM qui se vend tout seul — découverte + scan CVE + EPSS/KEV + IA + outbound auto."
+authors = [
+    { name = "Nabil Bahhar", email = "nabil.imdh@gmail.com" }
+]
+readme = "README.md"
+requires-python = ">=3.12"
+
+dependencies = [
+    # IA + scan basique (Sprint 0)
+    "anthropic>=0.40.0",         # SDK Claude pour résumés IA + outbound
+    "httpx>=0.28.0",             # Client HTTP Python (requêtes vers APIs externes)
+    "python-dotenv>=1.0.0",      # Lit .env (secrets)
+    "rich>=13.0.0",              # Affichage terminal coloré (CLI)
+    # Web app (Sprint 1)
+    "fastapi>=0.118.0",          # Framework web Python moderne
+    "uvicorn[standard]>=0.34.0", # Serveur ASGI
+    "jinja2>=3.1.0,<3.1.6",      # Moteur de templates HTML (3.1.6 = bug avec Starlette 1.0)
+    "starlette<1.0",             # Pin pour éviter cache_key bug avec Jinja2
+    "python-multipart>=0.0.20",  # Gère les form POST HTML
+    "sqlalchemy>=2.0.0",         # ORM = objets Python <-> tables SQL
+    "aiosqlite>=0.20.0",         # Driver SQLite async
+    "pydantic-settings>=2.6.0",  # Lit les variables .env
+    # Sprint 1.5 — extensions ASM
+    "dnspython>=2.7.0",          # Résolution DNS (records, SPF, DKIM, DMARC, NS, MX...)
+    # Sprint 3 — Auth & SaaS
+    "passlib[bcrypt]>=1.7.4",    # Hachage sécurisé des mots de passe (bcrypt)
+    "itsdangerous>=2.0",         # Sessions sécurisées signées (SessionMiddleware)
+    "python-jose[cryptography]>=3.3.0",  # JWT tokens (optionnel, futur)
+    "fpdf2>=2.8.7",
+    "stripe>=15.1.0",
+]
+
+[tool.uv]
+package = false

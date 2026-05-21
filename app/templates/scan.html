@@ -1,0 +1,679 @@
+{% extends "base.html" %}
+{% block title %}{{ scan.domain }} · Rapport ARGUS{% endblock %}
+
+{% block content %}
+
+<div class="flex-between mb-16">
+  <div>
+    <div class="text-dim" style="font-size: 11px; letter-spacing: 2px; text-transform: uppercase;">
+      Rapport #{{ scan.id }} · {{ scan.started_at.strftime("%Y-%m-%d %H:%M") }}
+    </div>
+    <h1 style="font-size: 32px; color: var(--neon-cyan); text-shadow: 0 0 14px rgba(0,217,255,0.3); margin-top: 4px;">
+      {{ scan.domain }}
+    </h1>
+  </div>
+  <div class="flex gap-12">
+    <span class="badge {{ scan.status }}" id="scan-status">{{ scan.status }}</span>
+    {% if current_user and (current_user.is_admin or (scan.user_id and scan.user_id == current_user.id)) %}
+    <form action="/scan/{{ scan.id }}/delete" method="post" style="display:inline;"
+          onsubmit="return confirm('Supprimer ce rapport ?')">
+      <button type="submit" class="btn btn-small btn-danger">Supprimer</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+{# === ARGUS RISK SCORE (HERO) === #}
+{% if scan.status == "completed" %}
+<section class="risk-hero">
+  <div class="risk-score-circle grade-{{ scan.risk_grade | lower }}">
+    <div class="risk-grade">{{ scan.risk_grade }}</div>
+    <div class="risk-value">{{ scan.risk_score }}<span>/100</span></div>
+  </div>
+  <div class="risk-meta">
+    <div class="risk-label">ARGUS RISK SCORE</div>
+    <p class="risk-description">
+      {% if scan.risk_grade == "A" %}
+        Excellent. Posture de sécurité exemplaire — peu d'angles d'attaque exploitables.
+      {% elif scan.risk_grade == "B" %}
+        Correct. Quelques points faibles à corriger, rien d'urgent.
+      {% elif scan.risk_grade == "C" %}
+        Moyen. Plusieurs faiblesses détectées — action recommandée sous 30 jours.
+      {% elif scan.risk_grade == "D" %}
+        Mauvais. Surface d'attaque significative — action urgente requise.
+      {% else %}
+        Critique. Vulnérabilités majeures exposées — risque immédiat de compromission.
+      {% endif %}
+    </p>
+    {% if scan.risk_breakdown and full_access %}
+    <details class="risk-breakdown-toggle">
+      <summary>Voir le détail du calcul ({{ scan.risk_breakdown | length }} facteur{% if scan.risk_breakdown|length > 1 %}s{% endif %})</summary>
+      <ul class="risk-breakdown-list">
+        {% for b in scan.risk_breakdown %}
+        <li>
+          <span class="risk-delta">{{ b.delta }}</span>
+          <strong>{{ b.label }}</strong> — <span class="text-secondary">{{ b.reason }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </details>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+{# === BANNER PENTEST MODE === #}
+{% if scan.pentest_authorized %}
+<div class="pentest-banner">
+  <span class="pentest-banner-icon">🔓</span>
+  <div>
+    <strong style="color: var(--sev-critical);">MODE PENTEST AUTORISÉ</strong> · Consentement enregistré le
+    {{ scan.pentest_authorized_at.strftime("%Y-%m-%d à %H:%M UTC") }} · Suite d'audit actif ARGUS activée
+  </div>
+</div>
+{% endif %}
+
+{# === SOURCES DE DÉCOUVERTE (noms propriétaires) === #}
+{% if scan.discovery_sources and full_access %}
+<section class="discovery-sources">
+  <div class="discovery-label">🔍 Moteurs de découverte ARGUS combinés</div>
+  <div class="discovery-grid">
+    {% for source, count in scan.discovery_sources.items() %}
+    <div class="discovery-source">
+      <div class="discovery-name">
+        {% if source == 'subfinder' %}🛰 Sources OSINT publiques
+        {% elif source == 'crtsh' %}🔐 Certificats SSL/TLS publics
+        {% elif source == 'wayback' %}⏳ Archives web publiques
+        {% elif source == 'bruteforce' %}⚡ Reconnaissance DNS
+        {% elif source == 'ai_permutation' %}🤖 Intelligence ARGUS
+        {% else %}{{ source }}{% endif %}
+      </div>
+      <div class="discovery-count">{{ count }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{# === STATS RAPIDES === #}
+<div class="stats-grid">
+  <div class="stat">
+    <div class="stat-label">Actifs découverts</div>
+    <div class="stat-value cyan" id="stat-assets">{{ scan.assets_count }}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">En ligne (HTTP)</div>
+    <div class="stat-value green" id="stat-alive">{{ scan.alive_count }}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Vulnérabilités</div>
+    <div class="stat-value violet" id="stat-vulns">{{ scan.vulns_count }}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Exploitées actives</div>
+    <div class="stat-value danger" id="stat-kev">{{ scan.kev_count }}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Critiques (P1)</div>
+    <div class="stat-value danger" id="stat-critical">{{ scan.critical_count }}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Élevées (P2)</div>
+    <div class="stat-value warning" id="stat-high">{{ scan.high_count }}</div>
+  </div>
+</div>
+
+{# === BARRE DE PROGRESSION (pendant le scan) === #}
+{% if scan.status == "running" %}
+<div class="progress-card" id="running-banner">
+  <div class="progress-header">
+    <div class="progress-step-label">
+      <span class="progress-prompt">&gt;_</span>
+      <span id="progress-step">{{ scan.current_step or 'INITIALISATION' }}</span>
+    </div>
+    <div class="progress-percent" id="progress-percent">{{ scan.progress or 0 }}<span>%</span></div>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="progress-fill" style="width: {{ scan.progress or 0 }}%;">
+      <span class="progress-scanline"></span>
+    </div>
+  </div>
+  <div class="progress-detail" id="progress-detail">
+    {{ scan.current_detail or 'Initialisation du moteur d\'analyse...' }}
+  </div>
+  <div class="progress-pipeline">
+    <span class="pipe-step done">DISCOVERY</span>
+    <span class="pipe-arrow">→</span>
+    <span class="pipe-step">CERTS</span>
+    <span class="pipe-arrow">→</span>
+    <span class="pipe-step">ARCHIVE</span>
+    <span class="pipe-arrow">→</span>
+    <span class="pipe-step">DNS</span>
+    <span class="pipe-arrow">→</span>
+    <span class="pipe-step">INTEL</span>
+    <span class="pipe-arrow">→</span>
+    <span class="pipe-step">PROBE</span>
+    <span class="pipe-arrow">→</span>
+    <span class="pipe-step">EMAIL</span>
+    <span class="pipe-arrow">→</span>
+    <span class="pipe-step">SSL</span>
+    <span class="pipe-arrow">→</span>
+    <span class="pipe-step">SCAN</span>
+    <span class="pipe-arrow">→</span>
+    <span class="pipe-step">THREATS</span>
+    <span class="pipe-arrow">→</span>
+    <span class="pipe-step">ANALYSIS</span>
+  </div>
+</div>
+{% elif scan.status == "failed" %}
+<div class="card" style="border-color: var(--sev-critical);">
+  <p class="sev-critical" style="font-weight: 700;">⚠ ÉCHEC DE L'ANALYSE</p>
+  <p class="mt-16 text-secondary" style="font-family: var(--font-mono);">Une erreur est survenue. Veuillez réessayer ou contacter le support.</p>
+</div>
+{% endif %}
+
+{# === BANDEAU PAYWALL (si accès limité) === #}
+{% if not full_access and scan.status == "completed" %}
+<div class="paywall-banner">
+  <div class="paywall-content">
+    <div class="paywall-icon">🔒</div>
+    <div class="paywall-text">
+      <strong>Vous voyez {{ assets | length }} actifs sur {{ total_assets }}
+      {% if total_vulns > 0 %} et {{ vulns | length }} vulnérabilité{% if vulns|length > 1 %}s{% endif %} sur {{ total_vulns }}{% endif %}.</strong><br>
+      <span>
+        Pour accéder à l'intégralité du rapport —
+        {% if total_assets > 5 %}<strong>{{ locked_assets }} actifs supplémentaires</strong>{% endif %}
+        {% if total_vulns > 0 %}, <strong>{{ locked_vulns }} vulnérabilités cachées</strong>{% endif %}
+        , l'analyse de sécurité et l'export — passez au plan <strong>Essentiel (29€/mois)</strong>.
+      </span>
+    </div>
+    <div style="flex-shrink:0;">
+      <a href="/pricing" class="btn btn-primary">Voir les plans →</a>
+    </div>
+  </div>
+  <div style="text-align:center; margin-top:12px; font-size:12px; color:var(--text-dim);">
+    Vos données de sécurité sont confidentielles. Seul un compte vérifié peut accéder au rapport complet.
+    <a href="/faq#pourquoi" class="text-neon-cyan">En savoir plus →</a>
+  </div>
+</div>
+{% endif %}
+
+{# === ANALYSE DE SÉCURITÉ EXÉCUTIVE (plan payant seulement) === #}
+{% if scan.ai_summary and full_access %}
+<section class="card">
+  <h2 class="card-title">🔐 Analyse ARGUS Security</h2>
+  <div class="ai-summary">{{ scan.ai_summary | md }}</div>
+</section>
+{% elif scan.ai_summary and not full_access %}
+<section class="card" style="position:relative; overflow:hidden;">
+  <h2 class="card-title">🔐 Analyse ARGUS Security</h2>
+  <div style="filter:blur(4px); user-select:none; pointer-events:none; max-height:80px; overflow:hidden; color:var(--text-secondary);">
+    {{ scan.ai_summary[:200] }}...
+  </div>
+  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(to bottom,transparent,var(--bg-card));">
+    <a href="/pricing" class="btn btn-primary">🔓 Débloquer l'analyse complète</a>
+  </div>
+</section>
+{% endif %}
+
+{# === DNS + EMAIL SECURITY === #}
+{% if (scan.spf or scan.dmarc or scan.dkim) and full_access %}
+<section class="card">
+  <h2 class="card-title">📧 Sécurité email & DNS</h2>
+  <div class="email-sec-grid">
+    <div class="email-sec-item">
+      <div class="email-sec-label">SPF</div>
+      {% if scan.spf.get("present") %}
+        <div class="email-sec-value {% if scan.spf.get('policy') in ['strict'] %}ok{% elif scan.spf.get('policy') in ['soft', 'no-all'] %}warn{% else %}bad{% endif %}">
+          ✓ {{ scan.spf.get("policy") | upper }}
+        </div>
+      {% else %}
+        <div class="email-sec-value bad">✗ Absent</div>
+      {% endif %}
+      {% if scan.spf.get("issue") %}<div class="email-sec-issue">{{ scan.spf.issue }}</div>{% endif %}
+    </div>
+    <div class="email-sec-item">
+      <div class="email-sec-label">DMARC</div>
+      {% if scan.dmarc.get("present") %}
+        <div class="email-sec-value {% if scan.dmarc.get('policy') == 'reject' %}ok{% elif scan.dmarc.get('policy') == 'quarantine' %}warn{% else %}bad{% endif %}">
+          ✓ p={{ scan.dmarc.get("policy") }}
+        </div>
+      {% else %}
+        <div class="email-sec-value bad">✗ Absent</div>
+      {% endif %}
+      {% if scan.dmarc.get("issue") %}<div class="email-sec-issue">{{ scan.dmarc.issue }}</div>{% endif %}
+    </div>
+    <div class="email-sec-item">
+      <div class="email-sec-label">DKIM</div>
+      {% if scan.dkim.get("present") %}
+        <div class="email-sec-value ok">✓ {{ scan.dkim.get("selectors") | length }} sélecteur(s)</div>
+        {% for s in scan.dkim.get("selectors", []) %}
+          <div class="text-dim" style="font-size: 11px; margin-top: 4px;">{{ s.selector }}</div>
+        {% endfor %}
+      {% else %}
+        <div class="email-sec-value warn">⚠ Non détecté</div>
+      {% endif %}
+    </div>
+  </div>
+  {% if scan.dns_records.get("MX") or scan.dns_records.get("NS") %}
+  <details class="mt-16">
+    <summary class="text-dim" style="cursor: pointer; font-size: 12px;">Records DNS</summary>
+    <table class="mt-16" style="font-size: 12px;">
+      {% for rtype in ['A', 'AAAA', 'MX', 'NS', 'CAA'] %}
+      {% set vals = scan.dns_records.get(rtype) %}
+      {% if vals %}
+      <tr>
+        <td style="width: 70px;" class="text-dim">{{ rtype }}</td>
+        <td>{% for v in vals %}<span class="tech-tag" style="margin-right: 4px;">{{ v }}</span>{% endfor %}</td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+    </table>
+  </details>
+  {% endif %}
+</section>
+{% endif %}
+
+{# === TLS / SSL HEALTH === #}
+{% if tls_findings and full_access %}
+<section class="card">
+  <h2 class="card-title">🔒 Santé SSL/TLS ({{ tls_findings | length }} certificats analysés)</h2>
+  <table>
+    <thead>
+      <tr><th>Domaine</th><th>Émetteur</th><th>Expire dans</th><th>Protocoles</th><th>État</th></tr>
+    </thead>
+    <tbody>
+      {% for t in tls_findings %}
+      <tr>
+        <td class="url-cell">{{ t.host }}{% if t.port != 443 %}:{{ t.port }}{% endif %}</td>
+        <td class="text-secondary">{{ t.issuer }}</td>
+        <td>
+          {% if t.expired %}<span class="sev-critical">EXPIRÉ</span>
+          {% elif t.days_until_expiry is none %}<span class="text-dim">—</span>
+          {% elif t.days_until_expiry < 30 %}<span class="sev-high">{{ t.days_until_expiry }}j</span>
+          {% elif t.days_until_expiry < 90 %}<span class="sev-medium">{{ t.days_until_expiry }}j</span>
+          {% else %}<span class="text-neon-green">{{ t.days_until_expiry }}j</span>{% endif %}
+        </td>
+        <td>
+          {% for v in t.tls_versions %}
+            <span class="tech-tag {% if v.lower() in ['sslv2','sslv3','tls10','tls11'] %}style='color:var(--sev-critical);border-color:var(--sev-critical);'{% endif %}">{{ v }}</span>
+          {% endfor %}
+        </td>
+        <td>
+          {% if t.issues %}
+            {% for issue in t.issues %}<div class="sev-high" style="font-size: 12px;">⚠ {{ issue }}</div>{% endfor %}
+          {% else %}<span class="text-neon-green">✓ OK</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+{# === VULNÉRABILITÉS === #}
+{% if vulns %}
+<section class="card">
+  <h2 class="card-title">
+    ⚠ Vulnérabilités
+    {% if not full_access %}
+      — {{ vulns | length }} affichées sur {{ total_vulns }} détectées
+    {% else %}
+      ({{ vulns | length }}) — triées par niveau de menace réelle
+    {% endif %}
+  </h2>
+  {% if full_access %}
+  <p class="text-dim" style="font-size: 12px; margin-top: -12px; margin-bottom: 16px;">
+    Tri par menace réelle : <strong class="sev-critical">exploitées activement</strong> > <strong class="text-neon-violet">probabilité d'exploitation (EPSS)</strong> > sévérité.
+  </p>
+  {% endif %}
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 95px;">Sévérité</th>
+        <th>Vulnérabilité</th>
+        <th>CVE</th>
+        <th style="width: 80px;">EPSS</th>
+        <th style="width: 90px;">Menace</th>
+        <th>URL concernée</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in vulns %}
+      <tr>
+        <td><span class="sev-badge {{ v.severity }}">{{ v.severity }}</span></td>
+        <td>
+          {{ v.name }}
+          {% if v.tags and full_access %}
+            <div class="tech-list" style="margin-top: 4px;">
+              {% for tag in v.tags[:3] %}<span class="tech-tag" style="font-size: 10px;">{{ tag }}</span>{% endfor %}
+            </div>
+          {% endif %}
+        </td>
+        <td>{% if v.cve_id %}<a href="https://nvd.nist.gov/vuln/detail/{{ v.cve_id }}" target="_blank" rel="noopener">{{ v.cve_id }}</a>{% else %}<span class="text-dim">—</span>{% endif %}</td>
+        <td>
+          {% if v.epss_score is not none %}
+            {% set epss_pct = (v.epss_score * 100) | round(1) %}
+            <span class="epss-badge {% if v.epss_score >= 0.5 %}high{% elif v.epss_score >= 0.1 %}mid{% else %}low{% endif %}">{{ epss_pct }}%</span>
+          {% else %}<span class="text-dim">—</span>{% endif %}
+        </td>
+        <td>
+          {% if v.kev %}<span class="kev-badge">🔴 Exploitée</span>
+          {% else %}<span class="text-dim">—</span>{% endif %}
+        </td>
+        <td class="url-cell truncate" style="max-width: 280px;" title="{{ v.matched_url }}">{{ v.matched_url }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {# Ligne cadenas si résultats tronqués #}
+  {% if not full_access and locked_vulns > 0 %}
+  <div class="paywall-row">
+    <span>🔒</span>
+    <span><strong>{{ locked_vulns }} vulnérabilités supplémentaires</strong> sont masquées.</span>
+    <a href="/pricing" class="btn btn-small btn-primary">Débloquer</a>
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# === PENTEST FINDINGS === #}
+{% if scan.pentest_authorized and scan.pentest_findings and full_access %}
+  {% set pt = scan.pentest_findings %}
+
+  {% if pt.ports %}
+  <section class="card" style="border-color: var(--sev-high);">
+    <h2 class="card-title">🔌 Ports exposés sur internet ({{ pt.ports | length }})</h2>
+    <p class="text-dim" style="font-size: 12px; margin-top: -12px; margin-bottom: 16px;">
+      Services accessibles depuis internet. <strong class="sev-critical">SSH (22), RDP (3389), bases de données (3306, 5432, 27017, 6379)</strong> publics = risque ransomware élevé.
+    </p>
+    <table>
+      <thead><tr><th>Hôte</th><th>IP</th><th>Port</th><th>Service probable</th></tr></thead>
+      <tbody>
+        {% for p in pt.ports %}
+        <tr>
+          <td class="url-cell">{{ p.host }}</td>
+          <td class="text-dim">{{ p.ip }}</td>
+          <td>
+            {% set port = p.port %}
+            {% if port in [22, 3389, 23, 3306, 5432, 27017, 6379, 1433, 11211, 9200] %}<span class="sev-critical" style="font-weight: 700;">{{ port }}</span>
+            {% elif port in [21, 25, 110, 139, 445, 143, 993, 8080, 8443] %}<span class="sev-high">{{ port }}</span>
+            {% else %}<span class="text-neon-cyan">{{ port }}</span>{% endif %}
+          </td>
+          <td class="text-secondary">
+            {% if port == 22 %}SSH ⚠ — accès shell distant
+            {% elif port == 23 %}Telnet ⚠⚠ — non chiffré, obsolète
+            {% elif port == 25 %}SMTP — serveur mail
+            {% elif port == 80 %}HTTP
+            {% elif port == 443 %}HTTPS
+            {% elif port == 3306 %}MySQL/MariaDB ⚠ — base SQL
+            {% elif port == 3389 %}RDP ⚠⚠ — bureau Windows distant
+            {% elif port == 5432 %}PostgreSQL
+            {% elif port == 6379 %}Redis ⚠ — cache (souvent sans auth)
+            {% elif port == 8080 %}HTTP alternatif — souvent panneau admin
+            {% elif port == 9200 %}Elasticsearch
+            {% elif port == 27017 %}MongoDB ⚠ — base NoSQL
+            {% else %}<span class="text-dim">—</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  {% if pt.paths %}
+  <section class="card" style="border-color: var(--sev-high);">
+    <h2 class="card-title">📁 Accès sensibles détectés ({{ pt.paths | length }})</h2>
+    <p class="text-dim" style="font-size: 12px; margin-top: -12px; margin-bottom: 16px;">
+      Chemins d'accès découverts lors de l'audit actif. <strong>Vérifiez chaque résultat</strong> — un fichier <code>.git</code>, <code>backup.zip</code> ou <code>/admin</code> exposé = risque critique.
+    </p>
+    <table>
+      <thead><tr><th style="width:60px;">Statut</th><th>URL</th><th style="width:100px;">Taille</th><th>Chemin</th></tr></thead>
+      <tbody>
+        {% for path in pt.paths %}
+        <tr>
+          <td>
+            {% set s = path.status %}
+            {% if s == 200 %}<span class="sev-critical">{{ s }}</span>
+            {% elif s == 401 or s == 403 %}<span class="sev-high">{{ s }}</span>
+            {% elif s in [301, 302] %}<span class="text-neon-cyan">{{ s }}</span>
+            {% else %}<span class="text-dim">{{ s }}</span>{% endif %}
+          </td>
+          <td class="url-cell"><a href="{{ path.url }}" target="_blank" rel="noopener">{{ path.url }}</a></td>
+          <td class="text-dim">{{ path.length }} o</td>
+          <td><code class="text-neon-violet">{{ path.matched }}</code></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  {% if pt.endpoints %}
+  <section class="card">
+    <h2 class="card-title">🕷 Endpoints API & JS découverts ({{ pt.endpoints | length }})</h2>
+    <p class="text-dim" style="font-size: 12px; margin-top: -12px; margin-bottom: 16px;">
+      URLs et endpoints trouvés lors de la cartographie applicative. Inclut souvent des APIs non documentées.
+    </p>
+    <div style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 4px; padding: 14px 18px; max-height: 350px; overflow-y: auto; font-family: var(--font-mono); font-size: 12px; line-height: 1.7;">
+      {% for ep in pt.endpoints %}<div><a href="{{ ep }}" target="_blank" rel="noopener" class="text-neon-cyan">{{ ep }}</a></div>{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+{% endif %}
+
+{# === SOUS-DOMAINES DÉCOUVERTS === #}
+{% if visible_subs %}
+<section class="card">
+  <div class="flex-between" style="margin-bottom: 16px;">
+    <h2 class="card-title" style="border: none; padding: 0; margin: 0;">
+      📋 Actifs identifiés
+      {% if not full_access %}
+        — {{ visible_subs | length }} sur {{ total_subs }} au total
+      {% else %}
+        ({{ total_subs }})
+      {% endif %}
+    </h2>
+    <div class="flex gap-12">
+      <input type="text" id="subs-filter" placeholder="🔎 Filtrer..." oninput="filterSubs()"
+        style="background: var(--bg-elevated); color: var(--text-primary); border: 1px solid var(--border); padding: 6px 12px; border-radius: 4px; font-family: var(--font-mono); font-size: 12px; width: 220px;" />
+      {% if full_access %}
+      <button class="btn btn-small btn-secondary" onclick="copySubs()">📋 Copier</button>
+      <a href="/scan/{{ scan.id }}/export/subs.txt" class="btn btn-small btn-violet">⬇ Export</a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if not full_access %}
+  <p class="text-dim" style="font-size: 12px; margin-bottom: 16px;">
+    Aperçu des premiers actifs détectés.
+    <a href="/pricing" class="text-neon-cyan">Passez au plan Essentiel</a> pour accéder aux {{ locked_subs }} autres actifs, à l'export et à l'analyse complète.
+  </p>
+  {% endif %}
+
+  <div id="subs-container" style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 4px; padding: 14px 18px; max-height: 400px; overflow-y: auto; font-family: var(--font-mono); font-size: 12px; line-height: 1.7;">
+    {% for sub in visible_subs %}<div class="sub-line" data-sub="{{ sub }}">{{ sub }}</div>{% endfor %}
+  </div>
+
+  {% if not full_access and locked_subs > 0 %}
+  <div class="paywall-row" style="margin-top:0; border-top:none; border-radius:0 0 6px 6px;">
+    <span>🔒</span>
+    <span><strong>{{ locked_subs }} actifs supplémentaires</strong> non affichés</span>
+    <a href="/pricing" class="btn btn-small btn-primary">Tout débloquer →</a>
+  </div>
+  {% endif %}
+
+  {% if full_access %}
+  <p class="text-dim mt-16" style="font-size: 11px;" id="subs-count">{{ visible_subs | length }} affiché{% if visible_subs|length > 1 %}s{% endif %}</p>
+  {% endif %}
+</section>
+
+<script>
+function filterSubs() {
+  const q = document.getElementById('subs-filter').value.toLowerCase();
+  const lines = document.querySelectorAll('.sub-line');
+  let shown = 0;
+  lines.forEach(line => {
+    const match = !q || line.dataset.sub.toLowerCase().includes(q);
+    line.style.display = match ? '' : 'none';
+    if (match) shown++;
+  });
+  const cnt = document.getElementById('subs-count');
+  if (cnt) cnt.textContent = shown + ' affiché' + (shown > 1 ? 's' : '');
+}
+function copySubs() {
+  const visible = Array.from(document.querySelectorAll('.sub-line'))
+    .filter(l => l.style.display !== 'none').map(l => l.dataset.sub).join('\n');
+  navigator.clipboard.writeText(visible).then(() => alert('Copié !'));
+}
+</script>
+{% endif %}
+
+{# === ACTIFS WEB VIVANTS === #}
+{% if assets %}
+<section class="card">
+  <h2 class="card-title">
+    🌐 Actifs web actifs
+    {% if not full_access %}— {{ assets | length }} sur {{ total_assets }}{% else %}({{ assets | length }}){% endif %}
+  </h2>
+  <table>
+    <thead>
+      <tr><th>URL</th><th style="width: 80px;">Statut</th><th>Technologies</th><th>Titre de page</th></tr>
+    </thead>
+    <tbody>
+      {% for a in assets %}
+      <tr>
+        <td class="url-cell">
+          {% if a.status_code > 0 %}<a href="{{ a.url }}" target="_blank" rel="noopener">{{ a.url or a.host }}</a>
+          {% else %}<span class="text-dim">{{ a.host }}</span>{% endif %}
+        </td>
+        <td>
+          {% if a.status_code == 0 %}<span class="text-dim">✗</span>
+          {% elif a.status_code < 300 %}<span class="text-neon-green">{{ a.status_code }}</span>
+          {% elif a.status_code < 400 %}<span class="text-neon-cyan">{{ a.status_code }}</span>
+          {% elif a.status_code < 500 %}<span class="sev-high">{{ a.status_code }}</span>
+          {% else %}<span class="sev-critical">{{ a.status_code }}</span>{% endif %}
+        </td>
+        <td>
+          <div class="tech-list">
+            {% for t in a.tech %}<span class="tech-tag">{{ t }}</span>{% endfor %}
+            {% if not a.tech %}<span class="text-dim">—</span>{% endif %}
+          </div>
+        </td>
+        <td class="text-secondary truncate" style="max-width: 280px;" title="{{ a.title }}">{{ a.title }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if not full_access and locked_assets > 0 %}
+  <div class="paywall-row">
+    <span>🔒</span>
+    <span><strong>{{ locked_assets }} actifs supplémentaires</strong> non affichés</span>
+    <a href="/pricing" class="btn btn-small btn-primary">Tout débloquer →</a>
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# === EXPORT DU RAPPORT — bouton actif sur plan payant, sinon redirige vers /upgrade === #}
+{% if scan.status == "completed" %}
+<section class="card" id="export-section">
+  <div class="flex-between" style="margin-bottom: 16px;">
+    <h2 class="card-title" style="border: none; padding: 0; margin: 0;">📄 Télécharger le rapport</h2>
+    {% if full_access %}
+    <span style="font-size: 11px; color: var(--neon-green); letter-spacing: 1px; text-transform: uppercase;">✓ Disponible</span>
+    {% else %}
+    <span style="font-size: 11px; color: var(--neon-violet); letter-spacing: 1px; text-transform: uppercase;">🔒 Plan Essentiel requis</span>
+    {% endif %}
+  </div>
+
+  <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center;">
+    {% if full_access %}
+      <a href="/scan/{{ scan.id }}/export/pdf" class="btn btn-primary" style="display:inline-flex; align-items:center; gap:8px;">
+        📄 Rapport PDF complet
+      </a>
+      <a href="/scan/{{ scan.id }}/export/subs.txt" class="btn btn-secondary" style="display:inline-flex; align-items:center; gap:8px;">
+        📋 Liste des actifs (.txt)
+      </a>
+      <span class="text-dim" style="font-size: 12px;">
+        Inclut le score, les vulnérabilités, l'analyse exécutive et la liste complète des actifs.
+      </span>
+    {% else %}
+      <a href="/upgrade?plan=essentiel&from=pdf" class="btn btn-primary" style="display:inline-flex; align-items:center; gap:8px; opacity:0.95;">
+        🔓 Débloquer l'export PDF
+      </a>
+      <span class="text-dim" style="font-size: 12px;">
+        Le rapport téléchargeable est inclus dès le plan Essentiel (29€/mois).
+      </span>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{% if scan.status == "running" %}
+<script>
+  const SCAN_ID = {{ scan.id }};
+  let pollCount = 0;
+
+  const pipeMap = {
+    "DISCOVERY":               ["DISCOVERY","CERTS","ARCHIVE","DNS","INTEL"],
+    "VÉRIFICATION HTTP":       ["PROBE"],
+    "SÉCURITÉ EMAIL":          ["EMAIL"],
+    "AUDIT SSL/TLS":           ["SSL"],
+    "ANALYSE VULNÉRABILITÉS":  ["SCAN"],
+    "THREAT INTELLIGENCE":     ["THREATS"],
+    "ANALYSE EXÉCUTIVE":       ["ANALYSIS"],
+    "CALCUL DU SCORE":         ["THREATS"],
+    "PENTEST ACTIF":           ["SCAN"],
+  };
+  const allStepsOrder = ["DISCOVERY","CERTS","ARCHIVE","DNS","INTEL","PROBE","EMAIL","SSL","SCAN","THREATS","ANALYSIS"];
+
+  function setBar(percent, step, detail) {
+    const fill = document.getElementById('progress-fill');
+    const pct  = document.getElementById('progress-percent');
+    const lbl  = document.getElementById('progress-step');
+    const det  = document.getElementById('progress-detail');
+    if (fill) fill.style.width = Math.max(2, percent) + '%';
+    if (pct)  pct.innerHTML = percent + '<span>%</span>';
+    if (lbl)  lbl.textContent = step || 'EN COURS';
+    if (det)  det.textContent = detail || '';
+
+    const currentStepGroup = pipeMap[step] || [];
+    const currentIdx = currentStepGroup.length ? allStepsOrder.indexOf(currentStepGroup[currentStepGroup.length-1]) : -1;
+    document.querySelectorAll('.pipe-step').forEach((el, i) => {
+      el.classList.remove('done', 'active');
+      if (i < currentIdx) el.classList.add('done');
+      else if (currentStepGroup.includes(el.textContent.trim())) el.classList.add('active');
+    });
+  }
+
+  async function pollStatus() {
+    try {
+      const res = await fetch(`/scan/${SCAN_ID}/status`);
+      const data = await res.json();
+      document.getElementById('scan-status').textContent = data.status;
+      document.getElementById('scan-status').className = 'badge ' + data.status;
+      document.getElementById('stat-assets').textContent = data.assets_count;
+      document.getElementById('stat-alive').textContent = data.alive_count;
+      document.getElementById('stat-vulns').textContent = data.vulns_count;
+      document.getElementById('stat-kev').textContent = data.kev_count;
+      document.getElementById('stat-critical').textContent = data.critical_count;
+      document.getElementById('stat-high').textContent = data.high_count;
+      setBar(data.progress, data.current_step, data.current_detail);
+      if (data.status !== 'running') { window.location.reload(); return; }
+      pollCount++;
+      setTimeout(pollStatus, pollCount < 20 ? 1500 : 3000);
+    } catch(e) {
+      console.error("Polling error:", e);
+      setTimeout(pollStatus, 5000);
+    }
+  }
+  setTimeout(pollStatus, 1000);
+</script>
+{% endif %}
+{% endblock %}

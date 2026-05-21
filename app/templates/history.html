@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% set active = "history" %}
+{% block body_class %}marketing{% endblock %}
+{% block title %}Mes scans · ARGUS Security{% endblock %}
+
+{% block content %}
+<div style="max-width:1100px; margin:0 auto; padding:48px 24px 80px;">
+
+  {# ── HEADER ──────────────────────────────────────────────────────── #}
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:20px; flex-wrap:wrap; margin-bottom:32px;">
+    <div>
+      <h1 style="font-size:30px; font-weight:800; letter-spacing:-0.8px; font-family:var(--font-sans); margin-bottom:6px;">
+        Mes scans
+      </h1>
+      <p style="color:var(--text-dim); font-family:var(--font-sans); font-size:14px;">
+        {% if scans %}
+          {{ scans|length }} rapport{{ 's' if scans|length > 1 }} dans votre historique
+        {% else %}
+          Lancez votre premier scan pour analyser votre surface d'attaque.
+        {% endif %}
+      </p>
+    </div>
+    <a href="/" class="mkt-btn-primary" style="font-family:var(--font-sans);">+ Nouveau scan</a>
+  </div>
+
+  {# ── ÉTAT VIDE ───────────────────────────────────────────────────── #}
+  {% if not scans %}
+    <div style="background:var(--bg-surface); border:1px dashed var(--border-glow); border-radius:16px; padding:60px 32px; text-align:center;">
+      <div style="font-size:48px; margin-bottom:16px;">🔍</div>
+      <h2 style="font-family:var(--font-sans); font-size:18px; font-weight:700; color:var(--text-primary); margin-bottom:8px;">
+        Aucun scan pour le moment
+      </h2>
+      <p style="font-family:var(--font-sans); font-size:14px; color:var(--text-dim); margin-bottom:24px; max-width:380px; margin-left:auto; margin-right:auto; line-height:1.6;">
+        Entrez un nom de domaine pour découvrir tous vos actifs web exposés en 60 secondes.
+      </p>
+      <a href="/" class="mkt-btn-primary">Lancer mon premier scan →</a>
+    </div>
+
+  {% else %}
+
+    {# ── CARDS DE SCANS ──────────────────────────────────────────────── #}
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      {% for s in scans %}
+      <div class="scan-card" style="background:var(--bg-surface); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:20px 24px; transition:border-color 0.15s, background 0.15s;">
+        <div style="display:flex; align-items:center; gap:24px; flex-wrap:wrap;">
+
+          {# Grade + domaine #}
+          <div style="display:flex; align-items:center; gap:16px; flex:1; min-width:280px;">
+            {% if s.status == 'completed' and s.risk_grade %}
+              {% set grade_class = 'neon-green' if s.risk_grade == 'A' else 'neon-cyan' if s.risk_grade == 'B' else 'neon-yellow' if s.risk_grade == 'C' else 'sev-high' if s.risk_grade == 'D' else 'sev-critical' %}
+              <div style="width:48px; height:48px; border-radius:50%; border:2px solid var(--{{ grade_class }}); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <span style="font-family:var(--font-sans); font-weight:800; font-size:20px; color:var(--{{ grade_class }});">{{ s.risk_grade }}</span>
+              </div>
+            {% elif s.status == 'running' %}
+              <div style="width:48px; height:48px; border-radius:50%; border:2px solid var(--neon-cyan); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <span style="display:inline-block; width:14px; height:14px; border:2px solid var(--neon-cyan); border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite;"></span>
+              </div>
+            {% else %}
+              <div style="width:48px; height:48px; border-radius:50%; border:2px solid var(--text-dim); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <span style="font-family:var(--font-sans); font-weight:800; font-size:20px; color:var(--text-dim);">—</span>
+              </div>
+            {% endif %}
+
+            <div style="min-width:0; flex:1;">
+              <a href="/scan/{{ s.id }}" style="font-family:var(--font-sans); font-size:16px; font-weight:700; color:var(--text-primary); text-decoration:none; display:block; margin-bottom:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                {{ s.domain }}
+              </a>
+              <div style="font-family:var(--font-sans); font-size:12px; color:var(--text-dim);">
+                {{ s.started_at.strftime("%d %B %Y à %H:%M") }}
+                {% if s.completed_at %}
+                  {% set delta = (s.completed_at - s.started_at).total_seconds() | int %}
+                  · {% if delta < 60 %}{{ delta }}s{% else %}{{ (delta // 60) }} min {{ (delta % 60) }}s{% endif %}
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          {# Stats #}
+          <div style="display:flex; gap:24px; align-items:center; flex-wrap:wrap;">
+            <div style="text-align:center; min-width:64px;">
+              <div style="font-family:var(--font-sans); font-size:20px; font-weight:700; color:var(--text-primary);">{{ s.alive_count or 0 }}</div>
+              <div style="font-family:var(--font-sans); font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px;">En ligne</div>
+            </div>
+            <div style="text-align:center; min-width:64px;">
+              <div style="font-family:var(--font-sans); font-size:20px; font-weight:700; color:{% if s.critical_count %}var(--sev-critical){% elif s.high_count %}var(--sev-high){% else %}var(--text-dim){% endif %};">
+                {% if s.critical_count or s.high_count %}{{ (s.critical_count or 0) + (s.high_count or 0) }}{% else %}—{% endif %}
+              </div>
+              <div style="font-family:var(--font-sans); font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px;">P1+P2</div>
+            </div>
+            {% if s.status == 'completed' %}
+            <div style="text-align:center; min-width:64px;">
+              <div style="font-family:var(--font-sans); font-size:20px; font-weight:700; color:var(--neon-cyan);">{{ s.risk_score or 0 }}<span style="font-size:11px; color:var(--text-dim); font-weight:500;">/100</span></div>
+              <div style="font-family:var(--font-sans); font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px;">Score</div>
+            </div>
+            {% endif %}
+          </div>
+
+          {# Actions #}
+          <div style="display:flex; gap:8px; align-items:center;">
+            {% if s.status == 'completed' %}
+              <a href="/scan/{{ s.id }}" class="avatar-upload-btn" style="font-size:13px;">Voir le rapport →</a>
+            {% elif s.status == 'running' %}
+              <a href="/scan/{{ s.id }}" class="avatar-upload-btn" style="font-size:13px; color:var(--neon-cyan); border-color:var(--neon-cyan);">Voir en direct</a>
+            {% else %}
+              <a href="/scan/{{ s.id }}" class="avatar-upload-btn" style="font-size:13px;">Détails</a>
+            {% endif %}
+            <form action="/scan/{{ s.id }}/delete" method="post" style="margin:0;"
+                  onsubmit="return confirm('Supprimer définitivement le scan de {{ s.domain }} ?')">
+              <button type="submit" title="Supprimer" style="background:transparent; border:1px solid rgba(255,51,85,0.2); color:var(--sev-critical); width:36px; height:36px; border-radius:8px; cursor:pointer; font-size:14px;">✕</button>
+            </form>
+          </div>
+
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {# ── PAYWALL FREE ────────────────────────────────────────────────── #}
+    {% if current_user and current_user.plan == 'free' %}
+    <div style="margin-top:32px; background:linear-gradient(135deg, rgba(0,217,255,0.06), rgba(176,106,255,0.04)); border:1px solid rgba(0,217,255,0.2); border-radius:14px; padding:24px 28px; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;">
+      <div>
+        <div style="font-family:var(--font-sans); font-size:15px; font-weight:700; color:var(--text-primary); margin-bottom:4px;">
+          Vous voyez 20% des résultats sur chaque rapport
+        </div>
+        <div style="font-family:var(--font-sans); font-size:13px; color:var(--text-secondary);">
+          Passez à Essentiel pour débloquer 100% des résultats + l'export PDF.
+        </div>
+      </div>
+      <a href="/upgrade?plan=essentiel" class="mkt-btn-primary" style="white-space:nowrap;">
+        Activer Essentiel — 29€/mois →
+      </a>
+    </div>
+    {% endif %}
+
+  {% endif %}
+
+</div>
+
+<style>
+  .scan-card:hover {
+    border-color: var(--border-glow) !important;
+    background: var(--bg-elevated) !important;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+{% endblock %}

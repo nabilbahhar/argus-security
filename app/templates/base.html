@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ARGUS Security — Cybersécurité web pour PME{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='42' fill='none' stroke='%2300d9ff' stroke-width='8'/><circle cx='50' cy='50' r='14' fill='%2300d9ff'/></svg>">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <header>
+    <a href="/" class="logo" style="text-decoration: none;">
+      <span class="logo-eye">◉</span>
+      <span class="logo-text">ARGUS</span>
+      <span class="logo-cursor"></span>
+    </a>
+    <nav>
+      <ul>
+        <li><a href="/" {% if active == 'home' %}class="active"{% endif %}>Scanner</a></li>
+        {% if current_user %}
+        <li><a href="/history" {% if active == 'history' %}class="active"{% endif %}>Mes scans</a></li>
+        {% endif %}
+        <li><a href="/pricing" {% if active == 'pricing' %}class="active"{% endif %}>Tarifs</a></li>
+        <li><a href="/faq" {% if active == 'faq' %}class="active"{% endif %}>FAQ</a></li>
+        {% if current_user %}
+          {% if current_user.is_admin %}
+          <li class="nav-item"><a href="/admin" style="color: var(--neon-violet);">⚙ Admin</a></li>
+          {% endif %}
+
+          {# DROPDOWN USER (style GitHub) #}
+          <li class="nav-item user-dropdown" id="user-dropdown">
+            <button type="button" class="user-avatar-trigger" aria-label="Menu compte" aria-expanded="false">
+              {% set initials = ((current_user.name or current_user.email)|trim) %}
+              {% if current_user.avatar_url %}
+                <img src="{{ current_user.avatar_url }}" alt="Avatar" class="user-avatar-img">
+              {% else %}
+                <span class="user-avatar-initials">{{ (initials[0] if initials else 'U') | upper }}</span>
+              {% endif %}
+            </button>
+
+            <div class="user-dropdown-menu" role="menu">
+              {# Header utilisateur #}
+              <div class="user-dropdown-header">
+                <div class="user-dropdown-name">{{ current_user.name or 'Mon compte' }}</div>
+                <div class="user-dropdown-email">{{ current_user.email }}</div>
+                <div class="user-dropdown-plan">
+                  Plan <strong>{{ (current_user.plan or 'free') | capitalize }}</strong>
+                </div>
+              </div>
+
+              <div class="user-dropdown-divider"></div>
+
+              <a href="/account" class="user-dropdown-item">
+                <span class="user-dropdown-icon">👤</span> Mon compte
+              </a>
+              <a href="/settings" class="user-dropdown-item">
+                <span class="user-dropdown-icon">⚙</span> Paramètres
+              </a>
+              <a href="/history" class="user-dropdown-item">
+                <span class="user-dropdown-icon">📊</span> Mes scans
+              </a>
+              {% if current_user.plan == 'free' %}
+              <a href="/upgrade?plan=essentiel" class="user-dropdown-item user-dropdown-upgrade">
+                <span class="user-dropdown-icon">⚡</span> Passer à Essentiel
+              </a>
+              {% endif %}
+
+              <div class="user-dropdown-divider"></div>
+
+              <form action="/logout" method="post" style="margin:0;">
+                <button type="submit" class="user-dropdown-item user-dropdown-logout">
+                  <span class="user-dropdown-icon">⎋</span> Déconnexion
+                </button>
+              </form>
+            </div>
+          </li>
+        {% else %}
+          <li class="nav-item"><a href="/login" {% if active == 'login' %}class="active"{% endif %}>Connexion</a></li>
+          <li class="nav-item"><a href="/register" class="nav-cta-btn">Essai gratuit</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+  </header>
+
+  {# Banner global : email pas vérifié → bloque le scan #}
+  {% if current_user and not current_user.email_verified_at and not current_user.is_admin %}
+  <div style="background:linear-gradient(90deg, rgba(255,165,0,0.15), rgba(255,90,0,0.1)); border-bottom:1px solid rgba(255,165,0,0.3); padding:12px 24px; text-align:center; font-family:var(--font-sans); font-size:13px; color:var(--text-primary);">
+    📬 <strong>Confirmez votre email</strong> ({{ current_user.email }}) pour activer toutes les fonctionnalités.
+    <form action="/verify-email/resend" method="post" style="display:inline; margin-left:8px;">
+      <button type="submit" style="background:none; border:none; color:var(--neon-cyan); font-size:13px; font-weight:600; cursor:pointer; text-decoration:underline; font-family:inherit;">
+        Renvoyer le lien
+      </button>
+    </form>
+  </div>
+  {% endif %}
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    <div>ARGUS by Exasys · Experts en cybersécurité depuis 2015 · Données chiffrées · Jamais revendues</div>
+    <div style="margin-top:6px; font-size:11px;">
+      <a href="/faq" style="color:var(--text-dim);">FAQ</a> ·
+      <a href="/pricing" style="color:var(--text-dim);">Tarifs</a> ·
+      <a href="/register" style="color:var(--text-dim);">Essai gratuit</a> ·
+      <a href="mailto:contact@argus-security.com" style="color:var(--text-dim);">contact@argus-security.com</a>
+    </div>
+  </footer>
+
+  {# Dropdown user menu — toggle au click + close au click-outside #}
+  <script>
+  (function(){
+    const dropdown = document.getElementById('user-dropdown');
+    if (!dropdown) return;
+    const trigger = dropdown.querySelector('.user-avatar-trigger');
+    const menu = dropdown.querySelector('.user-dropdown-menu');
+
+    function open() {
+      dropdown.classList.add('open');
+      trigger.setAttribute('aria-expanded', 'true');
+    }
+    function close() {
+      dropdown.classList.remove('open');
+      trigger.setAttribute('aria-expanded', 'false');
+    }
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdown.classList.contains('open') ? close() : open();
+    });
+    document.addEventListener('click', (e) => {
+      if (!dropdown.contains(e.target)) close();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') close();
+    });
+  })();
+  </script>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

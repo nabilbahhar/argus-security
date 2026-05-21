@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% set active = "faq" %}
+{% block body_class %}marketing{% endblock %}
+{% block title %}FAQ — Questions fréquentes · ARGUS Security{% endblock %}
+
+{% block content %}
+
+{# ── HEADER ───────────────────────────────────────────────────────── #}
+<section style="text-align:center; padding:80px 24px 60px; max-width:700px; margin:0 auto;">
+  <div class="mkt-section-label">Support</div>
+  <h1 style="font-size:clamp(28px, 4vw, 48px); font-weight:800; letter-spacing:-2px; margin-bottom:16px; font-family:var(--font-sans); color:var(--text-primary);">
+    Questions fréquentes
+  </h1>
+  <p style="color:var(--text-secondary); font-size:17px; line-height:1.6; font-family:var(--font-sans);">
+    Tout ce que vous devez savoir sur ARGUS Security.
+    Une question sans réponse ?
+    <a href="mailto:contact@argus-security.com" style="color:var(--neon-cyan);">Contactez-nous</a>.
+  </p>
+</section>
+
+{# ── FAQ CONTENT ──────────────────────────────────────────────────── #}
+<section style="max-width:800px; margin:0 auto; padding:0 24px 80px;">
+
+  {# Section 1 — À propos de l'outil #}
+  <div class="faq-section">
+    <h2 class="faq-section-title">À propos de l'outil</h2>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggleFaq(this)">Pourquoi je ne vois que 20% des résultats en version gratuite ?</div>
+      <div class="faq-answer">
+        <p>ARGUS génère des rapports de sécurité complets qui peuvent contenir des données sensibles sur votre infrastructure — sous-domaines cachés, ports ouverts, vulnérabilités.</p>
+        <p>Pour votre propre protection, <strong>l'accès complet à ces informations est réservé aux comptes vérifiés</strong> (plans Essentiel, Pro ou Agency). Cela garantit que seul le propriétaire légitime du domaine peut consulter l'intégralité des résultats.</p>
+        <p>La version gratuite vous montre suffisamment pour évaluer la qualité de notre analyse. <a href="/pricing" style="color:var(--neon-cyan);">Passez au plan Essentiel</a> pour tout débloquer (29€/mois).</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggleFaq(this)">Comment fonctionne ARGUS Security ?</div>
+      <div class="faq-answer">
+        <p>ARGUS utilise une combinaison de techniques propriétaires développées par notre équipe depuis 2015 pour cartographier l'ensemble de la surface d'attaque web d'un domaine :</p>
+        <ul>
+          <li>Interrogation de bases de données publiques (certificats SSL, archives web, DNS)</li>
+          <li>Reconnaissance DNS passive</li>
+          <li>Intelligence artificielle propriétaire pour détecter des actifs oubliés</li>
+          <li>Vérification HTTP de chaque actif découvert</li>
+          <li>Analyse des protocoles SSL/TLS</li>
+          <li>Audit de la sécurité email (SPF, DKIM, DMARC)</li>
+        </ul>
+        <p>Nous ne divulguons pas les détails de nos méthodes pour protéger notre propriété intellectuelle.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggleFaq(this)">Est-ce que vous avez accès à mes données de scan ?</div>
+      <div class="faq-answer">
+        <p>Vos rapports de scan sont stockés chiffrés sur nos serveurs. Seuls vous et notre équipe technique (en cas de demande d'assistance que vous initiez) pouvez y accéder.</p>
+        <p>Nous ne revendons <strong>jamais</strong> vos données à des tiers. Vous pouvez demander la suppression complète de votre compte et de toutes vos données à tout moment depuis votre espace personnel.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggleFaq(this)">Quelle est la différence avec d'autres outils de cybersécurité ?</div>
+      <div class="faq-answer">
+        <p>ARGUS Security se distingue par :</p>
+        <ul>
+          <li>✅ Interface et rapports clairs, sans jargon technique</li>
+          <li>✅ Explications en langage business, accessibles à tous</li>
+          <li>✅ Données chiffrées et confidentielles</li>
+          <li>✅ Prix adaptés aux PME (à partir de 29€/mois)</li>
+          <li>✅ Support humain réactif inclus</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggleFaq(this)">Comment fonctionne le score de risque A-F ?</div>
+      <div class="faq-answer">
+        <p>Chaque scan reçoit un score sur <strong>100 points</strong>, traduit en lettre A à F (comme un bulletin scolaire).</p>
+        <p>Le score démarre à <strong>100</strong> et des points sont retirés pour chaque problème détecté :</p>
+        <ul>
+          <li><strong>A (90-100)</strong> — Posture exemplaire, peu d'angles d'attaque exploitables</li>
+          <li><strong>B (75-89)</strong> — Correct, quelques points faibles à corriger</li>
+          <li><strong>C (60-74)</strong> — Moyen, action recommandée à court terme</li>
+          <li><strong>D (40-59)</strong> — Mauvais, action urgente nécessaire</li>
+          <li><strong>F (0-39)</strong> — Critique, votre exposition est dangereuse</li>
+        </ul>
+        <p>Le calcul prend en compte : les vulnérabilités détectées (gravité, exploitation en cours dans le monde), la sécurité email (SPF, DKIM, DMARC), la santé des certificats SSL/TLS, et la taille de votre surface d'attaque. Le détail exact du calcul s'affiche en bas de chaque rapport (section "Voir le détail").</p>
+      </div>
+    </div>
+  </div>
+
+  {# Section 2 — Légal & Sécurité #}
+  <div class="faq-section">
+    <h2 class="faq-section-title">Légal &amp; Sécurité</h2>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggleFaq(this)">Est-il légal de scanner un domaine avec ARGUS ?</div>
+      <div class="faq-answer">
+        <p><strong>Oui, à condition de scanner uniquement des domaines dont vous êtes propriétaire ou pour lesquels vous avez une autorisation écrite.</strong></p>
+        <p>ARGUS en mode standard utilise exclusivement des techniques <strong>passives et légales</strong> : consultation de bases de données publiques (sans envoyer de trafic vers la cible). C'est légal partout dans le monde.</p>
+        <p>Le Mode Pentest (plans Pro et Agency) envoie du trafic actif vers la cible et est réservé aux propriétaires de domaine avec double consentement enregistré.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggleFaq(this)">Que se passe-t-il si je scanne un domaine qui n'est pas le mien ?</div>
+      <div class="faq-answer">
+        <p>En acceptant nos CGU à l'inscription, vous avez certifié n'utiliser ARGUS que sur vos propres domaines ou avec autorisation écrite du propriétaire.</p>
+        <p>En cas d'utilisation abusive, <strong>vous assumez l'entière responsabilité légale</strong> selon la législation applicable dans votre juridiction. ARGUS Security conserve les logs d'utilisation et peut les transmettre aux autorités compétentes sur réquisition légale.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggleFaq(this)">Mes résultats sont-ils confidentiels ?</div>
+      <div class="faq-answer">
+        <p>Absolument. Vos rapports de scan ne sont <strong>jamais publics</strong> et ne sont accessibles qu'à vous (et à l'équipe ARGUS pour support). Nous ne partageons aucun résultat avec des tiers.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggleFaq(this)">Comment protégez-vous mes données personnelles ?</div>
+      <div class="faq-answer">
+        <p>Nous collectons uniquement les données strictement nécessaires au fonctionnement du service (email, domaines scannés, résultats). Toutes les données sont chiffrées au repos et en transit.</p>
+        <p>Vous pouvez demander la <strong>suppression complète</strong> de votre compte et de toutes vos données à tout moment en nous contactant à <a href="mailto:contact@argus-security.com" style="color:var(--neon-cyan);">contact@argus-security.com</a>.</p>
+      </div>
+    </div>
+  </div>
+
+  {# Section 3 — CGU #}
+  <div class="faq-section" id="cgu">
+    <h2 class="faq-section-title">Conditions Générales d'Utilisation (résumé)</h2>
+
+    <div style="background:var(--bg-surface); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:28px;">
+      <p style="margin-bottom:16px; color:var(--text-secondary); font-family:var(--font-sans); font-size:15px;">
+        En créant un compte ARGUS Security, vous acceptez les conditions suivantes :
+      </p>
+      <ol style="color:var(--text-secondary); line-height:2.2; padding-left:20px; font-family:var(--font-sans); font-size:14px;">
+        <li>Vous n'utiliserez ARGUS Security que sur des domaines dont vous êtes propriétaire ou pour lesquels vous disposez d'une autorisation écrite.</li>
+        <li>Vous assumez l'entière responsabilité légale de vos scans.</li>
+        <li>Vous n'utiliserez pas ARGUS Security pour des activités illégales, malveillantes ou frauduleuses.</li>
+        <li>ARGUS Security conserve les logs d'utilisation à des fins d'audit légal.</li>
+        <li>ARGUS Security se réserve le droit de suspendre tout compte en cas d'utilisation abusive.</li>
+        <li>Les données personnelles sont traitées de manière confidentielle, chiffrées, et jamais revendues.</li>
+      </ol>
+      <p style="margin-top:16px; font-size:13px; color:var(--text-dim); font-family:var(--font-sans);">
+        Pour les CGU complètes, contactez-nous à <a href="mailto:legal@argus-security.com" style="color:var(--neon-cyan);">legal@argus-security.com</a>
+      </p>
+    </div>
+  </div>
+
+  {# Section 4 — Tarifs & Abonnement #}
+  <div class="faq-section">
+    <h2 class="faq-section-title">Tarifs &amp; Abonnement</h2>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggleFaq(this)">Puis-je annuler mon abonnement à tout moment ?</div>
+      <div class="faq-answer">
+        <p>Oui. Aucun engagement minimum. Vous pouvez annuler votre abonnement à tout moment depuis votre espace compte. L'accès reste actif jusqu'à la fin de la période payée.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggleFaq(this)">Y a-t-il un essai gratuit ?</div>
+      <div class="faq-answer">
+        <p>Oui ! La version gratuite est permanente et sans carte bancaire. Elle vous permet de scanner n'importe quel domaine et de voir 20% des résultats. Pour accéder à l'intégralité du rapport, passez au plan Essentiel (29€/mois).</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggleFaq(this)">Proposez-vous des remises pour les associations ou établissements d'enseignement ?</div>
+      <div class="faq-answer">
+        <p>Oui. Contactez-nous à <a href="mailto:contact@argus-security.com" style="color:var(--neon-cyan);">contact@argus-security.com</a> avec votre justificatif et nous étudions votre demande.</p>
+      </div>
+    </div>
+  </div>
+
+  {# CTA Contact #}
+  <div style="text-align:center; margin-top:48px; padding:40px 32px; background:var(--bg-surface); border:1px solid rgba(255,255,255,0.06); border-radius:20px;">
+    <h2 style="font-size:24px; font-weight:700; margin-bottom:12px; letter-spacing:-0.5px; font-family:var(--font-sans);">Une question sans réponse ?</h2>
+    <p style="color:var(--text-secondary); margin-bottom:24px; font-family:var(--font-sans); font-size:15px;">Notre équipe répond sous 24h, jours ouvrables.</p>
+    <a href="mailto:contact@argus-security.com" class="mkt-btn-primary">
+      Nous contacter →
+    </a>
+  </div>
+
+</section>
+
+{# ── ACCORDION SCRIPT ─────────────────────────────────────────────── #}
+<script>
+function toggleFaq(questionEl) {
+  const item = questionEl.closest('.faq-item');
+  const answer = item.querySelector('.faq-answer');
+  const isOpen = item.classList.contains('open');
+
+  // Fermer tous les autres
+  document.querySelectorAll('.faq-item.open').forEach(function(openItem) {
+    if (openItem !== item) {
+      openItem.classList.remove('open');
+      const otherAnswer = openItem.querySelector('.faq-answer');
+      if (otherAnswer) otherAnswer.style.display = 'none';
+    }
+  });
+
+  // Toggle celui-ci
+  if (isOpen) {
+    item.classList.remove('open');
+    answer.style.display = 'none';
+  } else {
+    item.classList.add('open');
+    answer.style.display = 'block';
+  }
+}
+
+// Ouvrir le premier par défaut
+document.addEventListener('DOMContentLoaded', function() {
+  const firstItem = document.querySelector('.faq-item');
+  if (firstItem) {
+    firstItem.classList.add('open');
+    const answer = firstItem.querySelector('.faq-answer');
+    if (answer) answer.style.display = 'block';
+  }
+
+  // Si on arrive via #cgu, ouvrir la section CGU
+  if (window.location.hash === '#cgu') {
+    const cguSection = document.getElementById('cgu');
+    if (cguSection) {
+      cguSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+});
+</script>
+
+{% endblock %}

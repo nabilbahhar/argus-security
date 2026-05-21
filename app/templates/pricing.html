@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% set active = "pricing" %}
+{% block body_class %}marketing{% endblock %}
+{% block title %}Tarifs — ARGUS Security{% endblock %}
+
+{% block content %}
+
+{# ── HEADER ───────────────────────────────────────────────────────── #}
+<section style="text-align:center; padding:80px 24px 60px; max-width:700px; margin:0 auto;">
+  <div class="mkt-section-label">Tarification transparente</div>
+  <h1 style="font-size:clamp(28px, 4vw, 48px); font-weight:800; letter-spacing:-2px; margin-bottom:16px; font-family:var(--font-sans); color:var(--text-primary); line-height:1.1;">
+    Des prix clairs pour chaque
+    <span style="background:linear-gradient(135deg,#00d9ff,#b06aff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+      taille d'entreprise
+    </span>
+  </h1>
+  <p style="color:var(--text-secondary); font-size:17px; line-height:1.6; font-family:var(--font-sans);">
+    Sans engagement. Sans carte bancaire pour l'essai gratuit. Annulation à tout moment.
+  </p>
+</section>
+
+{# ── PRICING GRID ─────────────────────────────────────────────────── #}
+<div class="mkt-pricing-grid" style="padding:0 24px; margin-bottom:60px;">
+
+  {# FREE #}
+  <div class="mkt-pricing-card">
+    <div class="mkt-pricing-plan">Gratuit</div>
+    <div class="mkt-pricing-price">0€<span>/mois</span></div>
+    <div class="mkt-pricing-desc">
+      Pour découvrir votre surface d'attaque en 60 secondes, sans engagement.
+    </div>
+    <ul class="mkt-pricing-features">
+      <li class="ok">1 scan par session</li>
+      <li class="ok">Découverte multi-sources</li>
+      <li class="ok">Score de risque A-F</li>
+      <li class="ok">20% des résultats visibles</li>
+      <li class="no">Analyse de sécurité détaillée</li>
+      <li class="no">Export des données</li>
+      <li class="no">Mode Pentest</li>
+    </ul>
+    {% if current_user %}
+    <a href="/" class="mkt-pricing-btn outline">Scanner maintenant</a>
+    {% else %}
+    <a href="/register" class="mkt-pricing-btn outline">Commencer gratuitement</a>
+    {% endif %}
+  </div>
+
+  {# ESSENTIEL #}
+  <div class="mkt-pricing-card featured">
+    <div class="mkt-pricing-badge">Recommandé PME</div>
+    <div class="mkt-pricing-plan">Essentiel</div>
+    <div class="mkt-pricing-price">29€<span>/mois</span></div>
+    <div class="mkt-pricing-desc">
+      L'essentiel pour sécuriser votre présence web et rester tranquille.
+    </div>
+    <ul class="mkt-pricing-features">
+      <li class="ok">3 domaines simultanés</li>
+      <li class="ok">Scans illimités</li>
+      <li class="ok">100% des résultats</li>
+      <li class="ok">Analyse de sécurité détaillée</li>
+      <li class="ok">Rapport SPF / DKIM / DMARC</li>
+      <li class="ok">Audit SSL/TLS complet</li>
+      <li class="ok">Export des données (.txt)</li>
+      <li class="no">Mode Pentest</li>
+    </ul>
+    {% if current_user and current_user.plan != 'essentiel' and current_user.plan not in ['pro','agency'] %}
+    <a href="/upgrade?plan=essentiel" class="mkt-pricing-btn primary">Activer Essentiel — 29€/mois →</a>
+    {% elif current_user and current_user.plan == 'essentiel' %}
+    <a href="/account" class="mkt-pricing-btn outline">Votre plan actuel ✓</a>
+    {% else %}
+    <a href="/register" class="mkt-pricing-btn primary">Démarrer l'essai →</a>
+    {% endif %}
+  </div>
+
+  {# PRO #}
+  <div class="mkt-pricing-card">
+    <div class="mkt-pricing-plan">Pro</div>
+    <div class="mkt-pricing-price">79€<span>/mois</span></div>
+    <div class="mkt-pricing-desc">
+      Pour les équipes IT qui veulent voir ce que voit un hacker.
+    </div>
+    <ul class="mkt-pricing-features">
+      <li class="ok">10 domaines simultanés</li>
+      <li class="ok">Tout Essentiel inclus</li>
+      <li class="ok">Mode Pentest (port scan, fuzzing)</li>
+      <li class="ok">Rapport de remédiation</li>
+      <li class="ok">Support prioritaire 24h</li>
+      <li class="ok">Notifications WhatsApp</li>
+    </ul>
+    {% if current_user and current_user.plan == 'pro' %}
+    <a href="/account" class="mkt-pricing-btn outline">Votre plan actuel ✓</a>
+    {% elif current_user %}
+    <a href="/upgrade?plan=pro" class="mkt-pricing-btn primary">Activer Pro — 79€/mois →</a>
+    {% else %}
+    <a href="/register?plan=pro" class="mkt-pricing-btn outline">Démarrer avec Pro</a>
+    {% endif %}
+  </div>
+
+  {# AGENCY #}
+  <div class="mkt-pricing-card">
+    <div class="mkt-pricing-plan">Agency</div>
+    <div class="mkt-pricing-price">249€<span>/mois</span></div>
+    <div class="mkt-pricing-desc">
+      Pour les MSSP et cabinets de conseil en cybersécurité.
+    </div>
+    <ul class="mkt-pricing-features">
+      <li class="ok">50 domaines simultanés</li>
+      <li class="ok">Tout Pro inclus</li>
+      <li class="ok">Gestion multi-clients</li>
+      <li class="ok">Rapports personnalisés</li>
+      <li class="ok">Accès API</li>
+      <li class="ok">SLA garanti</li>
+    </ul>
+    {% if current_user and current_user.plan == 'agency' %}
+    <a href="/account" class="mkt-pricing-btn outline">Votre plan actuel ✓</a>
+    {% elif current_user %}
+    <a href="/upgrade?plan=agency" class="mkt-pricing-btn primary">Activer Agency — 249€/mois →</a>
+    {% else %}
+    <a href="/register?plan=agency" class="mkt-pricing-btn outline">Démarrer avec Agency</a>
+    {% endif %}
+  </div>
+
+</div>
+
+{# ── COMPARAISON FEATURES ─────────────────────────────────────────── #}
+<section style="max-width:900px; margin:0 auto 80px; padding:0 24px;">
+  <h2 style="font-size:22px; font-weight:700; text-align:center; margin-bottom:32px; letter-spacing:-0.5px; font-family:var(--font-sans);">
+    Comparaison complète des fonctionnalités
+  </h2>
+
+  <div style="background:var(--bg-surface); border:1px solid var(--border); border-radius:16px; overflow:hidden;">
+    <table style="width:100%; border-collapse:collapse; font-family:var(--font-sans);">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border);">
+          <th style="text-align:left; padding:16px 20px; font-size:13px; color:var(--text-dim); font-weight:500;">Fonctionnalité</th>
+          <th style="padding:16px 20px; font-size:13px; color:var(--text-dim); font-weight:500; text-align:center;">Gratuit</th>
+          <th style="padding:16px 20px; font-size:13px; color:var(--neon-cyan); font-weight:700; text-align:center; background:rgba(0,217,255,0.04);">Essentiel</th>
+          <th style="padding:16px 20px; font-size:13px; color:var(--text-dim); font-weight:500; text-align:center;">Pro</th>
+          <th style="padding:16px 20px; font-size:13px; color:var(--text-dim); font-weight:500; text-align:center;">Agency</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% set rows = [
+          ("Scans par mois", "1/session", "Illimités", "Illimités", "Illimités"),
+          ("Domaines simultanés", "1", "3", "10", "50"),
+          ("Résultats visibles", "20%", "100%", "100%", "100%"),
+          ("Découverte multi-sources", "✓", "✓", "✓", "✓"),
+          ("Score de risque A-F", "✓", "✓", "✓", "✓"),
+          ("Audit SSL/TLS", "Basique", "Complet", "Complet", "Complet"),
+          ("Sécurité email (SPF/DKIM/DMARC)", "—", "✓", "✓", "✓"),
+          ("Analyse des vulnérabilités", "—", "✓", "✓", "✓"),
+          ("Export des données", "—", "✓ (.txt)", "✓ (tous formats)", "✓ (tous formats)"),
+          ("Mode Pentest", "—", "—", "✓", "✓"),
+          ("Rapport de remédiation", "—", "—", "✓", "✓"),
+          ("Notifications WhatsApp", "—", "—", "✓", "✓"),
+          ("Gestion multi-clients", "—", "—", "—", "✓"),
+          ("Accès API", "—", "—", "—", "✓"),
+          ("SLA garanti", "—", "—", "—", "✓"),
+          ("Support", "—", "Email", "Prioritaire 24h", "Dédié"),
+        ] %}
+        {% for row in rows %}
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+          <td style="padding:14px 20px; font-size:14px; color:var(--text-secondary);">{{ row[0] }}</td>
+          {% for val in row[1:] %}
+          <td style="padding:14px 20px; text-align:center; font-size:14px;{% if loop.index == 2 %} background:rgba(0,217,255,0.03);{% endif %}">
+            {% if val == "✓" %}
+              <span style="color:var(--neon-cyan); font-size:16px;">✓</span>
+            {% elif val == "—" %}
+              <span style="color:var(--text-dim);">—</span>
+            {% else %}
+              <span style="color:var(--text-secondary);">{{ val }}</span>
+            {% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+        {# Prix finaux #}
+        <tr style="background:rgba(0,217,255,0.02);">
+          <td style="padding:20px; font-weight:700; font-size:14px; color:var(--text-primary); font-family:var(--font-sans);">Prix mensuel</td>
+          <td style="padding:20px; text-align:center; font-weight:800; font-size:18px; color:var(--text-primary);">0€</td>
+          <td style="padding:20px; text-align:center; font-weight:800; font-size:18px; color:var(--neon-cyan); background:rgba(0,217,255,0.05);">29€</td>
+          <td style="padding:20px; text-align:center; font-weight:800; font-size:18px; color:var(--text-primary);">79€</td>
+          <td style="padding:20px; text-align:center; font-weight:800; font-size:18px; color:var(--text-primary);">249€</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{# ── CONFIANCE ────────────────────────────────────────────────────── #}
+<section style="text-align:center; padding:0 24px 80px;">
+  <p style="color:var(--text-dim); font-size:14px; font-family:var(--font-sans); line-height:2;">
+    🔒 Paiement sécurisé · Annulation à tout moment · Facture disponible · TVA selon législation applicable<br>
+    Une question ? <a href="mailto:contact@argus-security.com" style="color:var(--neon-cyan);">contact@argus-security.com</a>
+    ou <a href="/faq" style="color:var(--neon-cyan);">consultez la FAQ</a>.
+  </p>
+  <div style="margin-top:32px;">
+    <a href="/register" class="mkt-btn-primary">Commencer gratuitement →</a>
+  </div>
+</section>
+
+{% endblock %}

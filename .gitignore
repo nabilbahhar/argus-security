@@ -1,0 +1,67 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+logs/
+logs/emails/
+
+# Database files (contiennent comptes utilisateurs, emails, hash passwords)
+data/
+*.db
+*.sqlite
+*.sqlite3
+argus.db
+
+# Claude Code session files
+.claude/
+
+# Secrets & data
+secrets/
+*.pem
+*.key
+*.crt
+data/private/
+data/raw/
+
+# Outputs that contain customer data
+scans/output/
+scans/*.json
+scans/
+reports/output/
+
+# OSS binaries downloaded by tools/install_tools.ps1
+tools/bin/
+*.exe
+!tools/install_tools.ps1
+
+# Tests
+coverage/
+.pytest_cache/
+.nyc_output/
+
+# OS
+Thumbs.db

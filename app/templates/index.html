@@ -1,0 +1,462 @@
+{% extends "base.html" %}
+{% set active = "home" %}
+{% block body_class %}marketing{% endblock %}
+{% block title %}ARGUS Security — Cartographiez et sécurisez votre surface d'attaque web{% endblock %}
+
+{% block content %}
+
+{# ── HERO ─────────────────────────────────────────────────────────── #}
+<section class="mkt-hero">
+  <div class="mkt-badge">
+    <span class="mkt-badge-dot"></span>
+    Exasys · Experts en cybersécurité depuis 2015
+  </div>
+
+  <h1 class="mkt-headline">
+    Votre surface d'attaque,<br>
+    <span class="gradient-text">cartographiée comme un hacker.</span><br>
+    Corrigée avant qu'il frappe.
+  </h1>
+
+  <p class="mkt-sub">
+    ARGUS cartographie tous vos actifs web exposés, identifie les vulnérabilités
+    et vous guide pour les corriger. En français. Sans jargon.
+  </p>
+
+  <form action="/scan" method="post" class="mkt-scan-form" id="scan-form" novalidate>
+    <input
+      type="text"
+      name="domain"
+      id="scan-domain-input"
+      placeholder="Entrez votre domaine (ex: monentreprise.com)"
+      autocomplete="off"
+      autofocus
+      required
+      pattern="^(?:https?://)?(?:www\.)?[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}(?:/.*)?$"
+      title="Entrez un nom de domaine valide (ex: monentreprise.com)"
+      value="{{ request.query_params.get('domain', '') }}"
+    />
+    <button type="submit" class="mkt-btn-scan">
+      Analyser maintenant →
+    </button>
+  </form>
+  <div id="scan-domain-err" class="field-error" style="display:none; text-align:center; max-width:600px; margin:8px auto 0;"></div>
+
+  <div class="mkt-trust-row">
+    <span>✓ Sans carte bancaire</span>
+    <span style="color:var(--border);">·</span>
+    <span>✓ Résultats en 60 secondes</span>
+    <span style="color:var(--border);">·</span>
+    <span>✓ Données chiffrées · Jamais revendues</span>
+  </div>
+
+  {# Options scan selon plan #}
+  {% set plan = current_user.plan if current_user else 'none' %}
+  {% set is_pro = plan in ['pro', 'agency'] or (current_user and current_user.is_admin) %}
+  {% set is_paid = plan in ['essentiel', 'pro', 'agency'] or (current_user and current_user.is_admin) %}
+
+  <div class="scan-options" style="margin-top:24px; font-family:var(--font-sans); font-size:13px;">
+    <label>
+      <input type="checkbox" name="deep_discovery" form="scan-form" value="true" checked />
+      Découverte approfondie (recommandée)
+    </label>
+    <label>
+      <input type="checkbox" name="run_tls" form="scan-form" value="true" checked />
+      Vérification SSL
+    </label>
+    {% if is_paid %}
+    <label>
+      <input type="checkbox" name="run_nuclei" form="scan-form" value="true" />
+      Analyse avancée des vulnérabilités <span style="color:var(--neon-violet); font-size:11px;">PRO</span>
+    </label>
+    {% else %}
+    <label style="opacity:0.4; cursor:not-allowed;">
+      <input type="checkbox" disabled />
+      Vulnérabilités approfondies — <a href="/pricing" style="color:var(--neon-cyan);">Plan Essentiel</a>
+    </label>
+    {% endif %}
+  </div>
+
+  {# Mode pentest Pro #}
+  {% if is_pro %}
+  <div class="pentest-section">
+    <div class="pentest-toggle">
+      <label class="pentest-toggle-label">
+        <input type="checkbox" id="pentest_mode" name="pentest_mode" form="scan-form" value="true" onchange="togglePentestConsent()" />
+        <span class="pentest-toggle-text">
+          🔓 <strong>MODE PENTEST</strong> — audit actif complet (port scan, accès sensibles, cartographie)
+        </span>
+      </label>
+    </div>
+    <div id="pentest-consent" class="pentest-consent" style="display: none;">
+      <div class="pentest-warning">
+        ⚠ <strong>ATTENTION JURIDIQUE.</strong> Le mode pentest envoie du trafic actif vers la cible.
+        Sans autorisation explicite du propriétaire du domaine, cela constitue une infraction pénale
+        dans la plupart des juridictions.
+      </div>
+      <label class="pentest-checkbox-label">
+        <input type="checkbox" name="pentest_consent_1" form="scan-form" value="true" />
+        J'atteste être <strong>propriétaire</strong> du domaine ou <strong>explicitement autorisé(e)</strong> à mener ce test.
+      </label>
+      <label class="pentest-checkbox-label">
+        <input type="checkbox" name="pentest_consent_2" form="scan-form" value="true" />
+        J'assume <strong>l'entière responsabilité légale</strong>. Mon consentement sera enregistré et horodaté.
+      </label>
+      <div class="pentest-tools-list">
+        Suite ARGUS activée :
+        <span class="pentest-tool">Audit réseau (top 1000 ports)</span>
+        <span class="pentest-tool">Audit des accès sensibles</span>
+        <span class="pentest-tool">Cartographie applicative JS/API</span>
+      </div>
+    </div>
+    <script>
+      function togglePentestConsent() {
+        const c = document.getElementById('pentest-consent');
+        const enabled = document.getElementById('pentest_mode').checked;
+        c.style.display = enabled ? 'block' : 'none';
+      }
+    </script>
+  </div>
+  {% elif not current_user %}
+  <div style="margin-top:20px; text-align:center; font-size:13px; color:var(--text-dim);">
+    <a href="/register" style="color:var(--neon-cyan);">Créez un compte gratuit</a> pour accéder à toutes les options d'analyse.
+  </div>
+  {% endif %}
+</section>
+
+{# ── STATS ────────────────────────────────────────────────────────── #}
+<div style="padding:0 24px; max-width:1100px; margin:0 auto;">
+  <div class="mkt-stats">
+    <div class="mkt-stat">
+      <div class="mkt-stat-value">30+</div>
+      <div class="mkt-stat-label">Sources OSINT combinées</div>
+    </div>
+    <div class="mkt-stat">
+      <div class="mkt-stat-value">60s</div>
+      <div class="mkt-stat-label">Premier résultat</div>
+    </div>
+    <div class="mkt-stat">
+      <div class="mkt-stat-value">A–F</div>
+      <div class="mkt-stat-label">Score de risque clair</div>
+    </div>
+    <div class="mkt-stat">
+      <div class="mkt-stat-value">100%</div>
+      <div class="mkt-stat-label">Rapport sans jargon</div>
+    </div>
+  </div>
+</div>
+
+{# ── COMMENT ÇA MARCHE ────────────────────────────────────────────── #}
+<section class="mkt-steps-section">
+  <div class="mkt-section-label">Comment ça marche</div>
+  <h2 class="mkt-section-title">De votre domaine à votre rapport<br>en 3 étapes simples</h2>
+  <p class="mkt-section-sub">
+    Pas d'installation. Pas de configuration. Entrez votre domaine et ARGUS fait le reste.
+  </p>
+
+  <div class="mkt-steps">
+    <div class="mkt-step">
+      <div class="mkt-step-num">1</div>
+      <div class="mkt-step-title">Entrez votre domaine</div>
+      <div class="mkt-step-desc">
+        Saisissez votre nom de domaine dans le champ ci-dessus.
+        Aucune installation, aucun accès serveur requis.
+      </div>
+    </div>
+    <div class="mkt-step">
+      <div class="mkt-step-num">2</div>
+      <div class="mkt-step-title">ARGUS analyse votre surface</div>
+      <div class="mkt-step-desc">
+        Notre moteur interroge 30+ sources OSINT, vérifie chaque actif
+        et identifie les vulnérabilités en temps réel.
+      </div>
+    </div>
+    <div class="mkt-step">
+      <div class="mkt-step-num">3</div>
+      <div class="mkt-step-title">Recevez votre rapport complet</div>
+      <div class="mkt-step-desc">
+        Score de risque A-F, liste des vulnérabilités, recommandations
+        de correction — clair, sans jargon.
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ── FEATURES ─────────────────────────────────────────────────────── #}
+<section class="mkt-features-section">
+  <div style="text-align:center; margin-bottom:60px;">
+    <div class="mkt-section-label">Ce qu'ARGUS analyse</div>
+    <h2 class="mkt-section-title">Tout ce qu'un hacker verrait.<br>Rien de plus. Rien de moins.</h2>
+  </div>
+
+  <div class="mkt-features">
+    <div class="mkt-feature-card">
+      <span class="mkt-feature-icon">🔍</span>
+      <div class="mkt-feature-title">Découverte maximale</div>
+      <div class="mkt-feature-desc">
+        30+ sources OSINT combinées : certificats SSL, archives web, DNS,
+        moteurs de recherche. Aucun actif oublié.
+      </div>
+    </div>
+    <div class="mkt-feature-card">
+      <span class="mkt-feature-icon">⚡</span>
+      <div class="mkt-feature-title">Score de risque A-F</div>
+      <div class="mkt-feature-desc">
+        Une note globale claire sur votre exposition. Compréhensible par
+        votre direction, actionnable par votre équipe IT.
+      </div>
+    </div>
+    <div class="mkt-feature-card">
+      <span class="mkt-feature-icon">📧</span>
+      <div class="mkt-feature-title">Sécurité email</div>
+      <div class="mkt-feature-desc">
+        SPF, DKIM, DMARC audités automatiquement. Protégez votre réputation
+        et bloquez l'usurpation d'identité.
+      </div>
+    </div>
+    <div class="mkt-feature-card">
+      <span class="mkt-feature-icon">🔒</span>
+      <div class="mkt-feature-title">Audit SSL/TLS</div>
+      <div class="mkt-feature-desc">
+        Certificats expirés, protocoles obsolètes, chiffrements faibles.
+        Votre présence HTTPS passée au crible.
+      </div>
+    </div>
+    <div class="mkt-feature-card">
+      <span class="mkt-feature-icon">🛡️</span>
+      <div class="mkt-feature-title">Threat Intelligence</div>
+      <div class="mkt-feature-desc">
+        Corrélation avec les vulnérabilités exploitées dans la nature.
+        Les failles qui comptent vraiment, en premier.
+      </div>
+    </div>
+    <div class="mkt-feature-card">
+      <span class="mkt-feature-icon">🔓</span>
+      <div class="mkt-feature-title">Mode Pentest</div>
+      <div class="mkt-feature-desc">
+        Audit actif réservé aux propriétaires de domaine. Port scan,
+        cartographie applicative, détection des accès sensibles.
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ── PRICING PREVIEW ──────────────────────────────────────────────── #}
+<section class="mkt-pricing-section">
+  <div class="mkt-section-label">Tarifs</div>
+  <h2 class="mkt-section-title">Des prix clairs pour chaque taille d'entreprise</h2>
+  <p class="mkt-section-sub">
+    Sans engagement. Sans carte bancaire pour l'essai. Annulation à tout moment.
+  </p>
+
+  <div class="mkt-pricing-grid">
+
+    {# FREE #}
+    <div class="mkt-pricing-card">
+      <div class="mkt-pricing-plan">Gratuit</div>
+      <div class="mkt-pricing-price">0€<span>/mois</span></div>
+      <div class="mkt-pricing-desc">Pour découvrir votre surface d'attaque en 60 secondes.</div>
+      <ul class="mkt-pricing-features">
+        <li class="ok">1 scan par session</li>
+        <li class="ok">Score de risque A-F</li>
+        <li class="ok">20% des résultats visibles</li>
+        <li class="no">Rapport complet</li>
+        <li class="no">Mode Pentest</li>
+      </ul>
+      {% if current_user %}
+      <a href="/" class="mkt-pricing-btn outline">Scanner maintenant</a>
+      {% else %}
+      <a href="/register" class="mkt-pricing-btn outline">Commencer gratuitement</a>
+      {% endif %}
+    </div>
+
+    {# ESSENTIEL #}
+    <div class="mkt-pricing-card featured">
+      <div class="mkt-pricing-badge">Recommandé PME</div>
+      <div class="mkt-pricing-plan">Essentiel</div>
+      <div class="mkt-pricing-price">29€<span>/mois</span></div>
+      <div class="mkt-pricing-desc">L'essentiel pour sécuriser votre présence web en continu.</div>
+      <ul class="mkt-pricing-features">
+        <li class="ok">3 domaines simultanés</li>
+        <li class="ok">Scans illimités</li>
+        <li class="ok">100% des résultats</li>
+        <li class="ok">Audit SSL & email complet</li>
+        <li class="no">Mode Pentest</li>
+      </ul>
+      {% if current_user and current_user.plan == 'essentiel' %}
+      <a href="/account" class="mkt-pricing-btn outline">Votre plan ✓</a>
+      {% elif current_user and current_user.plan not in ['pro','agency'] %}
+      <a href="/upgrade?plan=essentiel" class="mkt-pricing-btn primary">Activer Essentiel →</a>
+      {% elif current_user %}
+      <a href="/account" class="mkt-pricing-btn outline">Plan supérieur actif ✓</a>
+      {% else %}
+      <a href="/register" class="mkt-pricing-btn primary">Démarrer l'essai</a>
+      {% endif %}
+    </div>
+
+    {# PRO #}
+    <div class="mkt-pricing-card">
+      <div class="mkt-pricing-plan">Pro</div>
+      <div class="mkt-pricing-price">79€<span>/mois</span></div>
+      <div class="mkt-pricing-desc">Pour les équipes IT qui veulent voir ce que voit un hacker.</div>
+      <ul class="mkt-pricing-features">
+        <li class="ok">10 domaines simultanés</li>
+        <li class="ok">Tout Essentiel inclus</li>
+        <li class="ok">Mode Pentest complet</li>
+        <li class="ok">Support prioritaire 24h</li>
+        <li class="ok">Notifications WhatsApp</li>
+      </ul>
+      <a href="mailto:contact@argus-security.com?subject=Plan Pro ARGUS" class="mkt-pricing-btn outline">Nous contacter</a>
+    </div>
+
+    {# AGENCY #}
+    <div class="mkt-pricing-card">
+      <div class="mkt-pricing-plan">Agency</div>
+      <div class="mkt-pricing-price">249€<span>/mois</span></div>
+      <div class="mkt-pricing-desc">Pour les MSSP et cabinets de conseil en cybersécurité.</div>
+      <ul class="mkt-pricing-features">
+        <li class="ok">50 domaines simultanés</li>
+        <li class="ok">Tout Pro inclus</li>
+        <li class="ok">Gestion multi-clients</li>
+        <li class="ok">Rapports personnalisés</li>
+        <li class="ok">Accès API + SLA garanti</li>
+      </ul>
+      <a href="mailto:contact@argus-security.com?subject=Plan Agency ARGUS" class="mkt-pricing-btn outline">Nous contacter</a>
+    </div>
+
+  </div>
+
+  <p style="color:var(--text-dim); font-size:13px;">
+    Voir la comparaison complète → <a href="/pricing" style="color:var(--neon-cyan);">Page tarifs</a>
+  </p>
+</section>
+
+{# ── DERNIERS SCANS (si connecté) ─────────────────────────────────── #}
+{% if recent_scans %}
+<section style="padding:0 24px; max-width:1100px; margin:0 auto 60px;">
+  <h2 style="font-size:20px; font-weight:700; margin-bottom:20px; letter-spacing:-0.5px;">Vos derniers rapports</h2>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Domaine</th>
+          <th>Statut</th>
+          <th>Actifs</th>
+          <th>Vulnérabilités</th>
+          <th>Score</th>
+          <th>Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in recent_scans %}
+        <tr>
+          <td class="url-cell" style="font-family:var(--font-sans);">{{ s.domain }}</td>
+          <td><span class="badge {{ s.status }}">{{ s.status }}</span></td>
+          <td>{{ s.alive_count }}/{{ s.assets_count }}</td>
+          <td>
+            {% if s.critical_count %}<span class="sev-critical">{{ s.critical_count }} P1</span>{% endif %}
+            {% if s.high_count %}<span class="sev-high"> · {{ s.high_count }} P2</span>{% endif %}
+            {% if not s.critical_count and not s.high_count %}<span class="text-dim">—</span>{% endif %}
+          </td>
+          <td>
+            {% if s.status == 'completed' %}
+              <span class="grade-mini grade-{{ s.risk_grade | lower }}">{{ s.risk_grade }}</span>
+              <span class="text-dim">{{ s.risk_score }}/100</span>
+            {% else %}<span class="text-dim">—</span>{% endif %}
+          </td>
+          <td class="text-dim">{{ s.started_at.strftime("%d/%m %H:%M") }}</td>
+          <td><a href="/scan/{{ s.id }}" class="btn btn-small btn-secondary">Voir →</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="text-center text-dim mt-16">
+    <a href="/history">Voir l'historique complet →</a>
+  </p>
+</section>
+{% endif %}
+
+{# ── CTA FINAL ────────────────────────────────────────────────────── #}
+<section class="mkt-cta">
+  <h2 class="mkt-cta-title">
+    Prêt à voir votre<br>
+    <span style="background:linear-gradient(135deg,#00d9ff,#b06aff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">surface d'attaque ?</span>
+  </h2>
+  <p class="mkt-cta-sub">
+    Lancez votre premier scan gratuitement en moins d'une minute.
+    Aucune carte bancaire requise.
+  </p>
+  <div style="display:flex; align-items:center; justify-content:center; gap:16px; flex-wrap:wrap;">
+    <a href="/register" class="mkt-btn-primary">Scanner gratuitement →</a>
+    <a href="/pricing" class="mkt-btn-secondary">Voir les tarifs</a>
+  </div>
+  <p style="margin-top:24px; font-size:13px; color:var(--text-dim);">
+    ARGUS by Exasys · Experts en cybersécurité depuis 2015 · Données chiffrées
+  </p>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<style>
+  .field-error {
+    color: var(--sev-critical, #ff3355);
+    font-size: 13px;
+    font-family: var(--font-sans);
+    line-height: 1.4;
+    padding: 4px 12px;
+  }
+</style>
+<script>
+(function() {
+  const form = document.getElementById('scan-form');
+  if (!form) return;
+
+  const input = document.getElementById('scan-domain-input');
+  const errBox = document.getElementById('scan-domain-err');
+
+  function normalize(raw) {
+    return (raw || '').trim().toLowerCase()
+      .replace(/^https?:\/\//, '')
+      .replace(/^www\./, '')
+      .split('/')[0]
+      .split('?')[0]
+      .split('#')[0];
+  }
+  const domainRe = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9\-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
+
+  function showErr(msg) {
+    errBox.textContent = msg;
+    errBox.style.display = msg ? 'block' : 'none';
+  }
+
+  input.addEventListener('input', () => showErr(''));
+
+  form.addEventListener('submit', (e) => {
+    const cleaned = normalize(input.value);
+    if (!cleaned) {
+      e.preventDefault();
+      showErr('Veuillez entrer un nom de domaine.');
+      input.focus();
+      return;
+    }
+    if (!domainRe.test(cleaned)) {
+      e.preventDefault();
+      showErr('Ce n\'est pas un nom de domaine valide. Exemple : monentreprise.com');
+      input.focus();
+      return;
+    }
+    // Remplace la valeur par la version normalisée pour le serveur
+    input.value = cleaned;
+  });
+
+  // Auto-scan : si on revient sur /?domain=X&autoscan=1, on clique sur le bouton automatiquement
+  const url = new URL(window.location.href);
+  if (url.searchParams.get('autoscan') === '1' && input.value.trim()) {
+    setTimeout(() => form.submit(), 300);
+  }
+})();
+</script>
+{% endblock %}

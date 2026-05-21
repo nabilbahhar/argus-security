@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block body_class %}marketing{% endblock %}
+{% block title %}{% if success %}Email vérifié{% else %}Lien invalide{% endif %} — ARGUS{% endblock %}
+
+{% block content %}
+<div style="max-width:540px; margin:80px auto; padding:0 24px; text-align:center;">
+  <div style="background:var(--bg-surface); border:1px solid {% if success %}rgba(0,255,136,0.3){% else %}rgba(255,51,85,0.25){% endif %}; border-radius:16px; padding:48px 32px;">
+
+    <div style="font-size:54px; margin-bottom:18px;">{% if success %}✅{% else %}⚠️{% endif %}</div>
+
+    <h1 style="font-size:24px; font-weight:800; letter-spacing:-0.5px; margin-bottom:14px; font-family:var(--font-sans); color:var(--text-primary);">
+      {% if success %}Email confirmé !{% else %}Lien invalide{% endif %}
+    </h1>
+
+    <p style="color:var(--text-secondary); font-size:15px; line-height:1.6; font-family:var(--font-sans); margin-bottom:28px;">
+      {{ message }}
+    </p>
+
+    {% if success %}
+    <a href="/" class="mkt-btn-primary" style="display:inline-block;">Lancer mon premier scan →</a>
+    {% else %}
+    <a href="/verify-email/pending" class="mkt-btn-primary" style="display:inline-block;">Demander un nouveau lien →</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

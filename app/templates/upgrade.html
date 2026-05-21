@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% set active = "upgrade" %}
+{% block body_class %}marketing{% endblock %}
+{% block title %}Activer mon plan — ARGUS Security{% endblock %}
+
+{% block content %}
+<div style="max-width:720px; margin:0 auto; padding:60px 24px 80px;">
+
+  {# ── CONFIRMATION POST-DEMANDE ─────────────────────────────────── #}
+  {% if confirmed %}
+  <div style="background:linear-gradient(135deg, rgba(0,255,136,0.08), rgba(0,217,255,0.05)); border:1px solid rgba(0,255,136,0.3); border-radius:16px; padding:32px; text-align:center; margin-bottom:32px;">
+    <div style="font-size:48px; margin-bottom:12px;">✅</div>
+    <h2 style="font-size:24px; font-weight:800; margin-bottom:12px; font-family:var(--font-sans); color:var(--text-primary); letter-spacing:-0.5px;">
+      Demande enregistrée
+    </h2>
+    <p style="color:var(--text-secondary); font-family:var(--font-sans); font-size:15px; line-height:1.6; margin-bottom:8px;">
+      Notre équipe vous contactera sous <strong>24h</strong> pour finaliser votre abonnement
+      {% if target_plan == 'pro' %}<strong style="color:var(--neon-violet);">Pro</strong>
+      {% elif target_plan == 'agency' %}<strong style="color:var(--neon-violet);">Agency</strong>
+      {% else %}<strong style="color:var(--neon-cyan);">Essentiel</strong>{% endif %}.
+    </p>
+    <p style="color:var(--text-dim); font-family:var(--font-sans); font-size:13px;">
+      Vous pouvez aussi nous joindre directement :
+      <a href="mailto:contact@argus-security.com?subject=Activation%20plan%20{{ target_plan }}" style="color:var(--neon-cyan); font-weight:600;">
+        contact@argus-security.com
+      </a>
+    </p>
+    <div style="margin-top:24px;">
+      <a href="/" class="mkt-btn-secondary">Retour au scanner</a>
+    </div>
+  </div>
+  {% else %}
+
+  {# ── HEADER ──────────────────────────────────────────────────────── #}
+  <div style="text-align:center; margin-bottom:40px;">
+    <div class="mkt-section-label">Activation</div>
+    <h1 style="font-size:clamp(28px, 4vw, 40px); font-weight:800; letter-spacing:-1.5px; margin-bottom:12px; font-family:var(--font-sans); color:var(--text-primary); line-height:1.15;">
+      {% if from_source == 'pdf' %}
+      Téléchargez le rapport complet avec
+      {% else %}
+      Passez au plan
+      {% endif %}
+      <span style="background:linear-gradient(135deg,#00d9ff,#b06aff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+        {% if target_plan == 'pro' %}Pro
+        {% elif target_plan == 'agency' %}Agency
+        {% else %}Essentiel{% endif %}
+      </span>
+    </h1>
+    <p style="color:var(--text-secondary); font-size:15px; font-family:var(--font-sans); line-height:1.6;">
+      {% if from_source == 'pdf' %}
+        L'export PDF est inclus dans tous les plans payants, à partir du plan Essentiel.
+      {% else %}
+        Débloquez 100% des résultats, l'export PDF et l'audit complet de votre sécurité.
+      {% endif %}
+    </p>
+  </div>
+
+  {# ── PLAN CARD ───────────────────────────────────────────────────── #}
+  {% set plan_data = {
+    'essentiel': {'name': 'Essentiel', 'price': '29', 'color': 'cyan', 'features': [
+        '3 domaines simultanés', 'Scans illimités', '100% des résultats',
+        'Audit SSL/TLS complet', 'Audit SPF/DKIM/DMARC',
+        'Export du rapport en PDF', 'Export des données (.txt)'
+    ]},
+    'pro': {'name': 'Pro', 'price': '79', 'color': 'violet', 'features': [
+        '10 domaines simultanés', 'Tout Essentiel inclus',
+        'Mode Pentest (audit actif)', 'Rapport de remédiation',
+        'Notifications WhatsApp', 'Support prioritaire 24h'
+    ]},
+    'agency': {'name': 'Agency', 'price': '249', 'color': 'violet', 'features': [
+        '50 domaines simultanés', 'Tout Pro inclus',
+        'Gestion multi-clients', 'Rapports personnalisés',
+        'Accès API', 'SLA garanti'
+    ]}
+  } %}
+  {% set p = plan_data.get(target_plan, plan_data['essentiel']) %}
+
+  <div style="background:var(--bg-surface); border:1px solid rgba(0,217,255,0.3); border-radius:16px; padding:36px; margin-bottom:32px; box-shadow:0 0 40px rgba(0,217,255,0.05);">
+    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+      <div>
+        <div style="font-size:11px; color:var(--text-dim); letter-spacing:2px; text-transform:uppercase; font-weight:600; margin-bottom:8px; font-family:var(--font-sans);">Plan {{ p.name }}</div>
+        <div style="font-size:42px; font-weight:800; color:var(--text-primary); font-family:var(--font-sans); letter-spacing:-1px;">
+          {{ p.price }}€<span style="font-size:18px; color:var(--text-dim); font-weight:500;">/mois</span>
+        </div>
+      </div>
+      <div style="font-size:13px; color:var(--text-dim); font-family:var(--font-sans);">
+        Sans engagement · Annulation à tout moment
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:32px;">
+      {% for f in p.features %}
+      <div style="font-size:14px; color:var(--text-secondary); font-family:var(--font-sans); display:flex; align-items:center; gap:8px;">
+        <span style="color:var(--neon-cyan); font-weight:700;">✓</span> {{ f }}
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if current_user %}
+    <form action="/upgrade/request" method="post" style="display:flex; gap:12px; flex-wrap:wrap;">
+      <input type="hidden" name="plan" value="{{ target_plan }}">
+      <button type="submit" class="mkt-btn-primary" style="flex:1; min-width:240px;">
+        Activer {{ p.name }} — {{ p.price }}€/mois →
+      </button>
+      <a href="mailto:contact@argus-security.com?subject=Plan%20{{ p.name }}%20ARGUS" class="mkt-btn-secondary" style="min-width:160px; text-align:center;">
+        Nous contacter
+      </a>
+    </form>
+    <p style="margin-top:16px; font-size:12px; color:var(--text-dim); font-family:var(--font-sans); text-align:center;">
+      🔒 Paiement par carte bancaire arrive très bientôt. En attendant,
+      notre équipe vous contacte sous 24h pour activer votre plan.
+    </p>
+    {% else %}
+    <a href="/register" class="mkt-btn-primary" style="display:block; text-align:center;">
+      Créer un compte gratuit pour démarrer →
+    </a>
+    {% endif %}
+  </div>
+
+  {# ── ALTERNATIVE PLANS ────────────────────────────────────────────── #}
+  <div style="text-align:center;">
+    <p style="color:var(--text-dim); font-size:13px; font-family:var(--font-sans);">
+      Besoin de plus ?
+      {% if target_plan != 'pro' %}<a href="/upgrade?plan=pro" style="color:var(--neon-violet);">Voir le plan Pro</a> · {% endif %}
+      {% if target_plan != 'agency' %}<a href="/upgrade?plan=agency" style="color:var(--neon-violet);">Voir le plan Agency</a> · {% endif %}
+      <a href="/pricing" style="color:var(--neon-cyan);">Comparer les plans</a>
+    </p>
+  </div>
+
+  {% endif %}
+</div>
+{% endblock %}
