@@ -694,149 +694,250 @@ function copySubs() {
   setTimeout(pollStatus, 1000);
 
   // ──────────────────────────────────────────────────────────────────
-  // Terminal stream (hacker-style live log lines)
-  // Crée l'impression d'un outil pro avec data qui défile vite.
+  // Terminal stream (hacker-style live log) — turbo mode + massive lib
+  // Vitesse ~80-180ms/ligne, 16 lignes visibles, contenu basé sur domaine.
+  // 100% fake-but-credible visuel pour donner impression d'outil pro lourd.
   // ──────────────────────────────────────────────────────────────────
   (function(){
     const term = document.getElementById('scan-terminal');
     if (!term) return;
-    const domain = term.dataset.domain || 'target';
+    const domain = term.dataset.domain || 'target.com';
+    const MAX_LINES = 16;
 
-    const MAX_LINES = 11;
-    const lines = [];
+    // ─── Helpers ────────────────────────────────────────────────────
+    const rand = a => a[Math.floor(Math.random()*a.length)];
+    const r256 = () => Math.floor(Math.random()*255);
+    const r1k  = () => Math.floor(Math.random()*999) + 100;
+    const r10k = () => Math.floor(Math.random()*9999) + 1000;
+    const rIp = () => `${r256()}.${r256()}.${r256()}.${r256()}`;
+    const rIp6 = () => `2a${rHex(2)}:${rHex(4)}::${rHex(4)}:${rHex(4)}`;
+    const rHex = n => Array.from({length:n}, ()=>'0123456789abcdef'[Math.floor(Math.random()*16)]).join('');
+    const rSha = () => rHex(8) + ':' + rHex(8) + ':' + rHex(8);
+    const rFloat = (min, max, dec=2) => (Math.random()*(max-min)+min).toFixed(dec);
+    const rPercent = () => Math.floor(Math.random()*100);
 
-    function rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-    function r256(){ return Math.floor(Math.random()*255); }
-    function r1k(){ return Math.floor(Math.random()*999) + 100; }
+    // ─── Dictionnaires ──────────────────────────────────────────────
+    const SUBS = ['api','www','admin','mail','dev','staging','prod','beta','test','vpn','intranet','portal','blog','shop','store','app','m','mobile','cdn','assets','static','media','img','docs','support','help','kb','status','health','metrics','grafana','prometheus','kibana','elastic','jenkins','gitlab','git','jira','confluence','wiki','crm','erp','hr','ldap','sso','auth','login','signin','oauth','sso-internal','dashboard','panel','console','cpanel','webmail','owa','exchange','smtp','imap','pop','ftp','sftp','db','db-prod','db-replica','redis','memcache','mysql','postgres','mongo','elastic-search','rabbitmq','kafka','consul','etcd','vault','docker','registry','k8s','kube','rancher','harbor','minio','s3','backup','old','legacy','archive','sandbox','demo','training','partners','vendors','clients','exchange-old'];
+    const SOURCES = ['crt.sh','virustotal','rapiddns','hackertarget','threatcrowd','urlscan.io','wayback machine','commoncrawl','censys','shodan','passivetotal','riddler','bufferover','dnsdumpster','sublist3r','assetfinder','findomain','amass','chaos','spyse','securitytrails','binaryedge','fullhunt','intelx','zone-h','threatminer','riskiq','intrigueio','greynoise','grayhatwarfare','leakix','reposcope'];
+    const PATHS = ['/','/login','/signin','/register','/signup','/admin','/admin/','/wp-admin','/wp-login.php','/cpanel','/webmail','/phpmyadmin','/.env','/.git/config','/.gitignore','/.htaccess','/robots.txt','/sitemap.xml','/security.txt','/.well-known/security.txt','/api','/api/','/api/v1','/api/v2','/v1/','/v2/','/swagger','/swagger-ui','/api-docs','/graphql','/health','/healthz','/status','/ping','/metrics','/dashboard','/console','/manage','/manager','/jenkins','/grafana','/kibana','/prometheus','/elastic','/jolokia','/actuator','/actuator/health','/actuator/env','/actuator/beans','/.DS_Store','/backup','/backup.sql','/dump.sql','/db.sql','/admin.zip','/test.php','/info.php','/phpinfo.php','/server-status','/server-info','/.well-known/openid-configuration','/oauth/authorize','/.well-known/jwks.json'];
+    const TECHS = ['nginx/1.18.0','nginx/1.20.2','nginx/1.24.0','Apache/2.4.41','Apache/2.4.52','Apache/2.4.58','IIS/10.0','LiteSpeed','OpenResty 1.21','PHP/7.4.33','PHP/8.0.30','PHP/8.1.27','PHP/8.2.15','Node.js 18.x','Node.js 20.x','Express 4.18','Python/3.10','Python/3.11','Django 4.2','Flask 2.3','FastAPI 0.110','Laravel 10','Symfony 6.4','WordPress 6.4.3','WordPress 6.5','Drupal 10.2','Joomla 4.4','Magento 2.4','Shopify','Webflow','Wix','Cloudflare','Akamai Ghost','Varnish','HAProxy 2.8','Tomcat 9.0','Tomcat 10','Jetty 11','Spring Boot 3.2','Rails 7.1','ASP.NET Core 8','.NET Framework 4.8','Express/Node','Nuxt 3','Next.js 14','Gatsby 5'];
+    const ISSUERS = ["Let's Encrypt R3","Let's Encrypt E5","Let's Encrypt R10","Let's Encrypt R11","DigiCert SHA2 Secure","DigiCert TLS RSA","Sectigo RSA DV","Sectigo RSA OV","GlobalSign GCC R6","GoDaddy Secure CA","Amazon RSA 2048","Google Trust Services","Comodo RSA","Entrust EV","ZeroSSL ECC"];
+    const CIPHERS = ['TLS_AES_256_GCM_SHA384','TLS_AES_128_GCM_SHA256','TLS_CHACHA20_POLY1305_SHA256','ECDHE-RSA-AES256-GCM-SHA384','ECDHE-RSA-AES128-GCM-SHA256','ECDHE-ECDSA-CHACHA20-POLY1305','DHE-RSA-AES256-GCM-SHA384'];
+    const CVES = ['CVE-2024-21412','CVE-2024-3094','CVE-2024-23897','CVE-2024-1086','CVE-2024-21413','CVE-2024-27198','CVE-2023-50164','CVE-2023-46604','CVE-2023-45689','CVE-2023-22515','CVE-2023-29357','CVE-2023-34362','CVE-2023-4966','CVE-2022-30190','CVE-2022-26134','CVE-2021-44228','CVE-2021-26084','CVE-2021-34527','CVE-2020-1472'];
+    const PRODUCTS = ['Apache HTTPD','nginx','Microsoft IIS','WordPress','Drupal','Joomla','Spring Boot','Spring Framework','Log4j','Jenkins','Atlassian Confluence','Atlassian Jira','GitLab','GitHub Enterprise','SonarQube','Citrix NetScaler','F5 BIG-IP','Fortinet FortiOS','Pulse Secure VPN','Ivanti Connect Secure','VMware vCenter','Microsoft Exchange','Zimbra','Postfix','Sendmail','MySQL','PostgreSQL','MongoDB','Redis','Elasticsearch','Kibana','Grafana','Prometheus','Docker','Kubernetes API','OpenSSL','SAP NetWeaver','Adobe Magento'];
+    const VULN_CATEGORIES = ['exposed-panels','exposures','misconfiguration','vulnerabilities','default-logins','workflows','cves/2024','cves/2023','cves/2022','file/keys','file/api-keys','file/backups','cloud/aws','cloud/azure','dns/dns-takeover','exposed-tokens','tech-detect'];
+    const ATTACK_TECHNIQUES = ['T1190 Exploit Public-Facing App','T1133 External Remote Services','T1078 Valid Accounts','T1110 Brute Force','T1059 Command Execution','T1505 Server Software Component','T1136 Create Account','T1098 Account Manipulation'];
+    const PORTS = [21,22,23,25,53,80,110,143,443,445,465,587,993,995,1433,1521,2049,2375,2376,3000,3306,3389,4000,4040,4443,4567,5000,5432,5601,5672,5900,5984,6000,6379,7000,7001,7474,7547,8000,8001,8008,8009,8010,8080,8081,8088,8089,8090,8123,8161,8200,8222,8443,8500,8888,9000,9001,9042,9090,9092,9100,9200,9300,9418,9443,9981,9990,9999,10000,11211,15672,15692,27017,27018,28017,32400,50070];
+    const COUNTRIES_NEUTRAL = ['EU','NA','APAC','AF','LATAM']; // no specific country
+    const SPF_INCLUDES = ['_spf.google.com','spf.mandrillapp.com','servers.mcsv.net','_spf.mailgun.org','spf.protection.outlook.com','sendgrid.net','amazonses.com','_spf.salesforce.com','mailchimp.com','spf.brevo.com','postmarkapp.com','smtp.resend.com'];
+    const DKIM_SELECTORS = ['default','google','mailgun','mandrill','smtpapi','sendgrid','k1','k2','selector1','selector2','dkim','m1','mail','outlook','protonmail','zoho','resend'];
 
-    const STEP_LIBRARY = {
-      "DISCOVERY":               buildDiscoveryLines,
-      "VÉRIFICATION HTTP":       buildProbeLines,
-      "SÉCURITÉ EMAIL":          buildEmailLines,
-      "AUDIT SSL/TLS":           buildTlsLines,
-      "ANALYSE VULNÉRABILITÉS":  buildVulnLines,
-      "THREAT INTELLIGENCE":     buildThreatLines,
-      "ANALYSE EXÉCUTIVE":       buildAnalysisLines,
-      "CALCUL DU SCORE":         buildScoreLines,
-      "PENTEST ACTIF":           buildPentestLines,
-      "INITIALISATION":          buildInitLines,
+    // ─── Builders par étape (chacun retourne une ligne) ─────────────
+    function pickInit(){
+      return rand([
+        ['cyan',   `[+] ARGUS scan engine v3.0.4 initialized`],
+        ['dim',    `    target=${domain} mode=passive max_depth=4`],
+        ['green',  `[OK] threat intel DB loaded (${r10k()*4}.${r1k()} CVEs indexed)`],
+        ['green',  `[OK] EPSS feed synced (2.${r1k()}M scores · last_update=24m ago)`],
+        ['green',  `[OK] CISA KEV catalog: 1.${r1k()} actively exploited entries`],
+        ['cyan',   `[~] resolving NS records for ${domain}...`],
+        ['dim',    `[dns] authoritative: ns1.${domain} -> ${rIp()}`],
+        ['dim',    `[dns] authoritative: ns2.${domain} -> ${rIp()}`],
+        ['cyan',   `[~] connecting to ${rand(SOURCES)}...`],
+        ['green',  `[OK] handshake complete (${r1k()}ms)`],
+        ['dim',    `[fingerprint] ${rSha()}`],
+      ]);
+    }
+
+    function pickDiscovery(){
+      const sub = rand(SUBS);
+      const src = rand(SOURCES);
+      return rand([
+        ['dim',    `[scan] querying ${src} for *.${domain}`],
+        ['green',  `[+] discovered: ${sub}.${domain}`],
+        ['green',  `[+] discovered: ${rand(SUBS)}-${rand(['v2','prod','old','new'])}.${domain}`],
+        ['cyan',   `    CT log entry: serial=${rHex(8)} issuer="${rand(ISSUERS)}"`],
+        ['dim',    `[dns] ${sub}.${domain} A -> ${rIp()}`],
+        ['dim',    `[dns] ${sub}.${domain} AAAA -> ${rIp6()}`],
+        ['cyan',   `[crt] SAN found: ${rand(['*.','dev.','api.','staging.','vpn.',''])}${domain}`],
+        ['dim',    `[osint] ${src}: ${r1k()/10} results`],
+        ['cyan',   `[whois] registrar: ${rand(['GoDaddy','Namecheap','Gandi','OVH','Hostinger','Cloudflare'])}`],
+        ['dim',    `[whois] created=20${r1k()%24+1}-${r1k()%12+1}-${r1k()%28+1} updated=recently`],
+        ['cyan',   `[archive.org] ${r1k()} snapshots in wayback machine`],
+        ['dim',    `[shodan] ASN=AS${r10k()*4} org="${rand(['CloudFlare','AWS','OVH','Azure','GCP','Hetzner','Digital Ocean'])}"`],
+        ['green',  `[+] new asset: ${rand(SUBS)}.${domain}`],
+        ['violet', `[brute] permutation match: ${rand(SUBS)}-${rand(['01','02','prod','test','old'])}.${domain}`],
+        ['dim',    `[dns] CNAME ${sub}.${domain} -> ${rand(['herokuapp.com','azurewebsites.net','cloudfront.net','vercel.app','netlify.app'])}`],
+        ['cyan',   `[zone-transfer] AXFR attempt on ns1.${domain}... refused (OK)`],
+        ['dim',    `[passive] ${rand(SOURCES)}: ${r1k()/10}s response`],
+        ['green',  `[+] ${rand(SUBS)}.${domain} resolves via CDN`],
+        ['cyan',   `[recon] subdomain bruteforce: ${r10k()}/${r10k()*5} wordlist tested`],
+      ]);
+    }
+
+    function pickProbe(){
+      const host = rand(SUBS);
+      const path = rand(PATHS);
+      const tech = rand(TECHS);
+      const code = rand([200,200,200,200,301,302,302,403,404,500,503]);
+      return rand([
+        ['cyan',  `[http] GET https://${host}.${domain}${path} -> ${code}`],
+        ['dim',   `       server: ${tech}`],
+        ['dim',   `       x-powered-by: ${rand(['PHP/8.1','ASP.NET','Express','Next.js'])}`],
+        ['green', `[+] live: ${host}.${domain} (${code} · ${Math.floor(Math.random()*400)+30}ms)`],
+        ['cyan',  `[tech] fingerprint: ${tech}`],
+        ['violet',`[tech] +${rand(['Cloudflare','jQuery 3.6','Bootstrap 5','React 18','Vue 3','Angular 17','Wordpress','WooCommerce','Stripe','Google Analytics','Hotjar'])}`],
+        ['yellow',`[!] ${host}.${domain}${path} exposes ${rand(['admin login','config file','version info','debug page'])}`],
+        ['dim',   `[http] HSTS: max-age=${rand([0,3600,86400,31536000])} ${Math.random()>0.5?'includeSubDomains':''}`],
+        ['cyan',  `[headers] x-frame-options: ${rand(['DENY','SAMEORIGIN','-'])}`],
+        ['dim',   `[headers] content-security-policy: ${rand(['default-src self','none','*'])} `],
+        ['cyan',  `[cookie] ${rand(['PHPSESSID','JSESSIONID','ASP.NET_SessionId','laravel_session','connect.sid'])}=${rHex(16)} ${rand(['HttpOnly','Secure','SameSite=Lax','-'])}`],
+        ['dim',   `[robots] ${path} found in robots.txt`],
+        ['green', `[+] redirect chain: ${host}.${domain} -> https://www.${domain}${path}`],
+        ['violet',`[match] CMS detected: ${rand(['WordPress','Drupal','Joomla','Magento','Shopify'])} v${rFloat(4,6,1)}`],
+        ['dim',   `[probe] response_size=${r10k()*5} bytes content-type=text/html`],
+        ['yellow',`[!] missing security headers on ${host}.${domain}: CSP, XFO`],
+        ['cyan',  `[ssl] HTTPS handshake OK -> TLS 1.3`],
+        ['dim',   `[favicon] hash=${rHex(8)} match=${rand(['WordPress','Joomla','phpMyAdmin','Jenkins'])}`],
+      ]);
+    }
+
+    function pickEmail(){
+      return rand([
+        ['cyan',  `[dns] TXT ${domain} -> v=spf1 include:${rand(SPF_INCLUDES)} ~all`],
+        ['dim',   `[spf] mechanism count: ${Math.floor(Math.random()*5)+3} lookups`],
+        ['yellow',`[!] SPF policy ends with ~all (softfail, not strict reject)`],
+        ['green', `[OK] DKIM selector active: ${rand(DKIM_SELECTORS)}._domainkey.${domain}`],
+        ['cyan',  `[dkim] 2048-bit RSA key found`],
+        ['dim',   `[dkim] selector probe: ${rand(DKIM_SELECTORS)}, ${rand(DKIM_SELECTORS)}, ${rand(DKIM_SELECTORS)}...`],
+        ['cyan',  `[dns] DMARC: v=DMARC1; p=${rand(['none','quarantine','reject'])}; rua=mailto:dmarc@${domain}`],
+        ['yellow',`[!] DMARC policy is p=none (reporting only, no blocking)`],
+        ['green', `[OK] DMARC policy is reject — phishing protected`],
+        ['cyan',  `[mx] priority=10 -> mail.${domain}`],
+        ['dim',   `[mx] priority=20 -> mx2.${domain}`],
+        ['violet',`[bimi] BIMI record found (brand indicator)`],
+        ['dim',   `[mta-sts] policy not found (recommended)`],
+        ['cyan',  `[tlsa] DANE check for ${domain}:25... no records`],
+      ]);
+    }
+
+    function pickTls(){
+      const cipher = rand(CIPHERS);
+      const issuer = rand(ISSUERS);
+      return rand([
+        ['cyan',  `[tls] handshake ${domain}:443 -> TLS 1.3 (${cipher})`],
+        ['green', `[OK] cert issuer: ${issuer}`],
+        ['dim',   `[cert] subject CN=${domain} expires=${r1k()%89+1}d`],
+        ['cyan',  `[cert] SAN: ${domain}, www.${domain}, ${rand(SUBS)}.${domain}`],
+        ['green', `[OK] OCSP stapling enabled`],
+        ['dim',   `[tls] supported: TLS 1.2 ✓, TLS 1.3 ✓, TLS 1.1 disabled, SSLv3 disabled`],
+        ['cyan',  `[hsts] Strict-Transport-Security: max-age=31536000; includeSubDomains`],
+        ['green', `[OK] HSTS preload eligible`],
+        ['yellow',`[!] TLS 1.0/1.1 still negotiable on ${rand(SUBS)}.${domain}`],
+        ['violet',`[tls] cipher score: A+ (Mozilla modern profile)`],
+        ['dim',   `[cert] SHA256 fingerprint: ${rHex(8)}:${rHex(8)}:${rHex(8)}`],
+        ['cyan',  `[cert] OCSP URL: http://ocsp.${rand(['letsencrypt','digicert','sectigo'])}.org`],
+        ['dim',   `[cert] CT logs: 3 SCTs embedded`],
+      ]);
+    }
+
+    function pickVuln(){
+      const cve = rand(CVES);
+      const product = rand(PRODUCTS);
+      return rand([
+        ['cyan',  `[nuclei] loading 12.${r1k()} templates...`],
+        ['dim',   `[scan] template: ${rand(VULN_CATEGORIES)}/${rand(['cve-2024','exposure','default-login','misconfig'])}`],
+        ['yellow',`[?] potential: ${cve} on ${product}`],
+        ['cyan',  `[verify] double-checking finding (false positive guard)`],
+        ['green', `[OK] no critical findings in this category`],
+        ['violet',`[match] CVSS=${rFloat(6,9.9,1)} severity=${rand(['HIGH','CRITICAL'])} ${cve}`],
+        ['yellow',`[!] ${product} version exposed via header`],
+        ['dim',   `[scan] templates processed: ${r10k()}/12847 (${rPercent()}%)`],
+        ['cyan',  `[fuzz] tested ${r1k()*5} attack patterns on ${rand(SUBS)}.${domain}`],
+        ['dim',   `[wappalyzer] ${rand(PRODUCTS)} v${rFloat(1,9,1)} detected`],
+        ['violet',`[exploit-db] EDB-${r10k()*5} matches ${cve}`],
+        ['cyan',  `[github] PoC search: ${rand(['exploit','PoC','rce','xss','sqli'])} ${cve}`],
+        ['yellow',`[!] outdated ${product} v${rFloat(1,9,1)} — newer ${rFloat(1,9,1)} available`],
+        ['dim',   `[scan] confidence=${rPercent()}% on ${cve} match`],
+        ['cyan',  `[verify] HTTP request: GET ${rand(PATHS)} HTTP/1.1`],
+      ]);
+    }
+
+    function pickThreat(){
+      return rand([
+        ['cyan',  `[epss] querying first.org/data/v1/epss?cve=${rand(CVES)}`],
+        ['dim',   `[enrich] ${rand(CVES)} EPSS=${rFloat(0.05,0.95,3)} percentile=${rPercent()}th`],
+        ['yellow',`[!] CISA KEV match: actively exploited in the wild`],
+        ['violet',`[mitre] technique: ${rand(ATTACK_TECHNIQUES)}`],
+        ['cyan',  `[threat] APT group ${rand(['APT29','APT41','Lazarus','FIN7','Conti','LockBit','BlackCat','ALPHV','Cl0p'])} known to exploit this CVE`],
+        ['dim',   `[enrich] ${rand(CVES)} first seen in exploit kit: ${r1k()}d ago`],
+        ['green', `[OK] threat intel enrichment complete`],
+        ['violet',`[prio] re-ranking ${r1k()} findings by exploitation probability`],
+        ['cyan',  `[censys] internet-wide scans show ${r10k()*4} similar exposures`],
+        ['dim',   `[shodan] last seen exposed: ${rPercent()}h ago`],
+        ['yellow',`[!] mass exploitation campaign active for ${rand(CVES)}`],
+        ['cyan',  `[news] CISA advisory: AA${r1k()%24}-${r1k()%366}A on ${rand(CVES)}`],
+      ]);
+    }
+
+    function pickAnalysis(){
+      return rand([
+        ['cyan',  `[analyst] compiling executive narrative...`],
+        ['dim',   `[analyst] correlating ${r1k()} findings across ${Math.floor(Math.random()*60)+10} assets`],
+        ['green', `[OK] risk narrative generated`],
+        ['violet',`[analyst] business impact assessment: ${rand(['high','medium','elevated'])}`],
+        ['cyan',  `[output] formatting structured report...`],
+        ['dim',   `[output] sections: 3 paragraphs, plain language, no jargon`],
+        ['cyan',  `[analyst] cross-referencing with industry baseline...`],
+        ['green', `[OK] remediation priorities identified`],
+        ['violet',`[analyst] estimated effort: ${rand(['low','medium','high'])} (${r1k()%8+1}-${r1k()%16+8}h)`],
+      ]);
+    }
+
+    function pickScore(){
+      return rand([
+        ['cyan',  `[score] computing ARGUS Risk Score (0-100)...`],
+        ['dim',   `[calc] base=100, applying deductions`],
+        ['violet',`[breakdown] DNS:${-Math.floor(Math.random()*15)} TLS:${-Math.floor(Math.random()*10)} VULN:${-Math.floor(Math.random()*25)} EMAIL:${-Math.floor(Math.random()*12)}`],
+        ['cyan',  `[grade] mapping score -> letter grade (A-F)`],
+        ['green', `[OK] final score computed`],
+        ['dim',   `[bench] industry baseline: ${r1k()%30+50}/100 (avg)`],
+      ]);
+    }
+
+    function pickPentest(){
+      const port = rand(PORTS);
+      return rand([
+        ['cyan',  `[pentest] active probing authorized (${r1k()} ports / ${Math.floor(Math.random()*30)+10} hosts)`],
+        ['yellow',`[!] port ${port}/tcp open on ${rand(SUBS)}.${domain}`],
+        ['dim',   `[banner] ${port}/tcp -> ${rand(['SSH-2.0-OpenSSH_8.4','HTTP/1.1','220 ProFTPD','* OK IMAP4'])}`],
+        ['cyan',  `[fuzz] testing ${r1k()*3} paths on alive hosts`],
+        ['violet',`[crawler] discovered ${Math.floor(Math.random()*30)+5} endpoints`],
+        ['dim',   `[katana] JS endpoint extraction: ${r1k()} URLs`],
+        ['cyan',  `[ffuf] wordlist=common.txt threads=50 mc=200,302,401`],
+        ['yellow',`[!] directory listing enabled on /backup/`],
+        ['green', `[OK] no obvious RCE found in fuzzed endpoints`],
+        ['dim',   `[port-scan] ${rPercent()}% complete`],
+      ]);
+    }
+
+    const STEP_MAP = {
+      'DISCOVERY':              pickDiscovery,
+      'VÉRIFICATION HTTP':      pickProbe,
+      'SÉCURITÉ EMAIL':         pickEmail,
+      'AUDIT SSL/TLS':          pickTls,
+      'ANALYSE VULNÉRABILITÉS': pickVuln,
+      'THREAT INTELLIGENCE':    pickThreat,
+      'ANALYSE EXÉCUTIVE':      pickAnalysis,
+      'CALCUL DU SCORE':        pickScore,
+      'PENTEST ACTIF':          pickPentest,
+      'INITIALISATION':         pickInit,
     };
 
-    function buildInitLines(){
-      return [
-        ['cyan', `[+] Initializing ARGUS scan engine v3.0...`],
-        ['dim', `    target: ${domain}`],
-        ['green', `[OK] threat intel database loaded (47.392 CVEs)`],
-        ['green', `[OK] EPSS feed up to date (2.4M scores)`],
-        ['green', `[OK] CISA KEV catalog synced (1.247 active exploits)`],
-        ['cyan', `[~] resolving DNS authoritative servers...`],
-      ];
-    }
-    function buildDiscoveryLines(){
-      const subs = ['api','admin','mail','dev','staging','vpn','blog','shop','app','intranet','crm','erp','portal','cdn','ftp','db','test','beta','www','support','help','docs','status','panel'];
-      const sub = rand(subs);
-      const sources = ['crt.sh','virustotal','rapiddns','hackertarget','threatcrowd','urlscan','wayback','commoncrawl','censys','shodan','passivetotal','riddler','bufferover'];
-      return [
-        ['dim', `[scan] querying ${rand(sources)} for *.${domain}`],
-        ['green', `[+] discovered: ${sub}.${domain}`],
-        ['cyan', `    CT log entry: serial=${r256()}${r256()}${r256()}`],
-        ['dim', `[dns] ${sub}.${domain} -> ${r256()}.${r256()}.${r256()}.${r256()}`],
-        ['green', `[+] new asset: ${rand(['admin','api','staging','dev'])}.${domain}`],
-        ['cyan', `[crt] SAN: ${rand(['*.','dev.','api.',''])}${domain}`],
-        ['dim', `[osint] passive recon: ${Math.floor(Math.random()*50)+5} sources probed`],
-      ];
-    }
-    function buildProbeLines(){
-      const path = ['/', '/login', '/admin', '/wp-admin', '/api/v1', '/.env', '/robots.txt', '/sitemap.xml', '/healthz'];
-      const tech = ['nginx/1.18.0','Apache/2.4.41','PHP/7.4','WordPress 6.2','Drupal 9.5','Laravel 9','Express','Django 4.1','Cloudflare','IIS/10.0'];
-      const status = [200,200,200,301,302,403,404,500];
-      const host = rand(['www','api','admin','app','blog','shop','m','staging','dev']);
-      return [
-        ['cyan', `[http] GET https://${host}.${domain}${rand(path)} -> ${rand(status)}`],
-        ['dim', `       server: ${rand(tech)}`],
-        ['green', `[+] live host: ${host}.${domain} [200]`],
-        ['cyan', `[tech] fingerprint: ${rand(tech)} on ${host}.${domain}`],
-        ['dim', `[http] response time: ${Math.floor(Math.random()*400)+50}ms`],
-        ['yellow', `[!] ${host}.${domain} exposes /admin (auth required)`],
-      ];
-    }
-    function buildEmailLines(){
-      return [
-        ['cyan', `[dns] TXT ${domain} -> v=spf1 include:_spf.google.com ~all`],
-        ['dim', `[spf] mechanism: include:_spf.google.com (3 lookups)`],
-        ['green', `[OK] DKIM selector found: default._domainkey.${domain}`],
-        ['cyan', `[dns] DMARC: v=DMARC1; p=reject; rua=mailto:dmarc@${domain}`],
-        ['yellow', `[!] SPF policy detected as ~all (softfail, not strict)`],
-        ['green', `[OK] DMARC policy is reject — phishing protected`],
-        ['dim', `[email] MX records: 2 mail servers found`],
-      ];
-    }
-    function buildTlsLines(){
-      const ciphers = ['TLS_AES_128_GCM_SHA256', 'ECDHE-RSA-AES256-GCM-SHA384', 'TLS_CHACHA20_POLY1305_SHA256'];
-      const issuer = ["Let's Encrypt R3", "DigiCert SHA2", "Sectigo RSA", "GlobalSign"];
-      return [
-        ['cyan', `[tls] handshake ${domain}:443 -> TLS 1.3 (${rand(ciphers)})`],
-        ['green', `[OK] cert valid: issuer=${rand(issuer)} expires=${r256()}d`],
-        ['dim', `[ssl] supported: TLS 1.2, TLS 1.3 — TLS 1.0/1.1 disabled OK`],
-        ['cyan', `[hsts] strict-transport-security: max-age=31536000`],
-        ['green', `[OK] HSTS preload eligible`],
-        ['dim', `[cert] SAN: ${domain}, www.${domain}, *.${domain}`],
-      ];
-    }
-    function buildVulnLines(){
-      const cves = ['CVE-2024-21412','CVE-2023-45689','CVE-2024-3094','CVE-2023-50164','CVE-2024-23897'];
-      const products = ['Apache','nginx','WordPress','Spring','Log4j','Jenkins','Confluence','GitLab'];
-      return [
-        ['cyan', `[nuclei] running 12.847 templates against ${domain}`],
-        ['dim', `[scan] template: ${rand(['exposed-panels','vulnerabilities','misconfiguration','exposures'])}/...`],
-        ['yellow', `[!] potential: ${rand(cves)} on ${rand(products)} ${r1k()/100}`],
-        ['cyan', `[verify] re-checking finding for false positive...`],
-        ['green', `[OK] no critical vulnerabilities in this category`],
-        ['violet', `[match] CVE database hit: severity=high cvss=${(Math.random()*4+6).toFixed(1)}`],
-        ['dim', `[scan] templates processed: ${r1k()*10}/12847`],
-      ];
-    }
-    function buildThreatLines(){
-      return [
-        ['cyan', `[epss] querying first.org EPSS API for findings...`],
-        ['dim', `[enrich] CVE-2024-${r1k()} -> EPSS=${(Math.random()*0.8+0.1).toFixed(3)} percentile=${Math.floor(Math.random()*99)}`],
-        ['yellow', `[!] CISA KEV match: actively exploited in the wild`],
-        ['green', `[OK] threat intel enrichment complete (${r1k()/100}s)`],
-        ['violet', `[prio] re-ranking findings by exploitation probability...`],
-      ];
-    }
-    function buildAnalysisLines(){
-      return [
-        ['cyan', `[ai] compiling executive summary for stakeholders...`],
-        ['dim', `[ai] analyzing ${r1k()} findings, ${Math.floor(Math.random()*50)} subdomains...`],
-        ['green', `[OK] risk narrative generated`],
-        ['violet', `[ai] correlating exposures with business impact`],
-        ['cyan', `[output] formatting human-readable report...`],
-      ];
-    }
-    function buildScoreLines(){
-      return [
-        ['cyan', `[score] computing ARGUS Risk Score (0-100)...`],
-        ['dim', `[calc] base=100, deductions applied for findings`],
-        ['violet', `[breakdown] DNS:${-Math.floor(Math.random()*15)} TLS:${-Math.floor(Math.random()*10)} VULN:${-Math.floor(Math.random()*25)}`],
-        ['green', `[OK] final score computed`],
-      ];
-    }
-    function buildPentestLines(){
-      return [
-        ['cyan', `[pentest] active probing authorized (${r1k()} ports)`],
-        ['yellow', `[!] port ${rand([22,80,443,3306,5432,6379,8080,8443,9000])} open on ${domain}`],
-        ['dim', `[fuzz] testing ${r1k()} paths on alive hosts...`],
-        ['violet', `[crawler] discovered ${Math.floor(Math.random()*30)+5} endpoints`],
-        ['green', `[OK] pentest module complete`],
-      ];
-    }
-
-    function colorTag(c){ return c || 'green'; }
-
+    // ─── Render ─────────────────────────────────────────────────────
     function pushLine(color, text){
       const div = document.createElement('div');
-      div.className = 'scan-terminal-line ' + colorTag(color);
+      div.className = 'scan-terminal-line ' + (color || 'green');
       div.textContent = text;
       term.appendChild(div);
       while (term.childElementCount > MAX_LINES) {
@@ -847,17 +948,23 @@ function copySubs() {
     function tick(){
       const stepEl = document.getElementById('progress-step');
       const step = (stepEl ? stepEl.textContent.trim() : 'INITIALISATION');
-      const builder = STEP_LIBRARY[step] || buildInitLines;
-      const candidates = builder();
-      const line = rand(candidates);
-      pushLine(line[0], line[1]);
+      const picker = STEP_MAP[step] || pickInit;
+      const [color, text] = picker();
+      pushLine(color, text);
     }
 
-    // Lance le stream — 1 nouvelle ligne toutes les 280-450ms
+    // Lance le stream — 1 nouvelle ligne toutes les 80-180ms (turbo)
     function loop(){
       tick();
-      setTimeout(loop, 280 + Math.floor(Math.random()*180));
+      // Burst occasionnel : 2-3 lignes d'un coup pour effet "shit happening"
+      if (Math.random() < 0.15) {
+        tick();
+        if (Math.random() < 0.3) tick();
+      }
+      setTimeout(loop, 80 + Math.floor(Math.random()*100));
     }
+    // Préchauffe : 6 lignes immédiates pour ne pas démarrer vide
+    for (let i = 0; i < 6; i++) tick();
     loop();
   })();
 </script>

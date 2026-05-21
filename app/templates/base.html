@@ -142,6 +142,35 @@
     </div>
   </footer>
 
+  {# Anti-copy minimal : bloque right-click + Ctrl+C/X/A en dehors des inputs #}
+  <script>
+  (function(){
+    // Bloque clic-droit (sauf sur inputs/textareas)
+    document.addEventListener('contextmenu', function(e) {
+      const tag = e.target.tagName;
+      if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
+        e.preventDefault();
+      }
+    });
+    // Bloque Ctrl+C / Ctrl+X / Ctrl+A si la sélection est dans le body (pas dans input)
+    document.addEventListener('keydown', function(e) {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const key = e.key.toLowerCase();
+      if (key !== 'c' && key !== 'x' && key !== 'a') return;
+      const ae = document.activeElement;
+      if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) {
+        return; // OK dans les inputs
+      }
+      e.preventDefault();
+    });
+    // Bloque le drag d'éléments
+    document.addEventListener('dragstart', function(e) {
+      const tag = e.target.tagName;
+      if (tag === 'IMG' || tag === 'SVG') e.preventDefault();
+    });
+  })();
+  </script>
+
   {# Dropdown user menu — toggle au click + close au click-outside #}
   <script>
   (function(){

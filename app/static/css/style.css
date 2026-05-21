@@ -55,6 +55,26 @@ html, body {
   font-size: 14px;
   line-height: 1.6;
   min-height: 100vh;
+  /* Anti-copy : pas de sélection sur le site */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  /* Anti-drag image */
+  -webkit-user-drag: none;
+}
+
+/* Exceptions : on garde la sélection pour les inputs/textarea (sinon impossible de taper) */
+input, textarea, [contenteditable="true"], .selectable {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* Évite la copie d'images via drag */
+img {
+  -webkit-user-drag: none;
 }
 
 /* Scanlines subtiles façon écran CRT (background) */
@@ -2880,12 +2900,12 @@ body.marketing .user-dropdown-plan {
   border: 1px solid var(--border-glow);
   border-radius: 6px;
   padding: 14px 16px;
-  height: 140px;
+  height: 220px;
   overflow: hidden;
   position: relative;
   font-family: var(--font-mono);
   font-size: 11px;
-  line-height: 1.4;
+  line-height: 1.35;
   margin-top: 14px;
   box-shadow: 0 0 30px rgba(0, 217, 255, 0.08) inset;
 }
