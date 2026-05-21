@@ -13,7 +13,7 @@
 <body class="{% block body_class %}{% endblock %}">
   <header>
     <a href="/" class="logo" style="text-decoration: none;">
-      <span class="logo-eye">◉</span>
+      {% with logo_size='small' %}{% include '_logo.html' %}{% endwith %}
       <span class="logo-text">ARGUS</span>
       <span class="logo-cursor"></span>
     </a>

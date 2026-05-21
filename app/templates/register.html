@@ -57,7 +57,7 @@
 
       <div class="auth-logo">
         <a href="/" style="text-decoration:none; display:inline-block;">
-          <span style="font-size:32px; color:var(--neon-cyan); display:block; margin-bottom:2px;">◉</span>
+          {% with logo_size='medium' %}{% include '_logo.html' %}{% endwith %}
           <div style="font-family:var(--font-sans); font-size:20px; font-weight:800; color:var(--text-primary); letter-spacing:0.5px;">ARGUS</div>
         </a>
         <div style="font-size:12px; color:var(--text-dim); margin-top:4px; font-family:var(--font-sans);">

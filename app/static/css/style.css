@@ -132,6 +132,15 @@ header {
   50%      { opacity: 0.75; transform: scale(1.08); }
 }
 
+/* SVG logo ARGUS (cible + onde radar) */
+.argus-logo {
+  display: inline-block;
+  vertical-align: middle;
+}
+.logo .argus-logo {
+  filter: drop-shadow(0 0 6px rgba(0, 217, 255, 0.4));
+}
+
 .logo-text {
   color: var(--neon-cyan);
   text-shadow: 0 0 12px rgba(0, 217, 255, 0.4);

@@ -60,7 +60,17 @@ def _wrap_html(title: str, body_html: str, cta_label: str = "", cta_url: str = "
       <table cellpadding="0" cellspacing="0" border="0" width="560" style="max-width:560px;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
         <!-- Header -->
         <tr><td style="background:#0a0e1a;padding:24px 32px;">
-          <div style="font-size:22px;font-weight:800;color:#00d9ff;letter-spacing:1px;">◉ ARGUS</div>
+          <div style="font-size:22px;font-weight:800;color:#00d9ff;letter-spacing:1px;">
+            <svg viewBox="0 0 100 100" width="22" height="22" style="vertical-align:middle;margin-right:6px;display:inline-block;">
+              <circle cx="50" cy="50" r="28" fill="none" stroke="#00d9ff" stroke-width="3"/>
+              <circle cx="50" cy="50" r="15" fill="none" stroke="#00d9ff" stroke-width="2"/>
+              <circle cx="50" cy="50" r="6" fill="#b06aff"/>
+              <line x1="50" y1="4" x2="50" y2="18" stroke="#00d9ff" stroke-width="3" stroke-linecap="round"/>
+              <line x1="50" y1="82" x2="50" y2="96" stroke="#00d9ff" stroke-width="3" stroke-linecap="round"/>
+              <line x1="4" y1="50" x2="18" y2="50" stroke="#00d9ff" stroke-width="3" stroke-linecap="round"/>
+              <line x1="82" y1="50" x2="96" y2="50" stroke="#00d9ff" stroke-width="3" stroke-linecap="round"/>
+            </svg>ARGUS
+          </div>
           <div style="font-size:11px;color:#8b9cad;text-transform:uppercase;letter-spacing:1.5px;margin-top:2px;">Security by Exasys</div>
         </td></tr>
         <!-- Body -->
