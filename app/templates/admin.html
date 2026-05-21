@@ -22,6 +22,25 @@
     </div>
   </div>
 
+  {# ── ACTIONS RAPIDES — EXPORTS CSV ──────────────────────────────── #}
+  <div style="background:linear-gradient(135deg, rgba(176,106,255,0.05), rgba(0,217,255,0.03)); border:1px solid rgba(176,106,255,0.2); border-radius:14px; padding:20px 24px; margin-bottom:24px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+      <h2 style="font-family:var(--font-sans); font-size:16px; font-weight:700; color:var(--text-primary); margin:0;">
+        📥 Exports rapides
+      </h2>
+      <span style="font-family:var(--font-sans); font-size:11px; color:var(--text-dim);">CSV utf-8 · ouvrable dans Excel/Google Sheets</span>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:10px;">
+      <a href="/admin/export/users.csv" class="admin-export-btn">👥 Tous les utilisateurs</a>
+      <a href="/admin/export/users.csv?plan=essentiel" class="admin-export-btn">⭐ Plan Essentiel</a>
+      <a href="/admin/export/users.csv?plan=pro" class="admin-export-btn">🚀 Plan Pro</a>
+      <a href="/admin/export/users.csv?plan=agency" class="admin-export-btn">🏢 Plan Agency</a>
+      <a href="/admin/export/emails.csv?verified_only=true" class="admin-export-btn">✉️ Emails vérifiés (marketing)</a>
+      <a href="/admin/export/whatsapp.csv" class="admin-export-btn">📱 Leads WhatsApp opt-in</a>
+      <a href="/admin/export/scans.csv" class="admin-export-btn">🔍 Tous les scans</a>
+    </div>
+  </div>
+
   {# ── KPIs ────────────────────────────────────────────────────────── #}
   <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:14px; margin-bottom:32px;">
     {% set kpis = [

@@ -2840,3 +2840,135 @@ body.marketing .user-dropdown-item,
 body.marketing .user-dropdown-plan {
   font-family: var(--font-sans);
 }
+
+/* === ADMIN EXPORT BUTTONS === */
+.admin-export-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-glow);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.15s;
+}
+.admin-export-btn:hover {
+  border-color: var(--neon-violet);
+  background: rgba(176, 106, 255, 0.06);
+  color: var(--neon-violet);
+  text-shadow: none;
+  transform: translateY(-1px);
+}
+
+/* === SCAN PROGRESS HACKER-TERMINAL STREAM === */
+.scan-terminal {
+  background: #000;
+  border: 1px solid var(--border-glow);
+  border-radius: 6px;
+  padding: 14px 16px;
+  height: 140px;
+  overflow: hidden;
+  position: relative;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.4;
+  margin-top: 14px;
+  box-shadow: 0 0 30px rgba(0, 217, 255, 0.08) inset;
+}
+.scan-terminal::after {
+  content: "";
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 60px;
+  background: linear-gradient(to top, #000 0%, transparent 100%);
+  pointer-events: none;
+}
+.scan-terminal-line {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.9;
+}
+.scan-terminal-line.cyan  { color: var(--neon-cyan); }
+.scan-terminal-line.green { color: var(--neon-green); }
+.scan-terminal-line.dim   { color: var(--text-dim); }
+.scan-terminal-line.violet { color: var(--neon-violet); }
+.scan-terminal-line.yellow { color: var(--neon-yellow); }
+
+/* === FREE PREVIEW — SCARE BANNER === */
+.scare-banner {
+  background: linear-gradient(135deg, rgba(255,51,85,0.08), rgba(255,140,0,0.04));
+  border: 1px solid rgba(255,51,85,0.35);
+  border-left: 4px solid var(--sev-critical);
+  border-radius: 10px;
+  padding: 22px 26px;
+  margin-bottom: 22px;
+  position: relative;
+}
+.scare-banner-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.scare-banner-icon {
+  font-size: 22px;
+  animation: pulse-warn 1.5s ease-in-out infinite;
+}
+@keyframes pulse-warn {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.15); }
+}
+.scare-banner-title {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--sev-critical);
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+.scare-banner-finding {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,51,85,0.2);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--neon-cyan);
+  word-break: break-all;
+}
+.scare-banner-explanation {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+.scare-banner-explanation strong {
+  color: var(--sev-high);
+}
+.scare-banner-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  background: linear-gradient(135deg, var(--sev-critical), var(--sev-high));
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+.scare-banner-cta:hover {
+  box-shadow: 0 0 18px rgba(255,51,85,0.35);
+  transform: translateY(-1px);
+  color: white;
+}

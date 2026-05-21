@@ -194,6 +194,11 @@ def scan_view(scan_id: int, request: Request, db: Session = Depends(get_db)):
         locked_vulns   = total_vulns  - n_vulns
         locked_subs    = total_subs   - n_subs
 
+    # ── Scare finding (preview alarmant pour user free) ──────────
+    # Identifie LE finding réel le plus impactant à afficher en haut
+    # pour faire prendre conscience du risque (jamais inventé).
+    scare = _build_scare_finding(scan, vulns_sorted) if not full_access else None
+
     return templates.TemplateResponse("scan.html", _ctx(
         request, db,
         scan=scan,
@@ -208,8 +213,154 @@ def scan_view(scan_id: int, request: Request, db: Session = Depends(get_db)):
         total_assets=total_assets,
         total_vulns=total_vulns,
         total_subs=total_subs,
+        scare=scare,
         plan_limits=get_plan_limits(user),
     ))
+
+
+def _build_scare_finding(scan, vulns_sorted):
+    """
+    Identifie le RÉEL finding le plus alarmant et l'explique en mots simples.
+    Priorité :
+      1. KEV (CVE activement exploitée dans la nature)
+      2. CVE critique
+      3. cPanel/admin/wp-admin exposé sans auth
+      4. DMARC absent (phishing au nom du domaine non bloqué)
+      5. SPF absent
+      6. Certif TLS expiré
+      7. Sous-domaine sensible exposé (admin, intranet, vpn, dev, staging, db, ftp)
+    """
+    # 1. KEV — la pire des pires
+    kev_vulns = [v for v in vulns_sorted if v.kev]
+    if kev_vulns:
+        v = kev_vulns[0]
+        return {
+            "icon": "🚨",
+            "title": "Vulnérabilité activement exploitée par des hackers",
+            "finding": f"{v.name or v.template_id}" + (f" — {v.cve_id}" if v.cve_id else "") + f" sur {v.matched_url or scan.domain}",
+            "explanation": (
+                "Cette faille fait partie du <strong>catalogue CISA KEV</strong> : "
+                "elle est <strong>actuellement exploitée par des hackers</strong> "
+                "contre d'autres entreprises dans le monde. Les exploits sont publics et automatisés. "
+                "Sans correction immédiate, c'est seulement une question de jours avant qu'un script kiddie "
+                "ne tombe sur votre site."
+            ),
+        }
+
+    # 2. CVE critique
+    critical = [v for v in vulns_sorted if (v.severity or "").lower() == "critical"]
+    if critical:
+        v = critical[0]
+        return {
+            "icon": "🔥",
+            "title": "Faille critique exploitable détectée",
+            "finding": f"{v.name or v.template_id}" + (f" — {v.cve_id}" if v.cve_id else "") + f" sur {v.matched_url or scan.domain}",
+            "explanation": (
+                "Une <strong>faille de gravité critique</strong> a été trouvée sur l'un de vos actifs. "
+                "Un attaquant peut potentiellement <strong>prendre le contrôle de ce serveur</strong>, "
+                "voler vos données, ou s'en servir comme tremplin pour atteindre votre infrastructure interne. "
+                "Aucune compétence technique poussée n'est requise — des outils automatisés exploitent ce genre de faille en quelques secondes."
+            ),
+        }
+
+    # 3. Panneaux d'admin exposés (cPanel, wp-admin, etc.)
+    sensitive_paths = ["cpanel", "wp-admin", "wp-login", "phpmyadmin", "/admin", "adminer", "webmin"]
+    for a in scan.assets[:50]:
+        url = (a.url or "").lower()
+        for sp in sensitive_paths:
+            if sp in url:
+                return {
+                    "icon": "🔓",
+                    "title": "Interface d'administration exposée publiquement",
+                    "finding": a.url,
+                    "explanation": (
+                        f"Une <strong>console d'administration</strong> est accessible depuis internet. "
+                        f"Un attaquant qui devine ou force le mot de passe (ou exploite une faille du logiciel) "
+                        f"peut <strong>prendre le contrôle complet du site</strong> en quelques minutes. "
+                        f"Ce type d'interface ne devrait jamais être exposée sans VPN ou IP whitelist."
+                    ),
+                }
+
+    # 4. DMARC absent — phishing facile
+    dmarc = scan.dmarc or {}
+    if not dmarc.get("present"):
+        return {
+            "icon": "📧",
+            "title": "Phishing au nom de votre entreprise possible",
+            "finding": f"Aucun enregistrement DMARC publié pour {scan.domain}",
+            "explanation": (
+                "<strong>N'importe qui peut envoyer des emails qui semblent venir de votre domaine</strong>. "
+                f"Un attaquant peut écrire à vos clients depuis <em>direction@{scan.domain}</em> ou <em>compta@{scan.domain}</em> "
+                "pour leur faire virer de l'argent ou cliquer sur un lien piégé. "
+                "Vos clients et partenaires sont à la merci d'un usurpateur d'identité."
+            ),
+        }
+
+    # 5. SPF absent
+    spf = scan.spf or {}
+    if not spf.get("present"):
+        return {
+            "icon": "✉️",
+            "title": "Vos emails peuvent être usurpés",
+            "finding": f"Aucun enregistrement SPF publié pour {scan.domain}",
+            "explanation": (
+                "Sans SPF, <strong>n'importe quel serveur peut envoyer des emails en se faisant passer pour vous</strong>. "
+                "Les serveurs mail de vos destinataires (Gmail, Outlook...) ne peuvent pas vérifier si l'email vient vraiment "
+                "de votre domaine. Résultat : soit vos vrais emails finissent en spam, soit des emails frauduleux "
+                "arrivent à vos clients en se faisant passer pour vous."
+            ),
+        }
+
+    # 6. Certif TLS expiré
+    expired_certs = [t for t in (scan.tls_findings or []) if t.expired]
+    if expired_certs:
+        t = expired_certs[0]
+        return {
+            "icon": "🔐",
+            "title": "Certificat SSL expiré — visiteurs bloqués",
+            "finding": f"Certificat expiré sur {t.host}",
+            "explanation": (
+                "Le certificat SSL/HTTPS de cet actif est <strong>expiré</strong>. "
+                "Tous vos visiteurs voient une <strong>page rouge d'alerte</strong> dans leur navigateur "
+                "(Chrome, Firefox, Edge) : <em>« Connexion non sécurisée — Risque attaque ! »</em>. "
+                "99% des visiteurs partent immédiatement. Si c'est un site e-commerce ou de contact, "
+                "vous perdez des clients chaque heure."
+            ),
+        }
+
+    # 7. Sous-domaine sensible exposé
+    sensitive_subs = ["admin", "intranet", "vpn", "dev", "staging", "db", "database", "ftp", "test", "phpmyadmin", "jenkins"]
+    for sub in (scan.discovered_subs or [])[:30]:
+        sub_lower = sub.lower()
+        for sens in sensitive_subs:
+            if sub_lower.startswith(sens + ".") or sub_lower == sens + "." + scan.domain.lower():
+                return {
+                    "icon": "👁️",
+                    "title": "Sous-domaine interne exposé publiquement",
+                    "finding": sub,
+                    "explanation": (
+                        f"Un sous-domaine qui semble être <strong>destiné à un usage interne</strong> ({sens}) "
+                        f"est accessible depuis internet. Les hackers le savent : ces interfaces sont souvent "
+                        f"moins surveillées, avec des mots de passe par défaut ou des versions logicielles obsolètes. "
+                        f"C'est une <strong>porte d'entrée privilégiée</strong> pour pénétrer votre réseau."
+                    ),
+                }
+
+    # Aucun finding alarmant — message generic mais honnête
+    if scan.assets_count and scan.assets_count > 0:
+        return {
+            "icon": "🔍",
+            "title": f"{scan.assets_count} actifs cartographiés — analyse complète disponible",
+            "finding": f"Surface d'attaque : {scan.assets_count} actifs identifiés",
+            "explanation": (
+                "Le scan a découvert votre surface d'attaque visible depuis internet. "
+                "Les détails de chaque actif (technologies utilisées, configurations, certificats) "
+                "sont visibles à 100% avec le plan Essentiel. "
+                "Sans cette visibilité complète, des actifs oubliés peuvent rester exposés sans surveillance."
+            ),
+        }
+
+    return None
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -286,6 +437,10 @@ def login_post(
     # Nettoie le compteur de rate limit après succès
     with _RATE_LIMIT_LOCK:
         _RATE_LIMIT_STORE.pop(rl_key, None)
+
+    # Admin → dashboard ops direct, pas l'accueil
+    if user.is_admin:
+        return RedirectResponse("/admin", 302)
     return RedirectResponse("/", 302)
 
 
@@ -833,6 +988,148 @@ def admin_change_plan(user_id: int, plan: str = Form(...), request: Request = No
         user.plan = plan
         db.commit()
     return RedirectResponse("/admin", 302)
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Admin — Exports CSV
+# ─────────────────────────────────────────────────────────────────────
+
+def _csv_response(filename: str, rows: list[list]) -> "Response":
+    """Helper pour retourner un CSV utf-8 BOM (compatible Excel)."""
+    import csv, io
+    from fastapi.responses import Response
+    buf = io.StringIO()
+    writer = csv.writer(buf, delimiter=";", quoting=csv.QUOTE_MINIMAL)
+    for row in rows:
+        writer.writerow(row)
+    content = "﻿" + buf.getvalue()  # BOM pour Excel
+    return Response(
+        content=content,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.get("/admin/export/users.csv")
+def admin_export_users(request: Request, db: Session = Depends(get_db),
+                       plan: str = None):
+    """Exporte tous les utilisateurs en CSV. Filtre optionnel par plan."""
+    admin = get_current_user(request, db)
+    if not admin or not admin.is_admin:
+        raise HTTPException(403)
+
+    q = db.query(User).order_by(User.created_at.desc())
+    if plan and plan in PLAN_LIMITS:
+        q = q.filter(User.plan == plan)
+    users = q.all()
+
+    rows = [["id", "email", "name", "company", "plan", "verified", "whatsapp", "whatsapp_opt_in",
+             "is_admin", "created_at", "last_login_at"]]
+    for u in users:
+        rows.append([
+            u.id,
+            u.email,
+            u.name or "",
+            u.company or "",
+            u.plan,
+            "yes" if u.email_verified_at else "no",
+            u.phone_whatsapp or "",
+            "yes" if u.whatsapp_opt_in else "no",
+            "yes" if u.is_admin else "no",
+            u.created_at.strftime("%Y-%m-%d %H:%M:%S") if u.created_at else "",
+            u.last_login_at.strftime("%Y-%m-%d %H:%M:%S") if u.last_login_at else "",
+        ])
+
+    suffix = f"_{plan}" if plan else "_all"
+    return _csv_response(f"argus_users{suffix}_{datetime.utcnow().strftime('%Y%m%d')}.csv", rows)
+
+
+@app.get("/admin/export/emails.csv")
+def admin_export_emails(request: Request, db: Session = Depends(get_db),
+                        plan: str = None, verified_only: bool = False,
+                        whatsapp_only: bool = False):
+    """Exporte juste les emails pour campagnes marketing."""
+    admin = get_current_user(request, db)
+    if not admin or not admin.is_admin:
+        raise HTTPException(403)
+
+    q = db.query(User).order_by(User.created_at.desc())
+    if plan and plan in PLAN_LIMITS:
+        q = q.filter(User.plan == plan)
+    if verified_only:
+        q = q.filter(User.email_verified_at.isnot(None))
+    if whatsapp_only:
+        q = q.filter(User.whatsapp_opt_in == True)
+    users = q.all()
+
+    rows = [["email", "name", "company", "plan", "phone_whatsapp", "verified"]]
+    for u in users:
+        rows.append([
+            u.email,
+            u.name or "",
+            u.company or "",
+            u.plan,
+            u.phone_whatsapp or "",
+            "yes" if u.email_verified_at else "no",
+        ])
+
+    parts = []
+    if plan: parts.append(plan)
+    if verified_only: parts.append("verified")
+    if whatsapp_only: parts.append("whatsapp")
+    suffix = "_" + "_".join(parts) if parts else ""
+    return _csv_response(f"argus_emails{suffix}_{datetime.utcnow().strftime('%Y%m%d')}.csv", rows)
+
+
+@app.get("/admin/export/scans.csv")
+def admin_export_scans(request: Request, db: Session = Depends(get_db)):
+    """Exporte tous les scans + leur owner."""
+    admin = get_current_user(request, db)
+    if not admin or not admin.is_admin:
+        raise HTTPException(403)
+
+    scans = db.query(Scan).order_by(Scan.started_at.desc()).all()
+    rows = [["id", "domain", "status", "owner_email", "owner_plan",
+             "assets_count", "alive_count", "vulns_count",
+             "critical", "high", "kev",
+             "risk_score", "risk_grade", "pentest_authorized",
+             "started_at", "completed_at"]]
+    for s in scans:
+        owner = s.user.email if s.user else "anonyme"
+        owner_plan = s.user.plan if s.user else ""
+        rows.append([
+            s.id, s.domain, s.status, owner, owner_plan,
+            s.assets_count or 0, s.alive_count or 0, s.vulns_count or 0,
+            s.critical_count or 0, s.high_count or 0, s.kev_count or 0,
+            s.risk_score or 0, s.risk_grade or "",
+            "yes" if s.pentest_authorized else "no",
+            s.started_at.strftime("%Y-%m-%d %H:%M:%S") if s.started_at else "",
+            s.completed_at.strftime("%Y-%m-%d %H:%M:%S") if s.completed_at else "",
+        ])
+    return _csv_response(f"argus_scans_{datetime.utcnow().strftime('%Y%m%d')}.csv", rows)
+
+
+@app.get("/admin/export/whatsapp.csv")
+def admin_export_whatsapp(request: Request, db: Session = Depends(get_db)):
+    """Exporte les leads avec WhatsApp opt-in (pour campagnes WA)."""
+    admin = get_current_user(request, db)
+    if not admin or not admin.is_admin:
+        raise HTTPException(403)
+    users = db.query(User).filter(
+        User.whatsapp_opt_in == True,
+        User.phone_whatsapp.isnot(None),
+    ).order_by(User.created_at.desc()).all()
+    rows = [["phone_whatsapp", "name", "email", "company", "plan", "created_at"]]
+    for u in users:
+        rows.append([
+            u.phone_whatsapp,
+            u.name or "",
+            u.email,
+            u.company or "",
+            u.plan,
+            u.created_at.strftime("%Y-%m-%d") if u.created_at else "",
+        ])
+    return _csv_response(f"argus_whatsapp_leads_{datetime.utcnow().strftime('%Y%m%d')}.csv", rows)
 
 
 # ─────────────────────────────────────────────────────────────────────
