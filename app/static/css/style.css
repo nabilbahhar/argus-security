@@ -55,7 +55,7 @@ html, body {
   font-size: 14px;
   line-height: 1.6;
   min-height: 100vh;
-  /* Anti-copy : pas de sélection sur le site */
+  /* Anti-copy par défaut (plan gratuit / anonyme) */
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
@@ -66,6 +66,20 @@ html, body {
 
 /* Exceptions : on garde la sélection pour les inputs/textarea (sinon impossible de taper) */
 input, textarea, [contenteditable="true"], .selectable {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* Plan payant : copie autorisée partout sur le site */
+body.plan-paid {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+body.plan-paid * {
   -webkit-user-select: text;
   -moz-user-select: text;
   -ms-user-select: text;
@@ -2894,40 +2908,61 @@ body.marketing .user-dropdown-plan {
   transform: translateY(-1px);
 }
 
-/* === SCAN PROGRESS HACKER-TERMINAL STREAM === */
+/* === SCAN PROGRESS HACKER-TERMINAL STREAM (Matrix green monochrome) === */
 .scan-terminal {
   background: #000;
-  border: 1px solid var(--border-glow);
+  border: 1px solid #003c12;
   border-radius: 6px;
-  padding: 14px 16px;
-  height: 220px;
+  padding: 12px 14px;
+  height: 420px;
   overflow: hidden;
   position: relative;
   font-family: var(--font-mono);
-  font-size: 11px;
-  line-height: 1.35;
+  font-size: 10.5px;
+  line-height: 1.25;
   margin-top: 14px;
-  box-shadow: 0 0 30px rgba(0, 217, 255, 0.08) inset;
+  box-shadow: 0 0 50px rgba(0, 255, 65, 0.08) inset, 0 0 25px rgba(0, 255, 65, 0.04);
 }
 .scan-terminal::after {
   content: "";
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  height: 60px;
+  height: 80px;
   background: linear-gradient(to top, #000 0%, transparent 100%);
   pointer-events: none;
+}
+.scan-terminal::before {
+  /* Subtle CRT scanlines effect */
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 255, 65, 0.025),
+    rgba(0, 255, 65, 0.025) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+  z-index: 1;
 }
 .scan-terminal-line {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  opacity: 0.9;
+  position: relative;
+  z-index: 2;
+  /* Matrix green tone, no other color */
+  color: #00ff41;
+  text-shadow: 0 0 4px rgba(0, 255, 65, 0.35);
 }
-.scan-terminal-line.cyan  { color: var(--neon-cyan); }
-.scan-terminal-line.green { color: var(--neon-green); }
-.scan-terminal-line.dim   { color: var(--text-dim); }
-.scan-terminal-line.violet { color: var(--neon-violet); }
-.scan-terminal-line.yellow { color: var(--neon-yellow); }
+/* Nuances vertes uniquement (monochrome hacker) */
+.scan-terminal-line.bright { color: #4dff80; font-weight: 600; }   /* discoveries / OK */
+.scan-terminal-line.normal { color: #00ff41; }                       /* normal */
+.scan-terminal-line.dim    { color: #2a7a3e; }                       /* faded */
+.scan-terminal-line.warn   { color: #88ff66; font-weight: 600; }    /* alerts */
+.scan-terminal-line.alert  { color: #c8ff99; font-weight: 700;       /* high alert */
+                              text-shadow: 0 0 6px rgba(0,255,65,0.6); }
 
 /* === FREE PREVIEW — SCARE BANNER === */
 .scare-banner {

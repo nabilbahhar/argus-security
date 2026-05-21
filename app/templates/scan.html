@@ -702,7 +702,7 @@ function copySubs() {
     const term = document.getElementById('scan-terminal');
     if (!term) return;
     const domain = term.dataset.domain || 'target.com';
-    const MAX_LINES = 16;
+    const MAX_LINES = 30;
 
     // ─── Helpers ────────────────────────────────────────────────────
     const rand = a => a[Math.floor(Math.random()*a.length)];
@@ -934,10 +934,20 @@ function copySubs() {
       'INITIALISATION':         pickInit,
     };
 
+    // Remappe les couleurs originales vers les 5 nuances de vert Matrix
+    const COLOR_MAP = {
+      'green':  'bright',
+      'cyan':   'normal',
+      'dim':    'dim',
+      'violet': 'bright',
+      'yellow': 'warn',
+      'red':    'alert',
+    };
+
     // ─── Render ─────────────────────────────────────────────────────
     function pushLine(color, text){
       const div = document.createElement('div');
-      div.className = 'scan-terminal-line ' + (color || 'green');
+      div.className = 'scan-terminal-line ' + (COLOR_MAP[color] || 'normal');
       div.textContent = text;
       term.appendChild(div);
       while (term.childElementCount > MAX_LINES) {
@@ -953,18 +963,19 @@ function copySubs() {
       pushLine(color, text);
     }
 
-    // Lance le stream — 1 nouvelle ligne toutes les 80-180ms (turbo)
+    // TURBO MODE — 30-70ms par ligne + bursts fréquents
     function loop(){
       tick();
-      // Burst occasionnel : 2-3 lignes d'un coup pour effet "shit happening"
-      if (Math.random() < 0.15) {
+      // Burst presque systématique (2-4 lignes d'un coup)
+      if (Math.random() < 0.5) {
         tick();
+        if (Math.random() < 0.6) tick();
         if (Math.random() < 0.3) tick();
       }
-      setTimeout(loop, 80 + Math.floor(Math.random()*100));
+      setTimeout(loop, 30 + Math.floor(Math.random()*60));
     }
-    // Préchauffe : 6 lignes immédiates pour ne pas démarrer vide
-    for (let i = 0; i < 6; i++) tick();
+    // Préchauffe massive : remplit l'écran d'un coup au boot
+    for (let i = 0; i < MAX_LINES; i++) tick();
     loop();
   })();
 </script>

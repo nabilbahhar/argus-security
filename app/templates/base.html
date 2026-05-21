@@ -41,7 +41,8 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
 </head>
-<body class="{% block body_class %}{% endblock %}">
+{% set _can_copy = current_user and (current_user.is_admin or current_user.plan in ['essentiel', 'pro', 'agency']) %}
+<body class="{% block body_class %}{% endblock %}{% if _can_copy %} plan-paid{% endif %}">
   <header>
     <a href="/" class="logo" style="text-decoration: none;">
       {% with logo_size='small' %}{% include '_logo.html' %}{% endwith %}
@@ -142,10 +143,13 @@
     </div>
   </footer>
 
-  {# Anti-copy minimal : bloque right-click + Ctrl+C/X/A en dehors des inputs #}
+  {# Anti-copy : actif uniquement pour plan gratuit / anonyme. Plan payant = copie libre. #}
   <script>
   (function(){
-    // Bloque clic-droit (sauf sur inputs/textareas)
+    // Si l'user a le plan payant, on ne bloque RIEN (il a droit de copier ses propres résultats)
+    if (document.body.classList.contains('plan-paid')) return;
+
+    // Sinon : bloque clic-droit (sauf sur inputs/textareas)
     document.addEventListener('contextmenu', function(e) {
       const tag = e.target.tagName;
       if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
@@ -163,7 +167,7 @@
       }
       e.preventDefault();
     });
-    // Bloque le drag d'éléments
+    // Bloque le drag d'images
     document.addEventListener('dragstart', function(e) {
       const tag = e.target.tagName;
       if (tag === 'IMG' || tag === 'SVG') e.preventDefault();
