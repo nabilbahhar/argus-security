@@ -91,7 +91,7 @@ Génère un JSON STRICT (sans backticks, sans ```json, juste le JSON brut) avec 
     {{"q": "C'est trop cher pour nous", "a": "réponse mentionnant pricing à partir de 29€/mois et ROI"}},
     {{"q": "On a déjà un antivirus / pare-feu", "a": "réponse expliquant pourquoi c'est complémentaire"}},
     {{"q": "Envoyez-moi une plaquette", "a": "réponse qui propose plutôt un scan gratuit immédiat"}},
-    {{"q": "On n'a pas d'expert sécurité", "a": "réponse rassurant : l'outil parle français clair, pas besoin d'expert"}}
+    {{"q": "On n'a pas d'expert sécurité", "a": "réponse rassurant : l'outil est clair et accessible, pas besoin d'expert"}}
   ]
 }}
 
