@@ -1,0 +1,417 @@
+{% extends "base.html" %}
+{% block body_class %}marketing public-report{% endblock %}
+{% block title %}Analyse de sécurité · {{ scan.domain }} — ARGUS{% endblock %}
+
+{% block meta_description %}Analyse de la surface d'attaque web de {{ scan.domain }} — réalisée par ARGUS Security en 60 secondes. Score, risques détectés et plan d'action recommandé.{% endblock %}
+
+{% block og_title %}Analyse de sécurité de {{ scan.domain }} · Score {{ scan.risk_grade }}/A{% endblock %}
+{% block og_description %}{{ total_assets }} actifs identifiés · {{ critical + high }} risques détectés · Recommandations claires.{% endblock %}
+
+{% block content %}
+
+{# === HERO === #}
+<section style="max-width:1100px; margin:0 auto; padding:60px 24px 40px;">
+  <div style="text-align:center; margin-bottom:32px;">
+    <div style="font-family:var(--font-sans); font-size:12px; letter-spacing:3px; text-transform:uppercase; color:var(--neon-cyan); font-weight:700; margin-bottom:14px;">
+      ⚡ Analyse réalisée par ARGUS Security
+    </div>
+    <h1 style="font-family:var(--font-sans); font-size:clamp(32px, 5vw, 52px); font-weight:800; letter-spacing:-1.5px; line-height:1.1; margin-bottom:18px; color:var(--text-primary);">
+      Voici ce qu'un attaquant<br>voit de
+      <span style="background:linear-gradient(135deg,#00d9ff,#b06aff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">{{ scan.domain }}</span>
+    </h1>
+    <p style="font-family:var(--font-sans); font-size:17px; color:var(--text-secondary); line-height:1.6; max-width:680px; margin:0 auto;">
+      Cette analyse a été réalisée en moins de 60 secondes, en utilisant uniquement
+      des informations <strong>publiquement disponibles</strong>. Aucun trafic intrusif
+      n'a été envoyé. C'est exactement la première étape de reconnaissance qu'effectuerait
+      un attaquant ciblant votre infrastructure.
+    </p>
+  </div>
+
+  {# Score card central #}
+  {% set grade_color = 'neon-green' if scan.risk_grade == 'A' else 'neon-cyan' if scan.risk_grade == 'B' else 'neon-yellow' if scan.risk_grade == 'C' else 'sev-high' if scan.risk_grade == 'D' else 'sev-critical' %}
+  <div style="background:var(--bg-surface); border:1px solid rgba(0,217,255,0.2); border-radius:18px; padding:32px; display:flex; align-items:center; justify-content:center; gap:32px; flex-wrap:wrap;">
+    {# Cercle score #}
+    <div style="width:130px; height:130px; border-radius:50%; border:5px solid var(--{{ grade_color }}); display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 0 28px rgba(0,217,255,0.12);">
+      <span style="font-family:var(--font-sans); font-size:56px; font-weight:800; color:var(--{{ grade_color }}); letter-spacing:-2px; line-height:1;">{{ scan.risk_grade }}</span>
+      <span style="font-family:var(--font-sans); font-size:12px; color:var(--text-dim); margin-top:2px;">{{ scan.risk_score }}/100</span>
+    </div>
+    {# Stats #}
+    <div style="display:grid; grid-template-columns:repeat(4, auto); gap:32px; font-family:var(--font-sans);">
+      <div>
+        <div style="font-size:30px; font-weight:800; color:var(--neon-cyan); letter-spacing:-0.5px;">{{ total_assets }}</div>
+        <div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1.5px; margin-top:2px;">Actifs cartographiés</div>
+      </div>
+      <div>
+        <div style="font-size:30px; font-weight:800; color:var(--neon-green); letter-spacing:-0.5px;">{{ alive_assets }}</div>
+        <div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1.5px; margin-top:2px;">En ligne maintenant</div>
+      </div>
+      <div>
+        <div style="font-size:30px; font-weight:800; color:{% if critical > 0 %}var(--sev-critical){% else %}var(--text-dim){% endif %}; letter-spacing:-0.5px;">{{ critical }}</div>
+        <div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1.5px; margin-top:2px;">Risques critiques</div>
+      </div>
+      <div>
+        <div style="font-size:30px; font-weight:800; color:{% if high > 0 %}var(--sev-high){% else %}var(--text-dim){% endif %}; letter-spacing:-0.5px;">{{ high }}</div>
+        <div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1.5px; margin-top:2px;">Risques élevés</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# === SECTION 1 : Ce qu'on a trouvé === #}
+<section style="max-width:1100px; margin:0 auto; padding:40px 24px;">
+  <div class="mkt-section-label">Étape 1 — Cartographie</div>
+  <h2 class="mkt-section-title" style="text-align:left; max-width:900px;">
+    Ce qu'ARGUS a découvert en moins d'une minute
+  </h2>
+  <p style="font-family:var(--font-sans); font-size:16px; color:var(--text-secondary); line-height:1.7; max-width:780px; margin-bottom:32px;">
+    À partir uniquement de votre nom de domaine <strong style="color:var(--neon-cyan);">{{ scan.domain }}</strong>,
+    notre moteur a identifié <strong>{{ total_assets }} adresses web actives</strong> rattachées à
+    votre organisation. Aucune information n'a été demandée à vos équipes IT — tout vient
+    de sources publiques que <strong>n'importe quel hacker peut consulter</strong>
+    (certificats SSL, registres DNS, archives web, moteurs de recherche spécialisés).
+  </p>
+
+  {% if sensitive_assets %}
+  <div style="background:linear-gradient(135deg, rgba(255,51,85,0.04), rgba(255,140,0,0.02)); border:1px solid rgba(255,51,85,0.2); border-left:4px solid var(--sev-critical); border-radius:12px; padding:24px 28px; margin-bottom:24px;">
+    <div style="font-family:var(--font-sans); font-size:15px; font-weight:700; color:var(--sev-critical); margin-bottom:14px;">
+      ⚠️ {{ sensitive_assets | length }} interface{{ 's' if sensitive_assets|length > 1 }} sensible{{ 's' if sensitive_assets|length > 1 }} repérée{{ 's' if sensitive_assets|length > 1 }} comme accessible publiquement
+    </div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      {% for asset in sensitive_assets %}
+      <div style="background:rgba(0,0,0,0.25); border-radius:6px; padding:10px 14px; font-family:var(--font-mono); font-size:13px; color:var(--neon-cyan); word-break:break-all;">
+        {{ asset.url }}
+        <span style="float:right; font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px;">{{ asset.keyword }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <p style="font-family:var(--font-sans); font-size:13px; color:var(--text-secondary); margin-top:14px; line-height:1.6;">
+      <strong>Pourquoi c'est un problème ?</strong> Ces interfaces sont conçues pour être utilisées
+      par vos administrateurs depuis votre réseau interne. Si elles sont accessibles depuis n'importe
+      quelle connexion internet dans le monde, elles deviennent des <strong>cibles privilégiées</strong> :
+      un attaquant n'a plus qu'à deviner ou forcer le mot de passe pour entrer.
+    </p>
+  </div>
+  {% endif %}
+
+  {% if old_tech %}
+  <div style="background:rgba(224,160,30,0.04); border:1px solid rgba(224,160,30,0.2); border-left:4px solid var(--sev-high); border-radius:12px; padding:24px 28px;">
+    <div style="font-family:var(--font-sans); font-size:15px; font-weight:700; color:var(--sev-high); margin-bottom:14px;">
+      🕰️ Versions logicielles anciennes détectées publiquement
+    </div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      {% for ot in old_tech %}
+      <div style="background:rgba(0,0,0,0.25); border-radius:6px; padding:10px 14px; font-family:var(--font-mono); font-size:13px; word-break:break-all;">
+        <span style="color:var(--text-secondary);">{{ ot.asset }}</span>
+        <br><span style="color:var(--sev-high); font-weight:600;">→ {{ ot.tech }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <p style="font-family:var(--font-sans); font-size:13px; color:var(--text-secondary); margin-top:14px; line-height:1.6;">
+      <strong>Pourquoi c'est un problème ?</strong> Ces versions ne reçoivent plus de mises à jour
+      de sécurité. Les failles qui les affectent sont <strong>connues publiquement</strong>
+      (référencées CVE) et des outils automatisés savent les exploiter sans intervention humaine.
+      C'est comme laisser une serrure dont les techniques d'ouverture sont enseignées sur YouTube.
+    </p>
+  </div>
+  {% endif %}
+</section>
+
+{# === SECTION 2 : Spotlight risque principal === #}
+{% if scare %}
+<section style="max-width:1100px; margin:0 auto; padding:40px 24px;">
+  <div class="mkt-section-label" style="color:var(--sev-critical);">Étape 2 — Le risque principal</div>
+  <h2 class="mkt-section-title" style="text-align:left; max-width:900px;">
+    {{ scare.title }}
+  </h2>
+
+  <div style="background:linear-gradient(135deg, rgba(255,51,85,0.06), rgba(255,140,0,0.03)); border:1px solid rgba(255,51,85,0.25); border-radius:14px; padding:32px; margin-top:16px;">
+    <div style="display:flex; align-items:flex-start; gap:18px; margin-bottom:20px;">
+      <div style="font-size:42px; flex-shrink:0;">{{ scare.icon }}</div>
+      <div style="flex:1;">
+        <div style="font-family:var(--font-mono); font-size:14px; color:var(--neon-cyan); background:rgba(0,0,0,0.3); padding:10px 14px; border-radius:6px; word-break:break-all; margin-bottom:14px;">
+          {{ scare.finding }}
+        </div>
+        <p style="font-family:var(--font-sans); font-size:15px; color:var(--text-secondary); line-height:1.7;">
+          {{ scare.explanation | safe }}
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# === SECTION 3 : Anatomie d'une attaque === #}
+<section style="max-width:1100px; margin:0 auto; padding:40px 24px;">
+  <div class="mkt-section-label">Étape 3 — Le scénario d'attaque</div>
+  <h2 class="mkt-section-title" style="text-align:left; max-width:900px;">
+    Comment un attaquant exploite ces failles en pratique
+  </h2>
+  <p style="font-family:var(--font-sans); font-size:16px; color:var(--text-secondary); line-height:1.7; max-width:780px; margin-bottom:32px;">
+    Ce scénario n'est pas hypothétique : il décrit ce qui se passe quotidiennement
+    contre des organisations dans votre secteur. La plupart des attaquants ne sont
+    pas des génies — ils suivent simplement <strong>une recette éprouvée</strong>,
+    souvent automatisée à 90%.
+  </p>
+
+  <div style="display:flex; flex-direction:column; gap:14px;">
+    {# Étape A — Reconnaissance #}
+    <div style="background:var(--bg-surface); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:24px 28px; display:flex; gap:20px; align-items:flex-start;">
+      <div style="width:48px; height:48px; border-radius:50%; background:rgba(0,217,255,0.1); border:2px solid var(--neon-cyan); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800; color:var(--neon-cyan); flex-shrink:0; font-family:var(--font-sans);">1</div>
+      <div>
+        <h3 style="font-family:var(--font-sans); font-size:17px; font-weight:700; color:var(--text-primary); margin-bottom:6px;">Reconnaissance — quelques minutes</h3>
+        <p style="font-family:var(--font-sans); font-size:14px; color:var(--text-secondary); line-height:1.7;">
+          L'attaquant tape <code style="background:rgba(0,217,255,0.08); padding:1px 6px; border-radius:3px; color:var(--neon-cyan);">{{ scan.domain }}</code>
+          dans un outil gratuit (le même type que celui qui a généré ce rapport). En 60 secondes,
+          il obtient la liste de vos sous-domaines, les serveurs derrière, les technologies utilisées,
+          et identifie les <strong>cibles les plus faibles</strong>. <em>Vous, vous ne voyez rien
+          car aucun trafic suspect n'est envoyé.</em>
+        </p>
+      </div>
+    </div>
+
+    {# Étape B — Sélection de la cible #}
+    <div style="background:var(--bg-surface); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:24px 28px; display:flex; gap:20px; align-items:flex-start;">
+      <div style="width:48px; height:48px; border-radius:50%; background:rgba(176,106,255,0.1); border:2px solid var(--neon-violet); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800; color:var(--neon-violet); flex-shrink:0; font-family:var(--font-sans);">2</div>
+      <div>
+        <h3 style="font-family:var(--font-sans); font-size:17px; font-weight:700; color:var(--text-primary); margin-bottom:6px;">Sélection du maillon faible</h3>
+        <p style="font-family:var(--font-sans); font-size:14px; color:var(--text-secondary); line-height:1.7;">
+          Parmi les {{ total_assets }} actifs identifiés, l'attaquant repère immédiatement les
+          <strong>interfaces sensibles exposées</strong> (panneaux d'admin, gestionnaires de bases
+          de données, webmails) et les <strong>versions logicielles obsolètes</strong>. Il sait que
+          ces cibles ont des failles documentées et des exploits prêts à l'emploi téléchargeables
+          gratuitement sur GitHub.
+        </p>
+      </div>
+    </div>
+
+    {# Étape C — Exploitation automatisée #}
+    <div style="background:var(--bg-surface); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:24px 28px; display:flex; gap:20px; align-items:flex-start;">
+      <div style="width:48px; height:48px; border-radius:50%; background:rgba(255,140,0,0.1); border:2px solid var(--sev-high); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800; color:var(--sev-high); flex-shrink:0; font-family:var(--font-sans);">3</div>
+      <div>
+        <h3 style="font-family:var(--font-sans); font-size:17px; font-weight:700; color:var(--text-primary); margin-bottom:6px;">Exploitation automatisée — quelques heures</h3>
+        <p style="font-family:var(--font-sans); font-size:14px; color:var(--text-secondary); line-height:1.7;">
+          L'attaquant lance un script qui essaye automatiquement <strong>des milliers de
+          combinaisons</strong> de mots de passe courants (admin/admin, root/123456, etc.)
+          sur les interfaces exposées. En parallèle, il teste les exploits publics correspondant
+          aux versions obsolètes détectées. <strong>Une seule réussite suffit.</strong>
+        </p>
+      </div>
+    </div>
+
+    {# Étape D — Élévation de privilèges #}
+    <div style="background:var(--bg-surface); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:24px 28px; display:flex; gap:20px; align-items:flex-start;">
+      <div style="width:48px; height:48px; border-radius:50%; background:rgba(255,51,85,0.1); border:2px solid var(--sev-critical); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800; color:var(--sev-critical); flex-shrink:0; font-family:var(--font-sans);">4</div>
+      <div>
+        <h3 style="font-family:var(--font-sans); font-size:17px; font-weight:700; color:var(--text-primary); margin-bottom:6px;">Élévation de privilèges et déplacement latéral</h3>
+        <p style="font-family:var(--font-sans); font-size:14px; color:var(--text-secondary); line-height:1.7;">
+          Une fois <strong>une seule machine compromise</strong>, l'attaquant l'utilise comme
+          tremplin pour atteindre vos autres serveurs : il vole les identifiants stockés,
+          se connecte aux bases de données voisines, accède à votre Active Directory.
+          C'est ainsi que <strong>la quasi-totalité des grosses violations de données</strong>
+          se produisent — pas par une seule faille géniale, mais par l'accumulation
+          d'oublis de configuration.
+        </p>
+      </div>
+    </div>
+
+    {# Étape E — Exfiltration #}
+    <div style="background:var(--bg-surface); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:24px 28px; display:flex; gap:20px; align-items:flex-start;">
+      <div style="width:48px; height:48px; border-radius:50%; background:rgba(255,51,85,0.15); border:2px solid var(--sev-critical); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800; color:var(--sev-critical); flex-shrink:0; font-family:var(--font-sans);">5</div>
+      <div>
+        <h3 style="font-family:var(--font-sans); font-size:17px; font-weight:700; color:var(--text-primary); margin-bottom:6px;">Exfiltration et monétisation</h3>
+        <p style="font-family:var(--font-sans); font-size:14px; color:var(--text-secondary); line-height:1.7;">
+          L'attaquant télécharge silencieusement vos données (fichiers clients, base utilisateurs,
+          documents internes, code source) puis choisit son business model :
+          <strong>(1) vendre les données</strong> sur des forums spécialisés (~1 à 10€ par compte
+          selon le type de données), <strong>(2) demander une rançon</strong> en menaçant de publier
+          (typiquement 5 à 8% de votre chiffre d'affaires annuel), ou
+          <strong>(3) chiffrer vos serveurs</strong> et bloquer votre activité jusqu'à paiement.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# === SECTION 4 : Conséquences === #}
+<section style="max-width:1100px; margin:0 auto; padding:40px 24px;">
+  <div class="mkt-section-label">Étape 4 — Les conséquences</div>
+  <h2 class="mkt-section-title" style="text-align:left; max-width:900px;">
+    Ce que vous risquez concrètement
+  </h2>
+
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:18px; margin-top:24px;">
+
+    <div style="background:var(--bg-surface); border:1px solid rgba(255,51,85,0.2); border-radius:12px; padding:24px;">
+      <div style="font-size:32px; margin-bottom:10px;">💸</div>
+      <h3 style="font-family:var(--font-sans); font-size:16px; font-weight:700; color:var(--text-primary); margin-bottom:8px;">Coût financier direct</h3>
+      <p style="font-family:var(--font-sans); font-size:13.5px; color:var(--text-secondary); line-height:1.6;">
+        Frais d'investigation forensique (15-50k€), reconstruction de l'infrastructure compromise,
+        rançon éventuelle (médiane 200k€ en 2025), interruption d'activité (jours ou semaines de
+        perte de chiffre d'affaires).
+      </p>
+    </div>
+
+    <div style="background:var(--bg-surface); border:1px solid rgba(255,140,0,0.2); border-radius:12px; padding:24px;">
+      <div style="font-size:32px; margin-bottom:10px;">📰</div>
+      <h3 style="font-family:var(--font-sans); font-size:16px; font-weight:700; color:var(--text-primary); margin-bottom:8px;">Atteinte à la réputation</h3>
+      <p style="font-family:var(--font-sans); font-size:13.5px; color:var(--text-secondary); line-height:1.6;">
+        Annonce publique obligatoire en cas de fuite de données personnelles. Couverture presse
+        souvent négative et durable. Perte de confiance des clients, partenaires, et investisseurs.
+        Effet pouvant durer plusieurs années sur la marque.
+      </p>
+    </div>
+
+    <div style="background:var(--bg-surface); border:1px solid rgba(224,160,30,0.2); border-radius:12px; padding:24px;">
+      <div style="font-size:32px; margin-bottom:10px;">⚖️</div>
+      <h3 style="font-family:var(--font-sans); font-size:16px; font-weight:700; color:var(--text-primary); margin-bottom:8px;">Responsabilité juridique</h3>
+      <p style="font-family:var(--font-sans); font-size:13.5px; color:var(--text-secondary); line-height:1.6;">
+        Sanctions selon la réglementation applicable à votre activité (protection des données
+        personnelles, exigences sectorielles). Actions en justice possibles de la part des
+        personnes dont les données ont fuité. Obligation de notification dans des délais courts.
+      </p>
+    </div>
+
+    <div style="background:var(--bg-surface); border:1px solid rgba(176,106,255,0.2); border-radius:12px; padding:24px;">
+      <div style="font-size:32px; margin-bottom:10px;">🔁</div>
+      <h3 style="font-family:var(--font-sans); font-size:16px; font-weight:700; color:var(--text-primary); margin-bottom:8px;">Effet domino</h3>
+      <p style="font-family:var(--font-sans); font-size:13.5px; color:var(--text-secondary); line-height:1.6;">
+        Une fois la première compromission connue publiquement, votre organisation devient une
+        <strong>cible privilégiée</strong> pour d'autres attaquants opportunistes qui savent
+        que vos défenses ont des failles. Les attaques se multiplient dans les semaines suivantes.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+{# === SECTION 5 : Plan d'action === #}
+<section style="max-width:1100px; margin:0 auto; padding:40px 24px;">
+  <div class="mkt-section-label" style="color:var(--neon-green);">Étape 5 — Le plan d'action</div>
+  <h2 class="mkt-section-title" style="text-align:left; max-width:900px;">
+    Comment fermer ces portes — par ordre de priorité
+  </h2>
+
+  {# Cette semaine #}
+  <div style="background:var(--bg-surface); border:1px solid rgba(255,51,85,0.25); border-left:4px solid var(--sev-critical); border-radius:12px; padding:24px 28px; margin-top:24px;">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+      <span style="font-family:var(--font-sans); font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--sev-critical); padding:4px 10px; border:1px solid var(--sev-critical); border-radius:4px;">Urgent — cette semaine</span>
+    </div>
+    <ul style="font-family:var(--font-sans); font-size:14.5px; color:var(--text-secondary); line-height:1.9; padding-left:20px; margin-bottom:0;">
+      <li><strong style="color:var(--text-primary);">Restreindre l'accès aux interfaces d'administration</strong> identifiées dans ce rapport : les rendre accessibles uniquement depuis vos IP internes ou via VPN.</li>
+      <li><strong style="color:var(--text-primary);">Activer la double authentification (2FA)</strong> sur tous les comptes ayant accès à ces interfaces.</li>
+      <li><strong style="color:var(--text-primary);">Auditer les mots de passe</strong> des comptes d'administration : forcer leur changement si anciens, vérifier qu'aucun n'est faible ou réutilisé.</li>
+      <li><strong style="color:var(--text-primary);">Activer la journalisation</strong> des tentatives de connexion sur les services exposés, avec alerte sur tentatives répétées.</li>
+    </ul>
+  </div>
+
+  {# Ce mois #}
+  <div style="background:var(--bg-surface); border:1px solid rgba(224,160,30,0.25); border-left:4px solid var(--sev-high); border-radius:12px; padding:24px 28px; margin-top:14px;">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+      <span style="font-family:var(--font-sans); font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--sev-high); padding:4px 10px; border:1px solid var(--sev-high); border-radius:4px;">Important — ce mois</span>
+    </div>
+    <ul style="font-family:var(--font-sans); font-size:14.5px; color:var(--text-secondary); line-height:1.9; padding-left:20px; margin-bottom:0;">
+      <li><strong style="color:var(--text-primary);">Mettre à jour les versions logicielles obsolètes</strong> identifiées : prévoir une fenêtre de maintenance et tester sur environnement de pré-production avant déploiement.</li>
+      <li><strong style="color:var(--text-primary);">Configurer correctement les protections email</strong> (SPF, DKIM, DMARC) si elles ne le sont pas, pour empêcher l'usurpation de votre domaine dans les campagnes de phishing.</li>
+      <li><strong style="color:var(--text-primary);">Auditer l'exposition de tous les sous-domaines</strong> avec votre prestataire informatique : certains pourraient avoir été oubliés ou ne plus servir.</li>
+      <li><strong style="color:var(--text-primary);">Mettre en place un processus de revue mensuelle</strong> de votre surface d'attaque (ce que ARGUS automatise).</li>
+    </ul>
+  </div>
+
+  {# À moyen terme #}
+  <div style="background:var(--bg-surface); border:1px solid rgba(0,217,255,0.2); border-left:4px solid var(--neon-cyan); border-radius:12px; padding:24px 28px; margin-top:14px;">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+      <span style="font-family:var(--font-sans); font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--neon-cyan); padding:4px 10px; border:1px solid var(--neon-cyan); border-radius:4px;">Stratégique — 3 à 6 mois</span>
+    </div>
+    <ul style="font-family:var(--font-sans); font-size:14.5px; color:var(--text-secondary); line-height:1.9; padding-left:20px; margin-bottom:0;">
+      <li><strong style="color:var(--text-primary);">Faire réaliser un test d'intrusion (pentest) complet</strong> par un cabinet spécialisé, pour valider que les corrections appliquées sont efficaces.</li>
+      <li><strong style="color:var(--text-primary);">Définir une politique de gestion des accès</strong> (qui peut accéder à quoi, comment, et avec quel niveau de privilège).</li>
+      <li><strong style="color:var(--text-primary);">Mettre en place un plan de réponse à incident</strong> : que faire les 4 premières heures si une compromission est détectée.</li>
+      <li><strong style="color:var(--text-primary);">Former vos équipes</strong> à reconnaître les signes d'une attaque (tentatives de phishing, comportements suspects sur les serveurs).</li>
+    </ul>
+  </div>
+</section>
+
+{# === SECTION 6 : Pourquoi ARGUS === #}
+<section style="max-width:1100px; margin:0 auto; padding:40px 24px 20px;">
+  <div style="background:linear-gradient(135deg, rgba(0,217,255,0.05), rgba(176,106,255,0.04)); border:1px solid rgba(0,217,255,0.2); border-radius:18px; padding:40px;">
+    <div style="text-align:center; margin-bottom:32px;">
+      <div class="mkt-section-label" style="color:var(--neon-violet);">ARGUS Security</div>
+      <h2 style="font-family:var(--font-sans); font-size:28px; font-weight:800; letter-spacing:-1px; line-height:1.2; color:var(--text-primary); margin-bottom:16px;">
+        Cette analyse représente <span style="color:var(--neon-cyan);">moins de 5%</span><br>
+        de ce qu'ARGUS peut vous montrer
+      </h2>
+      <p style="font-family:var(--font-sans); font-size:16px; color:var(--text-secondary); line-height:1.7; max-width:740px; margin:0 auto;">
+        Ce rapport est un aperçu généré automatiquement. Une analyse complète inclut :
+        l'évaluation détaillée de chaque actif, la vérification des vulnérabilités actives sur
+        chaque service, un suivi continu pour détecter les changements dans votre exposition,
+        et un brief exécutif personnalisé pour votre comité de direction.
+      </p>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:14px; margin-bottom:32px;">
+      <div style="text-align:center;">
+        <div style="font-size:22px; font-weight:800; color:var(--neon-cyan); font-family:var(--font-sans);">100%</div>
+        <div style="font-size:12px; color:var(--text-dim); font-family:var(--font-sans); margin-top:4px;">Vulnérabilités révélées (vs 20% ici)</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:22px; font-weight:800; color:var(--neon-cyan); font-family:var(--font-sans);">Suivi</div>
+        <div style="font-size:12px; color:var(--text-dim); font-family:var(--font-sans); margin-top:4px;">Détection automatique des changements</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:22px; font-weight:800; color:var(--neon-cyan); font-family:var(--font-sans);">PDF</div>
+        <div style="font-size:12px; color:var(--text-dim); font-family:var(--font-sans); margin-top:4px;">Rapport exécutif pour direction</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:22px; font-weight:800; color:var(--neon-cyan); font-family:var(--font-sans);">29€</div>
+        <div style="font-size:12px; color:var(--text-dim); font-family:var(--font-sans); margin-top:4px;">À partir de, par mois sans engagement</div>
+      </div>
+    </div>
+
+    <div style="text-align:center;">
+      <a href="/register?domain={{ scan.domain }}" class="mkt-btn-primary" style="display:inline-block; padding:16px 32px; font-size:16px; margin-right:12px;">
+        Lancer une analyse complète →
+      </a>
+      <a href="mailto:contact@argus-security.com?subject=Audit%20complet%20-%20{{ scan.domain }}" class="mkt-btn-secondary" style="display:inline-block; padding:16px 32px; font-size:16px;">
+        Parler à un expert
+      </a>
+    </div>
+  </div>
+</section>
+
+{# === Partage social === #}
+<section style="max-width:1100px; margin:0 auto; padding:20px 24px 60px; text-align:center;">
+  <p style="font-family:var(--font-sans); font-size:13px; color:var(--text-dim); margin-bottom:14px;">
+    Partager ce rapport :
+  </p>
+  <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+    <a id="share-copy" href="#" class="mkt-btn-secondary" style="font-size:13px; padding:8px 14px;">📋 Copier le lien</a>
+    <a href="https://wa.me/?text={{ ('Analyse de sécurité de ' + scan.domain + ' par ARGUS : ' + public_url) | urlencode }}" target="_blank" class="mkt-btn-secondary" style="font-size:13px; padding:8px 14px;">WhatsApp</a>
+    <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ public_url | urlencode }}" target="_blank" class="mkt-btn-secondary" style="font-size:13px; padding:8px 14px;">LinkedIn</a>
+    <a href="https://twitter.com/intent/tweet?text={{ ('Analyse de sécurité de ' + scan.domain) | urlencode }}&url={{ public_url | urlencode }}" target="_blank" class="mkt-btn-secondary" style="font-size:13px; padding:8px 14px;">X/Twitter</a>
+    <a href="mailto:?subject={{ ('Analyse de sécurité de ' + scan.domain) | urlencode }}&body={{ public_url | urlencode }}" class="mkt-btn-secondary" style="font-size:13px; padding:8px 14px;">Email</a>
+  </div>
+  <p style="font-family:var(--font-sans); font-size:11px; color:var(--text-dim); margin-top:20px;">
+    Rapport généré le {{ scan.started_at.strftime('%d %B %Y') if scan.started_at }} ·
+    <a href="/" style="color:var(--text-dim);">Lancer mon analyse</a>
+    · vues : {{ report.view_count or 0 }}
+  </p>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  const btn = document.getElementById('share-copy');
+  if (!btn) return;
+  btn.addEventListener('click', function(e){
+    e.preventDefault();
+    navigator.clipboard.writeText('{{ public_url }}').then(function(){
+      const orig = btn.innerHTML;
+      btn.innerHTML = '✓ Copié !';
+      setTimeout(function(){ btn.innerHTML = orig; }, 2000);
+    });
+  });
+})();
+</script>
+{% endblock %}

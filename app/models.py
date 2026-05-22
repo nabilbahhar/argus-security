@@ -87,6 +87,29 @@ class PasswordResetToken(Base):
     user = relationship("User", back_populates="password_reset_tokens")
 
 
+class PublicReport(Base):
+    """
+    Rapport public partageable d'un scan — accessible sans authentification
+    via une URL /r/{slug}. Conçu pour la prospection commerciale d'ARGUS.
+    Affiche une vue vulgarisée du scan : ce qu'on a trouvé, comment ça peut
+    être exploité, ce que le propriétaire risque, comment corriger.
+    """
+    __tablename__ = "public_reports"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    scan_id = Column(Integer, ForeignKey("scans.id"), nullable=False, index=True)
+    slug = Column(String(80), unique=True, nullable=False, index=True)
+    custom_intro = Column(Text, nullable=True)        # intro personnalisée (admin)
+    contact_email = Column(String(255), nullable=True)  # email contact prospect
+    contact_name = Column(String(120), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    expires_at = Column(DateTime, nullable=True)      # optionnel : expiration du lien
+    view_count = Column(Integer, default=0)
+    last_viewed_at = Column(DateTime, nullable=True)
+
+    scan = relationship("Scan", backref="public_reports")
+
+
 class EmailVerificationToken(Base):
     """Token unique pour vérification d'email — expire après 24h."""
     __tablename__ = "email_verification_tokens"

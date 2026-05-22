@@ -30,7 +30,7 @@ from sqlalchemy import func
 
 from app.database import init_db, get_db, SessionLocal
 from app.models import (Scan, Asset, Vuln, TlsFinding, User,
-                        PasswordResetToken, EmailVerificationToken,
+                        PasswordResetToken, EmailVerificationToken, PublicReport,
                         PLAN_LIMITS, PLAN_NAMES)
 from app.email_sender import send_welcome_email, send_password_reset_email, send_email_verification
 from app import scanner, nuclei, dns_scan, tls_scan, enrichment, risk_score, discovery, pentest
@@ -1130,6 +1130,160 @@ def admin_export_whatsapp(request: Request, db: Session = Depends(get_db)):
             u.created_at.strftime("%Y-%m-%d") if u.created_at else "",
         ])
     return _csv_response(f"argus_whatsapp_leads_{datetime.utcnow().strftime('%Y%m%d')}.csv", rows)
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Public reports — rapports partageables par lien (commercial)
+# ─────────────────────────────────────────────────────────────────────
+
+import re as _re_slug
+
+
+def _slugify(text: str) -> str:
+    """Convertit un domaine en slug URL-safe : 'uir.ac.ma' -> 'uir-ac-ma'."""
+    s = (text or "").strip().lower()
+    s = _re_slug.sub(r"[^a-z0-9]+", "-", s)
+    s = s.strip("-")[:60]
+    return s or "report"
+
+
+@app.post("/admin/scan/{scan_id}/share")
+def admin_create_share_link(
+    scan_id: int,
+    request: Request,
+    slug: str = Form(""),
+    custom_intro: str = Form(""),
+    contact_name: str = Form(""),
+    contact_email: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    """Génère un lien public partageable pour ce scan. Admin uniquement."""
+    admin = get_current_user(request, db)
+    if not admin or not admin.is_admin:
+        raise HTTPException(403)
+
+    scan = db.query(Scan).filter(Scan.id == scan_id).first()
+    if not scan:
+        raise HTTPException(404, "Scan introuvable")
+    if scan.status != "completed":
+        raise HTTPException(400, "Le scan doit être terminé")
+
+    # Slug : custom ou auto-généré
+    if slug:
+        slug = _slugify(slug)
+    else:
+        base = _slugify(scan.domain)
+        slug = base
+        # Si existe déjà, ajoute un suffixe scan_id
+        existing = db.query(PublicReport).filter(PublicReport.slug == slug).first()
+        if existing:
+            slug = f"{base}-{scan_id}"
+
+    # Vérifie l'unicité
+    if db.query(PublicReport).filter(PublicReport.slug == slug).first():
+        raise HTTPException(409, f"Le slug '{slug}' est déjà utilisé. Choisissez-en un autre.")
+
+    report = PublicReport(
+        scan_id=scan_id,
+        slug=slug,
+        custom_intro=custom_intro.strip() or None,
+        contact_name=contact_name.strip() or None,
+        contact_email=contact_email.strip() or None,
+    )
+    db.add(report)
+    db.commit()
+    db.refresh(report)
+
+    base_url = str(request.base_url).rstrip("/")
+    public_url = f"{base_url}/r/{slug}"
+    return {"slug": slug, "url": public_url, "scan_id": scan_id}
+
+
+@app.get("/r/{slug}", response_class=HTMLResponse)
+def public_report_view(slug: str, request: Request, db: Session = Depends(get_db)):
+    """Rapport public consultable sans authentification."""
+    report = db.query(PublicReport).filter(PublicReport.slug == slug).first()
+    if not report:
+        raise HTTPException(404, "Rapport introuvable ou expiré")
+
+    if report.expires_at and report.expires_at < datetime.utcnow():
+        raise HTTPException(410, "Ce lien a expiré")
+
+    scan = db.query(Scan).filter(Scan.id == report.scan_id).first()
+    if not scan:
+        raise HTTPException(404)
+
+    # Incrémente compteur de vues (sauf si l'admin consulte)
+    user = get_current_user(request, db)
+    if not (user and user.is_admin):
+        report.view_count = (report.view_count or 0) + 1
+        report.last_viewed_at = datetime.utcnow()
+        db.commit()
+
+    # Construit le finding principal pour la spotlight
+    vulns_sorted = sorted(scan.vulns, key=nuclei.vuln_priority_score, reverse=True)
+    scare = _build_scare_finding(scan, vulns_sorted)
+
+    # Compteurs simples
+    total_assets = scan.assets_count or 0
+    alive_assets = scan.alive_count or 0
+    total_vulns = scan.vulns_count or 0
+    critical = scan.critical_count or 0
+    high = scan.high_count or 0
+
+    # Premier sample d'actifs sensibles (pour la section "ce qu'on a vu")
+    sensitive_keywords = ["admin", "cpanel", "phpmyadmin", "webmail", "ftp", "owa",
+                          "intranet", "vpn", "manage", "panel", "console"]
+    sensitive_assets = []
+    for a in scan.assets[:200]:
+        url_lower = (a.url or "").lower()
+        for kw in sensitive_keywords:
+            if kw in url_lower:
+                sensitive_assets.append({"url": a.url, "keyword": kw})
+                break
+    sensitive_assets = sensitive_assets[:6]
+
+    # Versions logicielles anciennes détectables
+    old_tech = []
+    for a in scan.assets[:100]:
+        for t in (a.tech or []):
+            if any(old in str(t).lower() for old in [
+                "apache http server:2.2", "apache http server:2.4.6", "apache http server:2.4.29",
+                "php:5", "php:7.0", "php:7.1", "php:7.2",
+                "nginx:1.14", "nginx:1.16",
+                "openssl:1.0", "openssl:0.9",
+                "iis:7", "iis:8",
+            ]):
+                old_tech.append({"asset": a.url, "tech": t})
+                break
+    old_tech = old_tech[:5]
+
+    return templates.TemplateResponse("public_report.html", _ctx(
+        request, db,
+        report=report,
+        scan=scan,
+        scare=scare,
+        total_assets=total_assets,
+        alive_assets=alive_assets,
+        total_vulns=total_vulns,
+        critical=critical,
+        high=high,
+        sensitive_assets=sensitive_assets,
+        old_tech=old_tech,
+        public_url=f"{str(request.base_url).rstrip('/')}/r/{slug}",
+    ))
+
+
+@app.post("/admin/report/{report_id}/delete")
+def admin_delete_report(report_id: int, request: Request, db: Session = Depends(get_db)):
+    admin = get_current_user(request, db)
+    if not admin or not admin.is_admin:
+        raise HTTPException(403)
+    report = db.query(PublicReport).filter(PublicReport.id == report_id).first()
+    if report:
+        db.delete(report)
+        db.commit()
+    return RedirectResponse("/admin#reports", 303)
 
 
 # ─────────────────────────────────────────────────────────────────────
