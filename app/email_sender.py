@@ -299,7 +299,7 @@ def send_sales_autoreply_email(to: str, name: str) -> bool:
     <ul style="padding-left:20px;line-height:1.8;">
       <li>Lancer un scan gratuit pour découvrir votre surface d'attaque</li>
       <li>Essayer le plan Essentiel (29€/mois, sans engagement)</li>
-      <li>Nous écrire directement à <a href="mailto:sales@argusanalyzer.com" style="color:#00d9ff;">sales@argusanalyzer.com</a></li>
+      <li>Nous écrire directement à <a href="mailto:contact@argusanalyzer.com" style="color:#00d9ff;">contact@argusanalyzer.com</a></li>
     </ul>
 
     <p style="margin-top:24px;color:#666;font-size:13px;">
