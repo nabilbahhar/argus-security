@@ -1259,24 +1259,58 @@ def _build_all_findings(scan, vulns_sorted):
             "title": "Faille critique exploitée par des hackers en ce moment",
             "summary": f"{v.name or v.template_id}" + (f" — {v.cve_id}" if v.cve_id else ""),
             "evidence": v.matched_url or domain,
+            "analogy": (
+                "<strong>Imaginez :</strong> un serrurier publie sur YouTube un tutoriel "
+                "« Comment ouvrir la serrure modèle X en 3 secondes » — et la vidéo cumule 50 000 vues "
+                "de gens qui cambriolent pour vivre. Votre maison utilise cette serrure exacte. "
+                "Le tutoriel est gratuit. Les outils sont gratuits. Tout ce qu'il manque aux cambrioleurs, "
+                "c'est l'adresse — et l'adresse est publique."
+            ),
             "what_it_means": (
                 "Cette faille fait partie du <strong>catalogue CISA KEV</strong> (Known Exploited Vulnerabilities) — "
                 "c'est-à-dire qu'elle est <strong>activement utilisée par des hackers</strong> "
                 "contre d'autres entreprises dans le monde en ce moment même. "
-                "Les exploits sont publics, automatisés et téléchargeables gratuitement."
+                "L'agence américaine CISA (équivalent de l'ANSSI) maintient cette liste pour signaler les failles "
+                "« en feu ». Les exploits sont publics, automatisés et téléchargeables gratuitement. "
+                "Vous n'êtes pas une cible « possible » — vous êtes une cible <em>active</em>."
+            ),
+            "scenario": (
+                "<strong>Mardi 14h02.</strong> Un opérateur d'un groupe ransomware basé à Bucarest lance "
+                "son script habituel : il scanne toutes les IP d'Europe à la recherche de cette faille précise. "
+                "<strong>14h04 :</strong> votre serveur répond positivement au test. "
+                "<strong>14h07 :</strong> il a un shell administrateur sur votre machine. "
+                "<strong>14h12 :</strong> il dépose un backdoor (porte cachée pour revenir plus tard), "
+                "désactive vos antivirus, et part dîner. "
+                "<strong>Pendant 6 mois :</strong> vous ne voyez rien. "
+                "<strong>Un lundi matin, à 5h du matin :</strong> tous vos serveurs sont chiffrés, "
+                "et un fichier <code>README.txt</code> demande 800 000€ en Bitcoin."
             ),
             "demonstration": (
-                f"Un attaquant tape la commande<br><code>nuclei -u https://{domain} -t cves/{v.cve_id or 'XXXX'}.yaml</code><br>"
-                f"En moins de 3 secondes, l'outil confirme si votre site est vulnérable. "
-                f"Si oui, l'attaquant lance l'exploit correspondant et obtient un accès "
-                f"(souvent niveau administrateur direct)."
+                f"<strong>Concrètement, voici l'attaque en 30 secondes :</strong><br><br>"
+                f"1. L'attaquant tape <code>nuclei -u https://{domain} -t cves/{v.cve_id or 'XXXX'}.yaml</code> "
+                f"(c'est une commande gratuite, n'importe quel ado de 15 ans peut le faire).<br>"
+                f"2. En moins de 3 secondes, l'outil affiche <code>[CRITICAL] {v.cve_id or 'CVE-XXXX-XXXX'} - VULNERABLE</code>.<br>"
+                f"3. Il télécharge l'exploit correspondant sur GitHub (encore gratuit, public).<br>"
+                f"4. Il lance l'exploit → accès <strong>root/administrateur</strong> direct sur votre serveur. "
+                f"Pas besoin de mot de passe. Pas besoin de phishing. Juste cette commande."
             ),
             "real_case": (
-                "En 2023, plus de <strong>2 000 serveurs MOVEit ont été compromis</strong> "
-                "en moins de 72h via CVE-2023-34362 — qui faisait partie du catalogue KEV. "
-                "L'attaque ransomware Cl0p a affecté British Airways, BBC, et Shell, entre autres."
+                "<strong>Cas MOVEit (mai-juin 2023) — l'attaque la plus rentable de l'histoire récente :</strong><br><br>"
+                "MOVEit Transfer est un logiciel de transfert sécurisé de fichiers utilisé par les grandes "
+                "entreprises et les administrations. Le 27 mai 2023, le groupe Cl0p découvre une faille "
+                "(CVE-2023-34362). Avant même que l'éditeur ne publie un patch, ils lancent une campagne d'exploitation massive. "
+                "<strong>En 72h, 2 000 serveurs sont compromis dans le monde.</strong> "
+                "Victimes : British Airways, BBC, Shell, le ministère américain de l'Énergie, "
+                "Sony, EY, PwC… Plus de <strong>62 millions de personnes</strong> ont vu leurs données fuiter. "
+                "Coût total estimé pour les entreprises : <strong>plus de 10 milliards de dollars</strong>. "
+                "Cl0p aurait empoché entre 75 et 100 millions de dollars en rançons. "
+                "La faille était dans le catalogue KEV dès le 2 juin."
             ),
-            "action": "Patcher immédiatement la version logicielle concernée. C'est l'action n°1 absolue.",
+            "action": (
+                "Patcher immédiatement la version logicielle concernée. C'est l'action n°1 absolue, "
+                "tout le reste passe après. Si pour une raison technique le patch n'est pas applicable "
+                "ce week-end, isolez l'actif derrière un firewall avec accès restreint par IP."
+            ),
         })
 
     # ── 2. Vulnérabilité critique ────────────────────────────────
@@ -1290,24 +1324,59 @@ def _build_all_findings(scan, vulns_sorted):
             "title": "Vulnérabilité critique exploitable",
             "summary": f"{v.name or v.template_id}" + (f" — {v.cve_id}" if v.cve_id else ""),
             "evidence": v.matched_url or domain,
+            "analogy": (
+                "<strong>Imaginez :</strong> la porte de votre coffre-fort est fissurée à un endroit précis. "
+                "Pas besoin de crocheter, pas besoin de combinaison — il suffit de pousser au bon endroit "
+                "et le coffre s'ouvre. Le mode d'emploi pour trouver l'endroit exact est publié gratuitement "
+                "sur internet. C'est ça, une faille critique : la sécurité existe en apparence, "
+                "mais elle est cassée à un endroit que n'importe qui peut trouver."
+            ),
             "what_it_means": (
                 "Une faille de sévérité <strong>critique</strong> a été détectée. "
                 "Concrètement, un attaquant peut potentiellement <strong>prendre le contrôle "
                 "du serveur compromis</strong>, voler vos données, ou l'utiliser comme tremplin "
-                "pour atteindre votre réseau interne."
+                "pour atteindre votre réseau interne. La note « critique » signifie que la faille "
+                "permet une compromission complète, sans authentification, et qu'elle est exploitable à distance — "
+                "c'est-à-dire de n'importe où dans le monde."
+            ),
+            "scenario": (
+                "<strong>Jeudi 23h15.</strong> Un étudiant en informatique à Hyderabad cherche un sujet de "
+                "thèse. Il découvre un PoC (Proof of Concept) publié 4 heures plus tôt sur Twitter. "
+                "Il copie-colle le code Python sur sa machine, change l'URL cible par la vôtre. "
+                "<strong>23h17 :</strong> il a un accès terminal sur votre serveur de production. "
+                "Il ne sait pas trop quoi en faire (il voulait juste apprendre), mais il prend une capture d'écran "
+                "et la poste sur Discord pour impressionner ses amis. "
+                "<strong>23h45 :</strong> un membre de son serveur Discord, qui lui n'est pas un étudiant, "
+                "lui propose 500€ pour l'accès. L'étudiant accepte. "
+                "<strong>Vendredi 8h :</strong> vos bases de données sont déjà copiées sur un serveur en Russie."
             ),
             "demonstration": (
-                f"Le scanner a envoyé une requête HTTP de test qui correspond exactement au pattern "
-                f"d'exploitation publique. Aucune compétence technique avancée n'est requise — "
-                f"des outils automatisés exploitent ce type de faille en quelques secondes, "
-                f"24h/24, sur des plages d'IPs entières."
+                f"<strong>L'exploitation tient en 3 lignes de Python :</strong><br><br>"
+                f"1. L'attaquant ouvre le script PoC public (cherchez « {v.cve_id or 'CVE'} PoC » sur GitHub, "
+                f"il y en a souvent une dizaine).<br>"
+                f"2. Il change la variable <code>target = \"https://...\"</code> avec votre URL.<br>"
+                f"3. Il appuie sur Entrée. La faille s'exploite seule. "
+                f"<strong>Aucune compétence avancée requise.</strong> Des outils automatisés font ça en boucle, "
+                f"24h/24, sur des plages d'IPs entières (ex: tout le réseau d'un fournisseur cloud français)."
             ),
             "real_case": (
-                "Log4Shell (CVE-2021-44228) — une faille critique similaire — a touché "
-                "<strong>plus de 35% des serveurs Java dans le monde</strong> en décembre 2021. "
-                "Les attaquants ont commencé l'exploitation 9 heures après la publication du PoC public."
+                "<strong>Log4Shell (décembre 2021) — la plus grande faille critique de la décennie :</strong><br><br>"
+                "Le 9 décembre 2021, un chercheur chinois publie sur Twitter une preuve d'exploitation "
+                "d'une faille dans Log4j, une bibliothèque Java utilisée par <strong>35% des serveurs Java "
+                "dans le monde</strong> (incluse par défaut dans Minecraft, Twitter, Steam, iCloud, Tesla, "
+                "et des dizaines de milliers d'entreprises). "
+                "<strong>9 heures plus tard</strong>, les premières exploitations sont observées sur internet. "
+                "<strong>Au pic, plus de 100 attaques par seconde</strong> visaient les serveurs vulnérables. "
+                "Le gouvernement américain a qualifié l'incident de « menace de sécurité nationale ». "
+                "Coût estimé : <strong>plus de 90 milliards de dollars</strong> en remédiation mondiale. "
+                "Certaines entreprises (comme Equifax) ont mis 6 mois pour finir de patcher tous leurs systèmes."
             ),
-            "action": "Patcher la version logicielle en priorité. Si le patch n'est pas disponible, isoler l'actif derrière un VPN ou un WAF.",
+            "action": (
+                "Patcher la version logicielle en priorité absolue (cette semaine, pas ce mois-ci). "
+                "Si le patch n'est pas disponible, isoler l'actif derrière un VPN ou un WAF (pare-feu web) "
+                "le temps de trouver une solution. Communiquer à votre équipe technique avec l'identifiant "
+                "CVE exact — c'est le seul vocabulaire qu'ils comprennent vite."
+            ),
         })
 
     # ── 3. Interface d'administration exposée ────────────────────
@@ -1344,32 +1413,76 @@ def _build_all_findings(scan, vulns_sorted):
             "title": f"Interface d'administration exposée publiquement",
             "summary": f"{name} accessible sans restriction : {first['url']}",
             "evidence": first["url"],
+            "analogy": (
+                f"<strong>Imaginez :</strong> votre coffre-fort professionnel est dans une pièce sécurisée "
+                f"à l'arrière du magasin. Normal. Mais vous avez collé un panneau lumineux sur la devanture "
+                f"qui dit : <em>« Coffre-fort ici, modèle marque-X, derrière cette porte »</em>. "
+                f"La porte est verrouillée — mais maintenant TOUS les passants savent qu'il y a un coffre, "
+                f"quel modèle, et où exactement. Il n'y a plus qu'à essayer les combinaisons. "
+                f"<br><br>C'est exactement la situation avec <strong>{name}</strong> : "
+                f"la porte d'entrée des administrateurs de votre infrastructure est visible depuis "
+                f"n'importe quelle connexion internet du monde."
+            ),
             "what_it_means": (
                 f"<strong>{name}</strong> est un {what_is}. "
                 f"Cette interface est conçue pour être utilisée par <strong>vos administrateurs depuis votre "
                 f"réseau interne</strong> — pas depuis n'importe quelle connexion internet du monde. "
-                f"Si un attaquant arrive à se connecter (mot de passe deviné ou faille), il obtient "
-                f"<strong>{what_attacker_gets}</strong>."
+                f"Si un attaquant arrive à se connecter (mot de passe deviné, mot de passe fuité dans une "
+                f"autre base de données, ou faille de l'interface elle-même), il obtient immédiatement "
+                f"<strong>{what_attacker_gets}</strong>. C'est la marche la plus haute de l'échelle "
+                f"des privilèges : tout en haut, accès complet."
+            ),
+            "scenario": (
+                f"<strong>Lundi 3h17 du matin (heure de Paris).</strong> Un bot automatique tournant sur "
+                f"un serveur compromis au Brésil scanne internet à la recherche d'interfaces "
+                f"<code>{first['keyword']}</code>. Il trouve {first['url']}. "
+                f"<strong>3h17 et 4 secondes :</strong> il lance une liste de 50 000 mots de passe (le top "
+                f"des mots de passe leakés ces 5 dernières années + des variantes avec votre nom de marque). "
+                f"<strong>4h08 :</strong> la combinaison <code>Admin@2024</code> fonctionne — un employé "
+                f"avait défini ce mot de passe « temporaire » il y a 18 mois. "
+                f"<strong>4h09 :</strong> le bot exporte automatiquement votre base de données complète "
+                f"vers un serveur en Roumanie. "
+                f"<strong>4h22 :</strong> il pose un script qui ouvrira à nouveau l'accès dans 30 jours "
+                f"(au cas où vous changiez le mot de passe). "
+                f"<strong>Mercredi suivant :</strong> votre base client est en vente sur un forum dark web "
+                f"à 1€ la ligne. Vous ne le savez pas encore."
             ),
             "demonstration": (
-                f"L'attaquant ouvre {first['url']} dans son navigateur. "
-                f"La page de login s'affiche normalement. Il lance ensuite un script qui essaye "
-                f"<strong>50 000 combinaisons de mots de passe courants</strong> "
-                f"(admin/admin, root/root, user/123456, etc.) à raison de 100 tentatives par seconde. "
-                f"Le tout en parallèle sur des dizaines d'IP pour contourner les éventuelles limites. "
-                f"<strong>Temps moyen pour craquer un mot de passe faible : moins d'une heure.</strong>"
+                f"<strong>Voici l'attaque, étape par étape :</strong><br><br>"
+                f"1. L'attaquant ouvre <code>{first['url']}</code> dans son navigateur. "
+                f"La page de connexion s'affiche normalement (pas d'erreur, pas de blocage).<br>"
+                f"2. Il lance <strong>Hydra</strong> ou <strong>Patator</strong> (outils gratuits "
+                f"de brute-force) avec une liste de 50 000 mots de passe courants (rockyou.txt, "
+                f"téléchargeable en 5 secondes).<br>"
+                f"3. Il configure : <code>100 tentatives/seconde × 30 IP en parallèle</code> = "
+                f"<strong>3 000 essais par seconde, distribués pour ne pas être bloqué</strong>.<br>"
+                f"4. Si vos employés utilisent un mot de passe basé sur le nom de l'entreprise + année "
+                f"(la combinaison la plus courante au monde), c'est cassé en <strong>moins d'une heure</strong>."
             ),
             "real_case": (
-                "En 2024, l'université de Western Sydney a été compromise via un phpMyAdmin exposé. "
-                "Les données de <strong>10 000 étudiants</strong> (noms, emails, notes, dossiers médicaux) "
-                "ont fuité. Coût total estimé de l'incident : <strong>~3 millions d'euros</strong> "
-                "(forensics, notification, remédiation, RP, juridique)."
+                "<strong>Western Sydney University (mai 2024) — phpMyAdmin oublié :</strong><br><br>"
+                "Une interface phpMyAdmin avait été installée en 2019 par un développeur pour debugger "
+                "un problème ponctuel, puis oubliée. Elle est restée accessible publiquement avec un "
+                "mot de passe par défaut <code>root/root</code>. Un attaquant l'a trouvée via un scan "
+                "Shodan (le moteur de recherche des objets connectés). "
+                "<strong>Conséquences :</strong> données de <strong>10 000 étudiants</strong> exfiltrées "
+                "(noms, dates de naissance, emails, notes, dossiers médicaux des étudiants en santé). "
+                "Coût total estimé : <strong>environ 3 millions d'euros</strong> en forensics, notifications "
+                "légales, frais juridiques et RP. La vice-chancellière a démissionné. "
+                "Un employé ayant créé l'interface a été licencié. "
+                "<br><br><strong>Le tragique :</strong> l'interface n'était utilisée par personne depuis 4 ans."
             ),
             "action": (
-                f"1) Restreindre l'accès à {first['url']} par IP whitelist (seulement les IPs de vos admins légitimes). "
-                f"2) Si possible, placer derrière un VPN obligatoire. "
-                f"3) Activer la double authentification sur ce panneau. "
-                f"4) Forcer changement de mot de passe + vérifier que les mots de passe respectent une politique forte."
+                f"<strong>Cette semaine :</strong><br>"
+                f"1. <strong>Identifier qui utilise vraiment {first['url']} </strong> (probablement 1-2 personnes).<br>"
+                f"2. <strong>Restreindre l'accès par IP whitelist</strong> dans votre firewall : "
+                f"seulement les IP de vos admins légitimes. Coût : 30 minutes de config réseau.<br>"
+                f"3. Si possible, <strong>placer derrière un VPN obligatoire</strong> : pour accéder "
+                f"à {name}, il faut d'abord se connecter au VPN.<br>"
+                f"4. <strong>Activer la double authentification (2FA)</strong> sur ce panneau "
+                f"(un code SMS ou Google Authenticator en plus du mot de passe).<br>"
+                f"5. <strong>Forcer changement de mot de passe</strong> avec politique forte "
+                f"(≥14 caractères, avec majuscules, chiffres, symboles)."
             ),
             "other_examples": [a["url"] for a in sensitive_assets[1:5]],
         })
@@ -1410,30 +1523,80 @@ def _build_all_findings(scan, vulns_sorted):
             "title": "Versions logicielles obsolètes détectables publiquement",
             "summary": f"{product_name} sur {first['asset']} (et {len(old_tech) - 1} autre(s) actif(s))" if len(old_tech) > 1 else f"{product_name} sur {first['asset']}",
             "evidence": first["asset"] + " → " + first["tech"],
+            "analogy": (
+                f"<strong>Imaginez :</strong> vous conduisez une voiture de {years} ans qui n'a jamais été "
+                f"révisée. Les freins ne sont plus aux normes, les airbags ont été rappelés mais pas remplacés, "
+                f"et le constructeur a arrêté la production des pièces de rechange depuis longtemps. "
+                f"En plus, vous avez collé une grande étiquette sur le pare-brise qui dit "
+                f"<em>« Voiture modèle XYZ, année 20{15 if years > 9 else 18} »</em>. "
+                f"Tous les mécaniciens malveillants qui passent voient immédiatement quel défaut exploiter. "
+                f"<br><br>C'est ce que fait votre serveur avec <strong>{product_name}</strong>."
+            ),
             "what_it_means": (
                 f"Le serveur affiche publiquement la version exacte du logiciel qu'il utilise : <strong>{product_name}</strong>. "
                 f"Cette version est <strong>{age_info}</strong> — donc <strong>aucune mise à jour de sécurité "
                 f"n'est plus publiée pour elle</strong> depuis des années. Toutes les failles découvertes "
-                f"depuis sont publiques, documentées, et exploitables via des outils gratuits."
+                f"depuis sont publiques, documentées dans des bases de données accessibles à n'importe qui, "
+                f"et exploitables via des outils gratuits téléchargeables en 30 secondes. "
+                f"<br><br>Pour information : un patch de sécurité = une rustine que l'éditeur publie quand une "
+                f"faille est découverte. Quand le support s'arrête, plus de rustines. Mais les failles continuent "
+                f"d'être trouvées par les chercheurs (et les attaquants), elles sont juste… jamais corrigées."
+            ),
+            "scenario": (
+                f"<strong>Vendredi 16h.</strong> Un opérateur d'un groupe ransomware reçoit la mission de "
+                f"trouver de nouvelles victimes avant la fin du mois. Il lance Shodan, un moteur de recherche "
+                f"qui catalogue tous les serveurs visibles sur internet et leur version logicielle. "
+                f"Sa requête : <code>product:\"{product_name.split()[0]}\" version:\"{product_name.split()[-1]}\"</code>. "
+                f"<strong>16h 02 :</strong> 4 800 serveurs vulnérables s'affichent. Le vôtre fait partie de la liste. "
+                f"<strong>16h 03 :</strong> il télécharge un script d'exploit du repository GitHub d'un "
+                f"chercheur bien intentionné (qui voulait juste démontrer la faille pour pousser les gens "
+                f"à patcher). "
+                f"<strong>16h 05 :</strong> il configure son script pour boucler sur les 4 800 IP. "
+                f"<strong>Samedi matin :</strong> 700 entreprises sont compromises. Il choisit les 30 plus "
+                f"« rentables » selon leur taille (analysée via leur site vitrine et LinkedIn) et déclenche "
+                f"le chiffrement chez elles. <strong>Vous êtes peut-être dans le top 30, peut-être pas.</strong>"
             ),
             "demonstration": (
-                f"L'attaquant utilise la commande<br><code>curl -I https://{first['asset']}</code><br>"
-                f"La réponse contient quelque chose comme <code>Server: {product_name}</code>. "
-                f"Il tape ensuite la version dans la base CVE publique → "
-                f"<strong>liste des failles connues s'affiche en quelques secondes</strong>. "
-                f"Il choisit la plus exploitable et lance l'attaque correspondante."
+                f"<strong>Pour identifier votre version, l'attaquant utilise une commande triviale :</strong><br><br>"
+                f"1. <code>curl -I https://{first['asset']}</code><br>"
+                f"&nbsp;&nbsp;&nbsp;→ La réponse du serveur contient un header <code>Server: {product_name}</code>. "
+                f"Votre serveur le donne <strong>gracieusement, à n'importe qui qui demande</strong>.<br><br>"
+                f"2. Il copie <code>{product_name}</code> dans <strong>NVD</strong> (la base CVE publique du "
+                f"gouvernement américain) ou simplement Google.<br>"
+                f"&nbsp;&nbsp;&nbsp;→ <strong>Liste des failles connues</strong> s'affiche en quelques secondes. "
+                f"Pour {product_name}, il y en a une dizaine au moins.<br><br>"
+                f"3. Il choisit la plus exploitable (généralement celle avec un PoC public déjà écrit) et "
+                f"lance l'attaque correspondante. <strong>Total de l'opération : 4 minutes.</strong>"
             ),
             "real_case": (
-                "L'attaque Equifax 2017 (147 millions de personnes touchées, "
-                "<strong>700 millions de dollars d'amende</strong>) était due à une seule chose : "
-                "Apache Struts pas patché alors qu'un correctif existait depuis 2 mois. "
-                "Le coût total de l'incident est estimé à 1,4 milliard de dollars."
+                "<strong>Equifax (juillet-septembre 2017) — l'attaque due à un seul patch oublié :</strong><br><br>"
+                "Equifax est l'un des trois bureaux de crédit américains : ils détiennent les données financières "
+                "et personnelles de plus de 800 millions de personnes. En mars 2017, une faille critique "
+                "(CVE-2017-5638) est publiée dans Apache Struts, un composant logiciel qu'Equifax utilise. "
+                "<strong>Un patch est disponible le 7 mars 2017</strong>. "
+                "L'équipe IT d'Equifax envoie un email demandant à toutes les équipes de patcher dans les 48h. "
+                "<strong>Mais un serveur est oublié.</strong> "
+                "Le 13 mai 2017, des attaquants (probablement chinois selon le DOJ américain) trouvent ce serveur "
+                "non patché via un simple scan internet. Ils restent dans le réseau d'Equifax pendant <strong>76 jours</strong>, "
+                "exfiltrant lentement des données pour ne pas alerter. "
+                "<strong>Bilan final :</strong> 147 millions de personnes touchées (noms, n° de sécu, dates de naissance, "
+                "adresses). <strong>700 millions de dollars d'amende</strong>. Le PDG, le DSI et la RSSI ont démissionné. "
+                "Le procureur général américain a recommandé des poursuites pénales. "
+                "<strong>Coût total estimé : 1,4 milliard de dollars.</strong> Tout ça parce qu'un patch de mars n'avait "
+                "pas été appliqué sur un serveur."
             ),
             "action": (
-                "1) Lister toutes les versions logicielles obsolètes (cette liste vous en donne déjà une partie). "
-                "2) Planifier une fenêtre de maintenance pour les mettre à jour vers les versions supportées. "
-                "3) Mettre en place un processus de veille mensuelle sur les CVE des logiciels que vous utilisez. "
-                "4) Masquer les bannières de version dans les headers HTTP (security through obscurity en complément, jamais en remplacement)."
+                f"<strong>Ce mois-ci :</strong><br>"
+                f"1. <strong>Lister toutes les versions logicielles obsolètes</strong> de votre parc "
+                f"(cette analyse vous en donne déjà une partie). Demander à votre équipe IT un export "
+                f"de l'inventaire avec les versions exactes.<br>"
+                f"2. <strong>Planifier une fenêtre de maintenance</strong> (généralement un dimanche soir) "
+                f"pour mettre à jour vers les versions supportées et patchées.<br>"
+                f"3. <strong>Mettre en place une veille mensuelle</strong> sur les CVE des logiciels que vous "
+                f"utilisez (outil gratuit : <code>dependabot</code> sur GitHub, ou abonnement à US-CERT).<br>"
+                f"4. <strong>Masquer les bannières de version</strong> dans les headers HTTP (option de "
+                f"configuration de votre serveur web) — ça ralentit l'attaquant sans le bloquer, "
+                f"complément utile mais jamais remplaçant du patch."
             ),
             "other_examples": [f"{ot['asset']} → {ot['tech']}" for ot in old_tech[1:5]],
         })
@@ -1448,32 +1611,90 @@ def _build_all_findings(scan, vulns_sorted):
             "title": "Phishing au nom de votre domaine — protection absente",
             "summary": f"Aucun enregistrement DMARC pour {domain}",
             "evidence": f"dig _dmarc.{domain} TXT → aucune réponse",
+            "analogy": (
+                f"<strong>Imaginez :</strong> la poste accepterait n'importe quelle lettre signée "
+                f"« {domain} », sans vérifier qui l'a écrite, et la livrerait normalement chez vos clients "
+                f"et partenaires. N'importe quel inconnu peut <strong>imiter votre papier à en-tête</strong> "
+                f"et envoyer du courrier à votre place. Le destinataire reçoit une enveloppe avec votre "
+                f"vrai nom, votre vraie adresse, votre vrai logo. Comment pourrait-il douter ? "
+                f"<br><br>C'est exactement la situation actuelle de votre domaine email."
+            ),
             "what_it_means": (
-                f"DMARC est une politique technique qui dit aux serveurs mail (Gmail, Outlook, etc.) : "
+                f"DMARC est une « règle » que vous publiez dans le DNS (l'annuaire d'internet) qui dit "
+                f"aux serveurs mail (Gmail, Outlook, Apple Mail, etc.) : "
                 f"<strong>« si tu reçois un email qui prétend venir de {domain} mais qui n'est pas authentifié, "
-                f"rejette-le »</strong>. Sans DMARC, <strong>n'importe qui peut envoyer des emails "
-                f"en se faisant passer pour vous</strong>, et ces emails arriveront en boîte de réception "
-                f"de vos clients/partenaires comme s'ils étaient légitimes."
+                f"rejette-le »</strong>. Sans DMARC, <strong>n'importe qui dans le monde peut envoyer des "
+                f"emails en se faisant passer pour vous</strong>, et ces emails arriveront en boîte de réception "
+                f"de vos clients/partenaires/employés comme s'ils étaient parfaitement légitimes. "
+                f"<br><br>Pas en spam. Pas avec un avertissement. <strong>En vraie boîte de réception</strong>, "
+                f"avec votre nom de domaine dans l'expéditeur."
+            ),
+            "scenario": (
+                f"<strong>Mardi 9h14.</strong> Votre directrice administrative et financière (DAF), Sophie, "
+                f"reçoit un email. Expéditeur : <code>pdg@{domain}</code>. Objet : <em>« URGENT - "
+                f"Acquisition confidentielle à valider avant 12h »</em>. "
+                f"<br><br>Le mail dit : <em>« Sophie, je suis en réunion avec nos avocats. Nous finalisons "
+                f"le rachat de la société CIBLE-X dont je t'ai parlé hier. Le vendeur exige un acompte "
+                f"de bonne foi de 87 000€ avant midi sinon la deal saute. Voici le RIB : FR76 …. — RIB "
+                f"de leur étude notariale. Confidentialité absolue jusqu'à l'annonce officielle. "
+                f"Je suis injoignable jusqu'à 13h, ne m'appelle pas. Tu peux gérer ? Merci. P. »</em> "
+                f"<br><br>Sophie hésite. Mais l'expéditeur est bien <code>pdg@{domain}</code>. Le ton "
+                f"correspond au style du PDG. Hier matin, justement, le PDG avait parlé d'opportunités "
+                f"d'acquisitions en réunion CODIR (info publique sur LinkedIn). Elle vire les 87 000€. "
+                f"<br><br><strong>16h.</strong> Le vrai PDG sort de réunion. Il n'a jamais envoyé cet email. "
+                f"L'argent est sur un compte aux Émirats. Il y restera 47 minutes avant d'être redistribué "
+                f"sur 12 autres comptes dans 8 pays. <strong>87 000€ irrécupérables.</strong> "
+                f"<br><br>Avec DMARC actif et configuré en <code>p=reject</code>, l'email serait arrivé "
+                f"directement dans la corbeille, jamais vu par Sophie."
             ),
             "demonstration": (
-                f"Un attaquant utilise un service gratuit comme spoofbox.com ou un script Python. "
-                f"En 30 secondes, il envoie un email frauduleux qui apparaît comme venant de "
-                f"<code>direction@{domain}</code> ou <code>compta@{domain}</code>. "
-                f"Cet email demande à vos employés/clients de virer de l'argent sur un nouveau RIB, "
-                f"de cliquer sur un lien piégé, ou de donner leurs identifiants."
+                f"<strong>Combien de temps pour usurper votre domaine ? Réponse : 38 secondes.</strong><br><br>"
+                f"1. L'attaquant ouvre <code>https://emkei.cz</code> (site gratuit, public, légal pour "
+                f"l'envoi de notifications légitimes — mais utilisé massivement pour le phishing).<br>"
+                f"2. Il remplit le formulaire : "
+                f"From: <code>direction@{domain}</code>, To: <code>compta@votre-client.fr</code>, "
+                f"Subject: <em>Mise à jour RIB urgente</em>, Body: faux message.<br>"
+                f"3. Clic sur « Send ». <strong>L'email part en 2 secondes</strong>, arrive chez votre "
+                f"client en moins d'une minute, dans la boîte de réception principale (pas en spam, car "
+                f"vous n'avez pas de DMARC pour signaler que cet email est faux).<br><br>"
+                f"<strong>Variante plus pro :</strong> il utilise un outil comme <code>Gophish</code> "
+                f"pour envoyer 5 000 phishings à vos clients en une heure, avec personnalisation "
+                f"automatique des prénoms (scrappés sur LinkedIn)."
             ),
             "real_case": (
-                "L'arnaque au président (CEO fraud) cause <strong>50+ milliards de dollars de pertes "
-                "mondiales</strong> chaque année. Les attaquants identifient le dirigeant via LinkedIn, "
-                "spoofent son adresse email, et demandent à la compta de virer urgent. Sans DMARC, "
-                "rien n'arrête techniquement ces emails. Cas Pathé France 2018 : "
-                "<strong>19 millions d'euros volés</strong> en quelques semaines via cette technique."
+                "<strong>Pathé France (mars 2018) — 19 millions d'euros disparus en 3 semaines :</strong><br><br>"
+                "Le 3 mars 2018, la directrice financière de Pathé Pictures International reçoit un email "
+                "qui semble venir de <strong>Marc Lacan, le PDG du groupe Pathé</strong>. "
+                "L'email demande de débloquer urgemment des fonds pour une acquisition confidentielle en Asie. "
+                "Le RIB indiqué pointe vers un compte à Hong Kong. La DAF, croyant agir sur ordre du PDG, "
+                "ordonne le virement. <strong>Sur trois semaines, 19,2 millions d'euros</strong> sont virés "
+                "sur 8 transactions vers différents comptes. "
+                "<br><br>Quand le PDG découvre l'arnaque, l'argent est déjà parti. La DAF est licenciée. "
+                "Le PDG est licencié 3 mois plus tard pour défaut de contrôle interne. "
+                "Pathé porte plainte, l'enquête remonte jusqu'à un réseau israélien et chinois — "
+                "<strong>l'argent ne sera jamais récupéré</strong>. "
+                "<br><br><strong>Cause technique unique :</strong> Pathé n'avait pas configuré DMARC sur son "
+                "domaine. Avec DMARC, l'email frauduleux aurait été rejeté avant même d'atteindre "
+                "la boîte de la DAF. "
+                "<br><br><strong>Au niveau mondial :</strong> le FBI estime les pertes annuelles dues "
+                "à l'arnaque au président (CEO fraud / BEC = Business Email Compromise) à "
+                "<strong>50+ milliards de dollars par an</strong>. C'est la cybercriminalité la plus rentable "
+                "au monde, devant le ransomware."
             ),
             "action": (
-                f"Ajouter un enregistrement TXT DNS au nom <code>_dmarc.{domain}</code> avec la valeur "
-                f"<code>v=DMARC1; p=quarantine; rua=mailto:dmarc@{domain}</code>. "
-                f"Commencer par <code>p=none</code> pour observer pendant 1 mois, puis passer à "
-                f"<code>p=quarantine</code> puis <code>p=reject</code>. Coût technique : 5 minutes."
+                f"<strong>Cette semaine — 5 minutes de config, gratuit :</strong><br>"
+                f"1. Demandez à votre administrateur DNS d'ajouter un enregistrement TXT au nom "
+                f"<code>_dmarc.{domain}</code> avec la valeur :<br>"
+                f"&nbsp;&nbsp;&nbsp;<code>v=DMARC1; p=none; rua=mailto:dmarc@{domain}</code><br>"
+                f"&nbsp;&nbsp;&nbsp;(<code>p=none</code> = juste observer pour l'instant, ne rien bloquer)<br>"
+                f"2. <strong>Pendant 1 mois :</strong> consultez les rapports DMARC reçus à "
+                f"<code>dmarc@{domain}</code>. Vous verrez qui envoie quoi en votre nom.<br>"
+                f"3. <strong>Une fois rassuré que tous vos envois légitimes passent :</strong> "
+                f"passez à <code>p=quarantine</code> (emails frauduleux → spam) pendant 1 mois.<br>"
+                f"4. <strong>Étape finale :</strong> <code>p=reject</code> = les emails usurpés sont "
+                f"totalement bloqués. <strong>Phishing à votre nom impossible.</strong><br><br>"
+                f"<strong>Coût total :</strong> 5 minutes de config DNS + 2 mois d'observation passive. "
+                f"<strong>Gain potentiel :</strong> éviter une CEO fraud à 100 000€+."
             ),
         })
     elif dmarc.get("policy") == "none":
@@ -1484,21 +1705,52 @@ def _build_all_findings(scan, vulns_sorted):
             "title": "Politique DMARC en mode 'observation' seulement",
             "summary": f"DMARC publié mais avec p=none (n'effectue aucun blocage)",
             "evidence": f"_dmarc.{domain} → p=none",
+            "analogy": (
+                f"<strong>Imaginez :</strong> vous avez installé une alarme dans votre magasin… mais en mode "
+                f"« silencieux ». L'alarme détecte les intrusions, prend des photos, enregistre tout — "
+                f"mais elle ne sonne pas, ne prévient personne, et ne ferme aucune porte. C'est utile pour "
+                f"comprendre <em>qui</em> vous attaque, mais ça ne vous protège pas. "
+                f"<br><br>C'est exactement ce que fait votre DMARC en <code>p=none</code>."
+            ),
             "what_it_means": (
-                f"Vous avez publié DMARC, mais avec la directive <code>p=none</code> qui signifie "
-                f"<strong>« observe les abus mais ne bloque rien »</strong>. "
-                f"Les emails frauduleux qui se font passer pour vous continuent d'arriver chez vos correspondants."
+                f"Vous avez publié DMARC (bravo, première étape), mais avec la directive <code>p=none</code> "
+                f"qui signifie <strong>« observe les abus et envoie-moi un rapport, mais ne bloque rien »</strong>. "
+                f"Les emails frauduleux qui se font passer pour vous continuent d'arriver chez vos correspondants. "
+                f"<br><br>Le mode <code>p=none</code> est une étape transitoire <strong>indispensable</strong> "
+                f"au début (pour s'assurer qu'on ne casse pas des envois légitimes), mais c'est une étape "
+                f"<strong>à dépasser</strong>. Si vous restez en <code>p=none</code> pendant des années, "
+                f"DMARC ne vous protège pas — il vous donne juste des statistiques."
+            ),
+            "scenario": (
+                f"<strong>Vendredi 11h.</strong> Un attaquant teste un phishing contre vos clients en "
+                f"se faisant passer pour <code>support@{domain}</code>. Il envoie 200 emails. "
+                f"<strong>Résultat :</strong> 198 sont délivrés normalement chez vos clients. "
+                f"2 sont rapportés à votre adresse DMARC (parce que vous avez configuré <code>rua=</code>). "
+                f"<br><br>Vous voyez le rapport lundi matin. Vous comprenez qu'il y a un problème. "
+                f"Mais entre vendredi et lundi, <strong>15 de vos clients ont cliqué sur le lien</strong> "
+                f"et donné leurs identifiants. <strong>Le mal est fait.</strong>"
             ),
             "demonstration": (
-                "Identique au cas sans DMARC : l'attaquant spoof votre domaine et l'email passe."
+                "Identique au cas sans DMARC : l'attaquant spoof votre domaine, l'email passe en boîte "
+                "de réception de votre destinataire. La seule différence : vous recevez un rapport "
+                "agrégé hebdomadaire qui vous dit <em>combien</em> de spoofing ont eu lieu — "
+                "<strong>après coup, sans aucune action préventive.</strong>"
             ),
             "real_case": (
-                "Beaucoup d'entreprises restent bloquées en p=none par peur de casser un envoi légitime. "
-                "Or sans passer en quarantine ou reject, DMARC n'a quasiment aucune valeur protective."
+                "Selon le rapport DMARC.org 2024, <strong>plus de 70% des domaines DMARC restent bloqués en "
+                "<code>p=none</code> indéfiniment</strong>, par peur de casser un envoi légitime. "
+                "Or sans passer en <code>quarantine</code> ou <code>reject</code>, DMARC n'a quasiment "
+                "aucune valeur protective. Les boîtes mail (Gmail/Outlook) appliquent strictement votre "
+                "politique : si vous dites « ne fais rien », elles ne font rien."
             ),
             "action": (
-                f"Après 1-2 mois d'observation des rapports DMARC, passer progressivement à "
-                f"<code>p=quarantine</code> (emails frauduleux en spam) puis <code>p=reject</code> (bloqués)."
+                f"<strong>Maintenant que DMARC est en place, terminez le travail :</strong><br>"
+                f"1. <strong>Pendant 1-2 mois :</strong> consultez vos rapports DMARC. Identifiez tous "
+                f"vos émetteurs légitimes (Google Workspace, Mailchimp, votre CRM, votre ERP…).<br>"
+                f"2. <strong>Étape suivante :</strong> passer à <code>p=quarantine</code> "
+                f"(emails frauduleux → spam au lieu de boîte principale).<br>"
+                f"3. <strong>Étape finale :</strong> <code>p=reject</code> (emails frauduleux totalement "
+                f"bloqués). C'est l'objectif."
             ),
         })
 
@@ -1512,24 +1764,65 @@ def _build_all_findings(scan, vulns_sorted):
             "title": "Emails facilement usurpables",
             "summary": f"Aucun enregistrement SPF pour {domain}",
             "evidence": f"dig {domain} TXT → aucun SPF",
+            "analogy": (
+                f"<strong>Imaginez :</strong> dans votre quartier, le facteur livre tout ce qu'on lui donne, "
+                f"sans vérifier d'où ça vient. N'importe quel inconnu peut déposer un courrier dans la "
+                f"sacoche du facteur en disant <em>« c'est de la part de M. {domain.split('.')[0].title()} »</em>. "
+                f"Le facteur ne vérifie pas, et livre. Vos voisins reçoivent une enveloppe à votre nom — "
+                f"sauf que ce n'est pas vous qui l'avez écrite. "
+                f"<br><br>SPF, c'est l'équivalent technique de la liste des facteurs officiellement autorisés "
+                f"à livrer en votre nom. Sans cette liste, n'importe qui peut prétendre l'être."
+            ),
             "what_it_means": (
-                f"SPF (Sender Policy Framework) liste les serveurs autorisés à envoyer des emails "
-                f"pour votre domaine. Sans SPF, <strong>n'importe quel serveur dans le monde "
-                f"peut prétendre envoyer en votre nom</strong>. Vos emails légitimes risquent "
-                f"aussi d'arriver en spam par manque de réputation."
+                f"SPF (Sender Policy Framework) est une liste publique des serveurs autorisés à envoyer "
+                f"des emails pour votre domaine. C'est techniquement un enregistrement DNS (l'annuaire d'internet) "
+                f"qui dit : <em>« seuls les serveurs A, B et C peuvent légitimement envoyer du courrier "
+                f"au nom de {domain} »</em>. "
+                f"<br><br>Sans SPF, <strong>n'importe quel serveur dans le monde peut prétendre envoyer en "
+                f"votre nom</strong>, et les boîtes mail destinataires n'ont aucun moyen de vérifier. "
+                f"Conséquences secondaires : vos emails légitimes risquent aussi d'arriver en spam, "
+                f"par manque de réputation (Gmail/Outlook préfèrent par défaut les domaines bien configurés)."
+            ),
+            "scenario": (
+                f"<strong>Lundi matin.</strong> Un escroc télécharge la liste de vos clients (récupérée sur "
+                f"votre site, votre LinkedIn d'entreprise, vos communiqués de presse). Il envoie un email "
+                f"depuis son serveur personnel à Saint-Pétersbourg : "
+                f"<em>« De: comptabilite@{domain}. Objet: Mise à jour de notre RIB. Suite à un changement "
+                f"de banque, merci de mettre à jour notre RIB ci-joint pour tout règlement à venir. »</em> "
+                f"<br><br><strong>Avec SPF actif :</strong> Gmail/Outlook voient que l'email vient de "
+                f"Saint-Pétersbourg, vérifient votre SPF, constatent que ce serveur n'est PAS dans la liste "
+                f"des serveurs autorisés. L'email part en spam ou est rejeté.<br><br>"
+                f"<strong>Sans SPF (situation actuelle) :</strong> Gmail/Outlook n'ont pas de référence "
+                f"de comparaison. L'email arrive normalement chez vos clients. 3 ou 4 d'entre eux changent "
+                f"le RIB dans leur ERP. Les prochains règlements vont sur le compte de l'escroc."
             ),
             "demonstration": (
-                "Idem DMARC : un attaquant envoie un email en se faisant passer pour vous "
-                "depuis un serveur quelconque, sans aucune vérification possible côté destinataire."
+                f"<strong>L'attaque est triviale :</strong><br><br>"
+                f"1. L'attaquant ouvre un terminal sur son serveur Linux et tape :<br>"
+                f"&nbsp;&nbsp;<code>swaks --from \"compta@{domain}\" --to cible@client.fr --server smtp.son-serveur.com</code><br>"
+                f"2. Il rédige son message frauduleux dans l'invite. Appuie sur Ctrl+D pour envoyer.<br>"
+                f"3. <strong>Email envoyé en 2 secondes</strong>, arrive chez la cible dans la minute, "
+                f"en boîte de réception normale parce que rien ne dit au serveur destinataire que cet "
+                f"expéditeur n'est pas légitime. Total : 30 secondes."
             ),
             "real_case": (
-                "Selon Verizon DBIR 2024, <strong>74% des intrusions impliquent un élément humain</strong>, "
-                "et le phishing par usurpation de domaine est la première vector d'attaque."
+                "<strong>Selon Verizon DBIR 2024 (Data Breach Investigations Report) :</strong><br><br>"
+                "Le phishing reste la <strong>première porte d'entrée</strong> pour les intrusions "
+                "(74% des intrusions impliquent un élément humain, principalement le clic sur un email "
+                "frauduleux). Sur ces 74%, une part majeure utilise l'usurpation de domaines mal configurés. "
+                "<br><br>Combiner SPF + DKIM + DMARC est la <strong>défense la plus rentable au monde</strong> "
+                "selon le NIST : coût technique nul, efficacité ~95% contre l'usurpation."
             ),
             "action": (
-                f"Ajouter un enregistrement TXT au nom <code>{domain}</code> avec la valeur "
-                f"<code>v=spf1 include:_spf.google.com ~all</code> (adapter selon votre fournisseur email). "
-                f"Coût technique : 5 minutes."
+                f"<strong>Cette semaine — 5 minutes :</strong><br>"
+                f"Demandez à votre administrateur DNS d'ajouter un enregistrement TXT au nom <code>{domain}</code> "
+                f"avec la valeur (à adapter selon votre fournisseur email) :<br><br>"
+                f"&nbsp;&nbsp;• Google Workspace : <code>v=spf1 include:_spf.google.com ~all</code><br>"
+                f"&nbsp;&nbsp;• Microsoft 365 : <code>v=spf1 include:spf.protection.outlook.com ~all</code><br>"
+                f"&nbsp;&nbsp;• OVH : <code>v=spf1 include:mx.ovh.com ~all</code><br><br>"
+                f"<strong>Effet immédiat :</strong> les serveurs frauduleux sont signalés aux destinataires, "
+                f"leurs emails partent en spam ou sont rejetés. <strong>+SPF + DMARC = phishing à votre nom "
+                f"quasi impossible.</strong>"
             ),
         })
 
@@ -1544,22 +1837,74 @@ def _build_all_findings(scan, vulns_sorted):
             "title": "Certificat SSL expiré — visiteurs bloqués",
             "summary": f"Certificat expiré sur {t.host}",
             "evidence": f"{t.host} → certificat expiré",
+            "analogy": (
+                f"<strong>Imaginez :</strong> votre boutique a un panneau lumineux qui dit "
+                f"<em>« COMMERCE FERMÉ — RISQUE SANITAIRE — N'ENTREZ PAS »</em>. "
+                f"Vous, vous savez que c'est juste un bug de l'enseigne — il n'y a aucun problème sanitaire. "
+                f"Mais TOUS les passants qui voient le panneau changent de trottoir et vont chez le voisin. "
+                f"<br><br>C'est exactement ce qu'affiche le navigateur de chaque visiteur "
+                f"qui essaye d'ouvrir <code>https://{t.host}</code> en ce moment."
+            ),
             "what_it_means": (
-                f"Le certificat SSL/HTTPS de cet actif est <strong>expiré</strong>. "
-                f"Tous vos visiteurs voient une <strong>page rouge d'alerte</strong> dans leur navigateur "
-                f"(Chrome, Firefox, Edge, Safari) avec un message du type "
-                f"<em>« Votre connexion n'est pas privée — Risque d'attaque ! »</em>."
+                f"Un certificat SSL (le « S » de HTTPS) est une pièce d'identité numérique qui prouve que "
+                f"vous êtes bien le propriétaire du site, et qui chiffre les communications entre votre "
+                f"site et le navigateur du visiteur. Cette pièce d'identité a une <strong>date de péremption</strong>, "
+                f"généralement 90 jours pour Let's Encrypt (gratuit) ou 1 an pour les certificats payants. "
+                f"<br><br>Le certificat de <strong>{t.host}</strong> est <strong>expiré</strong>. "
+                f"Tous vos visiteurs voient une <strong>grande page rouge d'alerte</strong> dans leur "
+                f"navigateur (Chrome, Firefox, Edge, Safari) avec un message du type "
+                f"<em>« Votre connexion n'est pas privée — Risque d'attaque ! Les attaquants pourraient "
+                f"voler vos informations… »</em>."
+            ),
+            "scenario": (
+                f"<strong>Mardi 14h.</strong> Un prospect chaud que vous courtisez depuis 3 mois reçoit "
+                f"votre proposition commerciale. Il clique sur le lien vers votre site pour vérifier votre "
+                f"crédibilité avant de signer. "
+                f"<br><br><strong>Il tombe sur le grand écran rouge :</strong> "
+                f"« Cette connexion n'est pas privée. Des attaquants pourraient voler vos informations. "
+                f"NE PAS POURSUIVRE. » "
+                f"<br><br>Il hésite 0,8 seconde, ferme l'onglet, et écrit à votre concurrent. "
+                f"Le contrat de 50 000€ vous échappe. "
+                f"<br><br><strong>Pire scénario :</strong> votre site est utilisé pour des paiements ou un "
+                f"login client. Tous les clients qui essayent de payer pensent que vous avez été piratés "
+                f"(le navigateur le suggère noir sur rouge) et abandonnent. <strong>Chiffre d'affaires divisé "
+                f"par 50</strong> pendant la durée du problème."
             ),
             "demonstration": (
-                f"Ouvrez <code>https://{t.host}</code> dans n'importe quel navigateur : "
-                f"page rouge avec avertissement. <strong>99% des visiteurs partent immédiatement.</strong>"
+                f"<strong>Pour voir le problème vous-même :</strong> ouvrez <code>https://{t.host}</code> "
+                f"dans n'importe quel navigateur. Vous verrez :<br><br>"
+                f"• Chrome : <em>« Votre connexion n'est pas privée »</em> + bouton « Retour à la sécurité »<br>"
+                f"• Firefox : <em>« Avertissement : risque probable de sécurité »</em><br>"
+                f"• Safari : <em>« Ce site web n'est peut-être pas sécurisé. Pour ne pas voler vos données… »</em><br><br>"
+                f"<strong>Études d'usabilité :</strong> 99% des visiteurs cliquent « Retour » devant cette page. "
+                f"Seuls les techniciens (1% des utilisateurs grand public) savent contourner l'avertissement, "
+                f"et ils ne le font pas non plus pour un site commercial."
             ),
             "real_case": (
-                "Whatsapp a été inaccessible pendant 4 heures en 2017 à cause d'un certificat expiré "
-                "non renouvelé à temps — coût estimé en perte d'usage pour les utilisateurs : "
-                "des centaines de millions d'euros."
+                "<strong>WhatsApp (3 novembre 2021) — 6 heures d'inaccessibilité à cause d'un certificat :</strong><br><br>"
+                "Le 3 novembre 2021, WhatsApp est devenu inaccessible pendant <strong>plus de 6 heures</strong> "
+                "dans le monde entier. La cause : un certificat TLS interne (entre les serveurs Facebook/Meta) "
+                "a expiré, n'a pas été renouvelé automatiquement à cause d'un bug dans leur système, et "
+                "tous les serveurs WhatsApp ont refusé de communiquer entre eux. "
+                "<br><br><strong>Conséquences :</strong> 2 milliards d'utilisateurs sans WhatsApp pendant 6h. "
+                "Action Meta -5% en bourse ce jour-là (perte de capitalisation : ~50 milliards de dollars). "
+                "Le manque à gagner sur les revenus business : des dizaines de millions de dollars. "
+                "<br><br><strong>Plus proche du quotidien :</strong> en 2020, le site de la sécurité sociale "
+                "française est resté inaccessible pendant 4 heures suite à une expiration de certificat. "
+                "Microsoft Teams a connu plusieurs incidents similaires (le plus récent en février 2024)."
             ),
-            "action": "Renouveler le certificat. Si vous utilisez Let's Encrypt, automatiser le renouvellement avec certbot. Si certificat commercial, vérifier votre processus de renouvellement.",
+            "action": (
+                f"<strong>Aujourd'hui :</strong><br>"
+                f"1. <strong>Renouveler immédiatement le certificat</strong>. Si vous utilisez Let's Encrypt "
+                f"(gratuit, recommandé), la commande est <code>certbot renew</code>.<br>"
+                f"2. <strong>Vérifier la cause du non-renouvellement automatique</strong> (probablement "
+                f"une cron task cassée ou un changement d'IP).<br><br>"
+                f"<strong>Cette semaine :</strong><br>"
+                f"3. <strong>Mettre en place une alerte de monitoring</strong> qui prévient 30 jours avant "
+                f"chaque expiration (outils gratuits : UptimeRobot, Better Uptime). Coût : 0€.<br>"
+                f"4. <strong>Auditer TOUS vos certificats</strong> de tous vos domaines/sous-domaines pour "
+                f"identifier les autres bombes à retardement."
+            ),
         })
 
     # ── 8. Sous-domaines sensibles ────────────────────────────────
@@ -1581,27 +1926,83 @@ def _build_all_findings(scan, vulns_sorted):
             "title": "Sous-domaines à usage interne accessibles publiquement",
             "summary": f"{len(sensitive_subs_found)} sous-domaine(s) suspect(s) : " + ", ".join(s["sub"] for s in sensitive_subs_found[:3]),
             "evidence": first["sub"],
+            "analogy": (
+                f"<strong>Imaginez :</strong> votre immeuble de bureaux a une grande entrée principale, "
+                f"belle et sécurisée, avec agent d'accueil + portique de sécurité + badge obligatoire. "
+                f"Mais sur le côté, il y a une porte de service marquée <em>« {first['keyword'].upper()} - "
+                f"personnel uniquement »</em>. Cette porte, vous croyez qu'elle est cachée derrière les "
+                f"poubelles. En réalité, elle est visible depuis la rue, elle n'a pas d'agent, le code de "
+                f"sécurité est <code>1234</code> et n'a pas été changé depuis 8 ans. "
+                f"<br><br>Tous les cambrioleurs professionnels savent qu'on entre par les portes de service, "
+                f"pas par l'entrée principale. C'est pareil en informatique."
+            ),
             "what_it_means": (
-                f"Des sous-domaines aux noms suggérant un usage interne ({first['keyword']}, etc.) "
-                f"sont accessibles depuis internet. Les hackers savent que ces sous-domaines sont souvent "
-                f"<strong>moins surveillés, avec des configurations plus laxistes</strong>, et représentent "
-                f"des portes d'entrée privilégiées."
+                f"Des sous-domaines aux noms suggérant un usage interne ou de développement (comme "
+                f"<code>{first['keyword']}.{domain}</code>) sont accessibles depuis internet. Les attaquants "
+                f"savent que ces sous-domaines sont presque toujours <strong>moins surveillés, avec des "
+                f"configurations plus laxistes, et créés rapidement « en attendant »</strong> sans audit "
+                f"de sécurité. Ils représentent des <strong>portes d'entrée privilégiées</strong>. "
+                f"<br><br>Concrètement, on trouve souvent sur ces sous-domaines : des versions de test "
+                f"avec des comptes par défaut (<code>test/test</code>), des sauvegardes de base de données, "
+                f"des dépôts de code source avec des mots de passe en clair, des panels d'administration "
+                f"oubliés, ou des versions obsolètes de logiciels."
+            ),
+            "scenario": (
+                f"<strong>Samedi 22h.</strong> Un chasseur de primes (bug bounty hunter) — pas un méchant, "
+                f"juste un freelance qui cherche des failles pour gagner des récompenses — découvre votre "
+                f"sous-domaine <code>{first['sub']}</code> via un scan public. "
+                f"<br><br>Sauf que ce hunter-là est passé du bon côté hier matin et a accepté un contrat "
+                f"« concurrence déloyale » pour 5 000€ de la part d'un concurrent qui veut connaître votre "
+                f"roadmap. Il fouille votre sous-domaine, trouve une instance de Jenkins (système de build "
+                f"de code) accessible sans login. Dans les logs de build, il trouve les credentials de votre "
+                f"base de données. "
+                f"<br><br><strong>Dimanche matin :</strong> votre roadmap produit complète, votre liste "
+                f"clients, et le code source de votre application sont dans les mains de votre concurrent. "
+                f"Vous ne le saurez jamais — il ne va pas vous le dire."
             ),
             "demonstration": (
-                "L'attaquant priorise systématiquement les sous-domaines avec des noms 'internes' dans "
-                "ses tentatives de brute-force. Ces interfaces ont souvent : des comptes de test "
-                "(test/test), des versions logicielles oubliées, ou des permissions trop ouvertes."
+                f"<strong>Voici comment l'attaquant procède :</strong><br><br>"
+                f"1. Il utilise <code>subfinder -d {domain}</code> ou consulte <code>crt.sh</code> "
+                f"(base publique des certificats SSL) pour énumérer TOUS vos sous-domaines.<br>"
+                f"2. Il filtre par mots-clés sensibles : <code>admin, test, dev, staging, vpn, ftp, "
+                f"intranet, db, jenkins, gitlab</code>.<br>"
+                f"3. Pour chaque sous-domaine sensible, il essaie : les pages de login standard "
+                f"(<code>/login, /admin, /wp-admin</code>), les credentials par défaut documentés en ligne, "
+                f"et les exploits récents.<br><br>"
+                f"<strong>Le plus drôle :</strong> ces sous-domaines sont souvent créés par des développeurs "
+                f"pressés qui se disent « je sécurise plus tard ». Le « plus tard » n'arrive jamais."
             ),
             "real_case": (
-                "Uber 2016 : un attaquant a trouvé un sous-domaine GitHub-Enterprise interne accessible "
-                "sans VPN, où des credentials AWS étaient committés. Résultat : "
-                "<strong>57 millions d'utilisateurs/conducteurs compromis</strong>, "
-                "<strong>148 millions de dollars d'amendes</strong>."
+                "<strong>Uber (octobre 2016) — 57 millions d'utilisateurs compromis :</strong><br><br>"
+                "Un attaquant a découvert qu'Uber utilisait GitHub Enterprise (la version privée de GitHub) "
+                "sur un sous-domaine accessible publiquement, sans VPN obligatoire. Dans les dépôts privés "
+                "stockés sur ce sous-domaine, des développeurs avaient committé (= sauvegardé dans Git) "
+                "<strong>les clés d'accès AWS</strong> de la prod d'Uber. "
+                "<br><br>L'attaquant a utilisé ces clés pour accéder aux bases de données AWS d'Uber et "
+                "exfiltrer les données de <strong>57 millions d'utilisateurs et conducteurs</strong> "
+                "(noms, emails, numéros de téléphone, et 600 000 numéros de permis de conduire). "
+                "<br><br><strong>Pire :</strong> au lieu de notifier les autorités comme la loi l'exige, "
+                "Uber a payé <strong>100 000$ de rançon</strong> à l'attaquant pour qu'il se taise et "
+                "supprime les données (avec une promesse écrite — comme si on pouvait faire confiance à un hacker…). "
+                "L'affaire a été révélée 1 an plus tard. "
+                "<br><br><strong>Sanctions finales :</strong> 148 millions de dollars d'amende, "
+                "le RSSI (responsable de la sécurité) Joe Sullivan a été condamné pénalement à 3 ans de probation "
+                "(une première mondiale pour un cadre cybersécurité), Uber a dû créer une commission de "
+                "supervision indépendante pour 20 ans. "
+                "Tout ça à cause d'un sous-domaine GitHub interne… exposé publiquement."
             ),
             "action": (
-                "1) Placer ces sous-domaines derrière un VPN d'entreprise. "
-                "2) Si ce sont des environnements de test/dev, ne pas les exposer publiquement. "
-                "3) Audit régulier de l'inventaire des sous-domaines."
+                f"<strong>Cette semaine :</strong><br>"
+                f"1. <strong>Audit des sous-domaines suspects</strong> ({', '.join(s['sub'] for s in sensitive_subs_found[:3])}) : "
+                f"sont-ils vraiment utilisés ? Par qui ? Pour quoi ?<br>"
+                f"2. <strong>Placer ces sous-domaines derrière un VPN d'entreprise</strong>. "
+                f"Pour y accéder, il faudra d'abord se connecter au VPN. Coût technique : 1-2 jours.<br>"
+                f"3. <strong>Si ce sont des environnements de test/dev :</strong> les sortir d'internet. "
+                f"Soit on les place en VPN, soit on les supprime, soit on accepte le risque mais avec "
+                f"authentification forte minimum.<br><br>"
+                f"<strong>En continu :</strong><br>"
+                f"4. <strong>Audit mensuel</strong> de votre inventaire de sous-domaines (cette analyse "
+                f"ARGUS le fait automatiquement pour vous)."
             ),
             "other_examples": [s["sub"] for s in sensitive_subs_found[1:6]],
         })

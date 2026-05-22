@@ -147,26 +147,46 @@
         {% endif %}
       </div>
 
+      {# Analogie du quotidien #}
+      {% if f.analogy %}
+      <div style="margin-bottom:20px;">
+        <div style="font-family:var(--font-sans); font-size:13px; font-weight:700; color:var(--neon-violet); margin-bottom:8px;">🧠 Pour bien comprendre (analogie)</div>
+        <div style="background:linear-gradient(135deg, rgba(160,100,255,0.06), rgba(160,100,255,0.02)); border:1px solid rgba(160,100,255,0.18); border-left:4px solid var(--neon-violet); border-radius:8px; padding:16px 20px; font-family:var(--font-sans); font-size:14.5px; color:var(--text-secondary); line-height:1.75;">
+          {{ f.analogy | safe }}
+        </div>
+      </div>
+      {% endif %}
+
       {# Ce que ça veut dire (vulgarisé) #}
       <div style="margin-bottom:20px;">
-        <div style="font-family:var(--font-sans); font-size:13px; font-weight:700; color:var(--neon-cyan); margin-bottom:8px;">📖 Ce que ça veut dire</div>
-        <p style="font-family:var(--font-sans); font-size:14px; color:var(--text-secondary); line-height:1.7;">
+        <div style="font-family:var(--font-sans); font-size:13px; font-weight:700; color:var(--neon-cyan); margin-bottom:8px;">📖 Ce que ça veut dire concrètement</div>
+        <p style="font-family:var(--font-sans); font-size:14.5px; color:var(--text-secondary); line-height:1.75;">
           {{ f.what_it_means | safe }}
         </p>
       </div>
 
       {# Démonstration #}
       <div style="margin-bottom:20px;">
-        <div style="font-family:var(--font-sans); font-size:13px; font-weight:700; color:var(--sev-high); margin-bottom:8px;">🎯 Comment l'attaquant l'exploite (démonstration)</div>
-        <div style="background:rgba(255,140,0,0.04); border:1px solid rgba(255,140,0,0.15); border-radius:8px; padding:14px 18px; font-family:var(--font-sans); font-size:14px; color:var(--text-secondary); line-height:1.7;">
+        <div style="font-family:var(--font-sans); font-size:13px; font-weight:700; color:var(--sev-high); margin-bottom:8px;">🎯 Comment l'attaquant l'exploite (étapes)</div>
+        <div style="background:rgba(255,140,0,0.04); border:1px solid rgba(255,140,0,0.15); border-radius:8px; padding:16px 20px; font-family:var(--font-sans); font-size:14.5px; color:var(--text-secondary); line-height:1.75;">
           {{ f.demonstration | safe }}
         </div>
       </div>
 
+      {# Scénario narratif #}
+      {% if f.scenario %}
+      <div style="margin-bottom:20px;">
+        <div style="font-family:var(--font-sans); font-size:13px; font-weight:700; color:var(--sev-critical); margin-bottom:8px;">🎬 Scénario : et si ça vous arrivait ?</div>
+        <div style="background:linear-gradient(135deg, rgba(255,51,85,0.06), rgba(255,51,85,0.02)); border:1px solid rgba(255,51,85,0.2); border-left:4px solid var(--sev-critical); border-radius:8px; padding:18px 22px; font-family:var(--font-sans); font-size:14.5px; color:var(--text-secondary); line-height:1.8; font-style:italic;">
+          {{ f.scenario | safe }}
+        </div>
+      </div>
+      {% endif %}
+
       {# Cas réel #}
       <div style="margin-bottom:20px;">
-        <div style="font-family:var(--font-sans); font-size:13px; font-weight:700; color:var(--sev-critical); margin-bottom:8px;">📰 Cas réel déjà arrivé</div>
-        <div style="background:rgba(255,51,85,0.04); border:1px solid rgba(255,51,85,0.15); border-radius:8px; padding:14px 18px; font-family:var(--font-sans); font-size:14px; color:var(--text-secondary); line-height:1.7;">
+        <div style="font-family:var(--font-sans); font-size:13px; font-weight:700; color:var(--sev-critical); margin-bottom:8px;">📰 Cas réel — déjà arrivé à d'autres</div>
+        <div style="background:rgba(255,51,85,0.04); border:1px solid rgba(255,51,85,0.15); border-radius:8px; padding:16px 20px; font-family:var(--font-sans); font-size:14.5px; color:var(--text-secondary); line-height:1.75;">
           {{ f.real_case | safe }}
         </div>
       </div>
