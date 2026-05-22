@@ -60,7 +60,7 @@
       <li class="ok">Analyse de sécurité détaillée</li>
       <li class="ok">Rapport SPF / DKIM / DMARC</li>
       <li class="ok">Audit SSL/TLS complet</li>
-      <li class="ok">Export PDF + données (.txt)</li>
+      <li class="ok">Export prompt LLM (.txt) pour ChatGPT / Claude / Gemini</li>
       <li class="no">Accompagnement expert</li>
     </ul>
     {% if current_user and current_user.plan == 'essentiel' %}
@@ -125,7 +125,7 @@
           ("Audit SSL/TLS", "Basique", "Complet", "Complet"),
           ("Sécurité email (SPF/DKIM/DMARC)", "—", "✓", "✓"),
           ("Analyse des vulnérabilités", "—", "✓", "✓"),
-          ("Export PDF + données", "—", "✓", "✓"),
+          ("Export prompt LLM (.txt)", "—", "✓", "✓"),
           ("Actions correctives pas-à-pas", "—", "—", "✓"),
           ("Accompagnement par nos experts", "—", "—", "✓"),
           ("Audit infrastructure complet", "—", "—", "✓"),

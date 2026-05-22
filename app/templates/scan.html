@@ -235,38 +235,80 @@
 </section>
 {% endif %}
 
-{# === SURFACES SENSIBLES DÉTECTÉES (sous-domaines à risque) === #}
+{# ─── Macro : finding card en accordéon (collapse par défaut) ─── #}
+{% macro finding_accordion(title_html, severity, label_short, explanation, scenario, recommendation, is_enterprise) %}
+<details class="finding-accordion finding-{{ severity }}">
+  <summary>
+    <span class="finding-sev sev-{{ severity }}">{{ severity|upper }}</span>
+    <span class="finding-title">{{ title_html|safe }}</span>
+    <span class="finding-hint">— {{ label_short }}</span>
+    <span class="finding-toggle">▾</span>
+  </summary>
+  <div class="finding-body">
+    <div class="finding-block">
+      <strong class="finding-block-label">Ce qu'on a observé</strong>
+      {{ explanation }}
+    </div>
+    <div class="finding-block">
+      <strong class="finding-block-label finding-scenario-label">🎯 Scénario d'exploitation</strong>
+      {{ scenario }}
+    </div>
+    {% if is_enterprise %}
+    <div class="finding-block">
+      <strong class="finding-block-label finding-action-label">✅ Action recommandée par nos experts</strong>
+      {{ recommendation }}
+    </div>
+    {% else %}
+    <div class="finding-block finding-locked">
+      <div class="finding-locked-overlay">
+        <strong>🔒 Action recommandée + walk-through technique</strong>
+        <span>Réservé au plan Entreprise — accompagnement personnalisé par nos experts pour vérifier et corriger.</span>
+        <a href="/upgrade?plan=pro" class="finding-locked-cta">Réserver un audit gratuit →</a>
+      </div>
+      <div class="finding-locked-blur">{{ recommendation }}</div>
+    </div>
+    {% endif %}
+  </div>
+</details>
+{% endmacro %}
+
+{% set MAX_VISIBLE = 8 %}
+
+{# === SURFACES SENSIBLES DÉTECTÉES === #}
 {% if surface_findings %}
 <section class="card">
-  <h2 class="card-title">🚨 Surfaces sensibles détectées</h2>
+  <h2 class="card-title">🚨 Surfaces sensibles détectées <span style="font-size:13px; color:var(--text-dim); font-weight:500; margin-left:8px;">({{ surface_findings|length }})</span></h2>
   <p style="color:var(--text-secondary); font-size:14px; margin-bottom:18px; font-family:var(--font-sans); line-height:1.6;">
-    Ces sous-domaines ont un nom qui suggère un usage sensible (administration, environnement
-    de test, actif ancien…). Leur exposition publique est une porte d'entrée typique pour les
-    attaquants automatisés. Aucun n'est forcément compromis — mais chacun mérite une action.
+    Sous-domaines avec un nom évoquant un usage sensible (administration, ancien, dev, etc.).
+    Cliquez sur chaque finding pour voir le scénario d'attaque concret. <strong>Chacun est une porte
+    d'entrée potentielle.</strong>
   </p>
-  {% for f in surface_findings %}
-  <div style="background:var(--bg-elevated); border:1px solid {% if f.severity == 'critical' %}rgba(255,71,87,0.35){% elif f.severity == 'high' %}rgba(255,180,0,0.35){% else %}var(--border){% endif %}; border-radius:10px; padding:18px 20px; margin-bottom:14px;">
-    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-      <span class="badge sev-{{ f.severity }}" style="text-transform:uppercase; letter-spacing:1px; font-weight:700;">{{ f.severity }}</span>
-      <code style="font-family:var(--font-mono); color:var(--neon-cyan); font-size:15px; font-weight:600;">{{ f.host }}</code>
-      <span style="color:var(--text-dim); font-size:12px; font-family:var(--font-sans);">— {{ f.label_short }}</span>
-    </div>
-    <div style="font-family:var(--font-sans); font-size:14px; line-height:1.65; color:var(--text-secondary); margin-bottom:10px;">
-      <strong style="color:var(--text-primary);">Ce qu'on a observé :</strong> {{ f.explanation }}
-    </div>
-    <div style="font-family:var(--font-sans); font-size:14px; line-height:1.65; color:var(--text-secondary); margin-bottom:10px;">
-      <strong style="color:#ff9d6b;">Scénario d'exploitation :</strong> {{ f.scenario }}
-    </div>
-    <div style="font-family:var(--font-sans); font-size:14px; line-height:1.65; color:var(--text-secondary);">
-      <strong style="color:var(--neon-green);">Action recommandée :</strong> {{ f.recommendation }}
-    </div>
+  <div class="findings-list">
+    {% set ent = current_user and current_user.plan in ['pro','agency'] %}
+    {% for f in surface_findings[:MAX_VISIBLE] %}
+      {{ finding_accordion(
+        '<code class="finding-host">' ~ f.host ~ '</code>',
+        f.severity, f.label_short, f.explanation, f.scenario, f.recommendation, ent
+      ) }}
+    {% endfor %}
+    {% if surface_findings|length > MAX_VISIBLE %}
+    <details class="findings-more">
+      <summary>+ Voir les {{ surface_findings|length - MAX_VISIBLE }} autres surfaces sensibles</summary>
+      <div style="margin-top:12px;">
+        {% for f in surface_findings[MAX_VISIBLE:] %}
+          {{ finding_accordion(
+            '<code class="finding-host">' ~ f.host ~ '</code>',
+            f.severity, f.label_short, f.explanation, f.scenario, f.recommendation, ent
+          ) }}
+        {% endfor %}
+      </div>
+    </details>
+    {% endif %}
   </div>
-  {% endfor %}
   {% if locked_surface and locked_surface > 0 %}
-  <div style="background:linear-gradient(135deg, rgba(176,106,255,0.08), rgba(0,217,255,0.05)); border:1px dashed rgba(176,106,255,0.4); border-radius:10px; padding:16px 20px; text-align:center;">
-    <strong style="color:var(--neon-violet);">🔒 {{ locked_surface }} surface(s) sensible(s) supplémentaire(s)</strong>
-    détaillée(s) avec scénario d'exploitation et plan d'action.
-    <a href="/pricing" style="display:block; margin-top:8px; color:var(--neon-cyan); font-weight:600;">Débloquer avec Essentiel — 29€/mois →</a>
+  <div class="findings-locked-banner">
+    🔒 <strong>{{ locked_surface }} surface(s) supplémentaire(s)</strong> détaillée(s) pour les comptes payants.
+    <a href="/pricing">Débloquer avec Essentiel — 29€/mois →</a>
   </div>
   {% endif %}
 </section>
@@ -275,55 +317,53 @@
 {# === TECHNOLOGIES À RISQUE DÉTECTÉES === #}
 {% if tech_findings %}
 <section class="card">
-  <h2 class="card-title">🛠 Technologies à risque détectées</h2>
+  <h2 class="card-title">🛠 Technologies à risque détectées <span style="font-size:13px; color:var(--text-dim); font-weight:500; margin-left:8px;">({{ tech_findings|length }})</span></h2>
   <p style="color:var(--text-secondary); font-size:14px; margin-bottom:18px; font-family:var(--font-sans); line-height:1.6;">
-    Pour chaque technologie identifiée sur votre surface (WordPress, PHP, nginx…), un attaquant
-    peut cibler les vulnérabilités connues de la version exacte. Voici ce que cela signifie pour vous.
+    Chaque techno identifiée (avec sa version exacte) permet à un attaquant de cibler des
+    vulnérabilités connues précises. Cliquez sur un finding pour comprendre comment.
   </p>
-  {% for f in tech_findings %}
-  <div style="background:var(--bg-elevated); border:1px solid {% if f.severity == 'critical' %}rgba(255,71,87,0.35){% elif f.severity == 'high' %}rgba(255,180,0,0.35){% else %}var(--border){% endif %}; border-radius:10px; padding:18px 20px; margin-bottom:14px;">
-    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-      <span class="badge sev-{{ f.severity }}" style="text-transform:uppercase; letter-spacing:1px; font-weight:700;">{{ f.severity }}</span>
-      <code style="font-family:var(--font-mono); color:var(--neon-cyan); font-size:15px; font-weight:600;">
-        {{ f.tech }}{% if f.version %} <span style="color:var(--text-dim);">v{{ f.version }}</span>{% endif %}
-      </code>
-      {% if f.is_eol %}<span style="color:#ff6b7a; font-size:12px; font-weight:700; font-family:var(--font-sans);">⚠ FIN DE VIE</span>{% endif %}
-      <span style="color:var(--text-dim); font-size:12px; font-family:var(--font-sans);">— {{ f.label_short }}</span>
-    </div>
-    <div style="font-family:var(--font-sans); font-size:14px; line-height:1.65; color:var(--text-secondary); margin-bottom:10px;">
-      <strong style="color:var(--text-primary);">Pourquoi c'est un risque :</strong> {{ f.explanation }}
-    </div>
-    <div style="font-family:var(--font-sans); font-size:14px; line-height:1.65; color:var(--text-secondary); margin-bottom:10px;">
-      <strong style="color:#ff9d6b;">Scénario d'exploitation :</strong> {{ f.scenario }}
-    </div>
-    <div style="font-family:var(--font-sans); font-size:14px; line-height:1.65; color:var(--text-secondary);">
-      <strong style="color:var(--neon-green);">Action recommandée :</strong> {{ f.recommendation }}
-    </div>
+  <div class="findings-list">
+    {% set ent = current_user and current_user.plan in ['pro','agency'] %}
+    {% for f in tech_findings[:MAX_VISIBLE] %}
+      {% set title_html %}<code class="finding-host">{{ f.tech }}{% if f.version %} <span style="color:var(--text-dim); font-weight:400;">v{{ f.version }}</span>{% endif %}</code>{% if f.is_eol %} <span class="finding-eol">⚠ FIN DE VIE</span>{% endif %}{% endset %}
+      {{ finding_accordion(
+        title_html,
+        f.severity, f.label_short, f.explanation, f.scenario, f.recommendation, ent
+      ) }}
+    {% endfor %}
+    {% if tech_findings|length > MAX_VISIBLE %}
+    <details class="findings-more">
+      <summary>+ Voir les {{ tech_findings|length - MAX_VISIBLE }} autres technologies à risque</summary>
+      <div style="margin-top:12px;">
+        {% for f in tech_findings[MAX_VISIBLE:] %}
+          {% set title_html %}<code class="finding-host">{{ f.tech }}{% if f.version %} <span style="color:var(--text-dim); font-weight:400;">v{{ f.version }}</span>{% endif %}</code>{% if f.is_eol %} <span class="finding-eol">⚠ FIN DE VIE</span>{% endif %}{% endset %}
+          {{ finding_accordion(
+            title_html,
+            f.severity, f.label_short, f.explanation, f.scenario, f.recommendation, ent
+          ) }}
+        {% endfor %}
+      </div>
+    </details>
+    {% endif %}
   </div>
-  {% endfor %}
   {% if locked_tech and locked_tech > 0 %}
-  <div style="background:linear-gradient(135deg, rgba(176,106,255,0.08), rgba(0,217,255,0.05)); border:1px dashed rgba(176,106,255,0.4); border-radius:10px; padding:16px 20px; text-align:center;">
-    <strong style="color:var(--neon-violet);">🔒 {{ locked_tech }} technologie(s) à risque supplémentaire(s)</strong>
-    détaillée(s) avec scénario d'exploitation.
-    <a href="/pricing" style="display:block; margin-top:8px; color:var(--neon-cyan); font-weight:600;">Débloquer avec Essentiel — 29€/mois →</a>
+  <div class="findings-locked-banner">
+    🔒 <strong>{{ locked_tech }} technologie(s) supplémentaire(s)</strong> détaillée(s) pour les comptes payants.
+    <a href="/pricing">Débloquer avec Essentiel — 29€/mois →</a>
   </div>
   {% endif %}
 
-  {# Bloc d'upsell vers Entreprise : walk-through technique #}
+  {# Bloc d'upsell global vers Entreprise pour les Essentiel #}
   {% if full_access and current_user and current_user.plan == 'essentiel' %}
-  <div style="margin-top:24px; padding:20px 24px; background:linear-gradient(135deg, rgba(176,106,255,0.08), rgba(0,217,255,0.04)); border:1px solid rgba(176,106,255,0.3); border-radius:12px;">
-    <div style="font-family:var(--font-sans); font-size:13px; color:var(--neon-violet); text-transform:uppercase; letter-spacing:1.5px; font-weight:700; margin-bottom:8px;">
-      🔓 Plan Entreprise — Vérifiez vous-même chaque faille
-    </div>
-    <p style="font-family:var(--font-sans); color:var(--text-secondary); font-size:14px; line-height:1.6; margin-bottom:14px;">
-      Avec le plan Entreprise, vous obtenez pour chaque finding un <strong style="color:var(--text-primary);">walk-through technique
-      complet</strong> : outils à installer, commandes step-by-step, scénarios d'exploitation guidés, et plan
-      de remédiation détaillé. Vous testez vous-même comme un hacker — sur votre propre infrastructure.
-      Plus l'accès direct au support de nos experts.
+  <div class="upsell-enterprise">
+    <div class="upsell-enterprise-label">🔓 Plan Entreprise — Allez plus loin</div>
+    <p>
+      Sur Essentiel, vous voyez ce qu'un attaquant verrait + comment il l'exploiterait. Avec
+      <strong>Entreprise</strong>, vous obtenez en plus pour chaque finding : <strong>l'action corrective
+      détaillée</strong>, un <strong>walk-through technique</strong> (outils, commandes step-by-step),
+      et un <strong>accès direct à nos experts</strong> pour vous accompagner sur la remédiation.
     </p>
-    <a href="/upgrade?plan=pro" class="btn btn-primary" style="display:inline-block;">
-      Réserver un audit gratuit →
-    </a>
+    <a href="/upgrade?plan=pro" class="btn btn-primary">Réserver un audit gratuit →</a>
   </div>
   {% endif %}
 </section>
@@ -694,7 +734,7 @@ function copySubs() {
 {% if scan.status == "completed" %}
 <section class="card" id="export-section">
   <div class="flex-between" style="margin-bottom: 16px;">
-    <h2 class="card-title" style="border: none; padding: 0; margin: 0;">📄 Télécharger le rapport</h2>
+    <h2 class="card-title" style="border: none; padding: 0; margin: 0;">✨ Exporter — Votre format, votre IA</h2>
     {% if full_access %}
     <span style="font-size: 11px; color: var(--neon-green); letter-spacing: 1px; text-transform: uppercase;">✓ Disponible</span>
     {% else %}
@@ -702,26 +742,37 @@ function copySubs() {
     {% endif %}
   </div>
 
+  {% if full_access %}
+  <p style="font-family:var(--font-sans); color:var(--text-secondary); font-size:14px; line-height:1.65; margin-bottom:18px;">
+    Téléchargez un <strong style="color:var(--text-primary);">prompt structuré</strong> qui contient tout votre rapport :
+    contexte, findings, scénarios, vulnérabilités, sous-domaines, technos. Collez-le dans votre IA
+    préférée (<strong>ChatGPT, Claude, Gemini, Mistral…</strong>) pour générer le livrable final dans le format
+    que vous voulez : présentation PowerPoint, rapport Word, email client, post LinkedIn, plan de
+    remédiation, tickets Jira... <strong style="color:var(--neon-cyan);">Vous gardez la flexibilité totale.</strong>
+  </p>
   <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center;">
-    {% if full_access %}
-      <a href="/scan/{{ scan.id }}/export/pdf" class="btn btn-primary" style="display:inline-flex; align-items:center; gap:8px;">
-        📄 Rapport PDF complet
-      </a>
-      <a href="/scan/{{ scan.id }}/export/subs.txt" class="btn btn-secondary" style="display:inline-flex; align-items:center; gap:8px;">
-        📋 Liste des actifs (.txt)
-      </a>
-      <span class="text-dim" style="font-size: 12px;">
-        Inclut le score, les vulnérabilités, l'analyse exécutive et la liste complète des actifs.
-      </span>
-    {% else %}
-      <a href="/upgrade?plan=essentiel&from=pdf" class="btn btn-primary" style="display:inline-flex; align-items:center; gap:8px; opacity:0.95;">
-        🔓 Débloquer l'export PDF
-      </a>
-      <span class="text-dim" style="font-size: 12px;">
-        Le rapport téléchargeable est inclus dès le plan Essentiel (29€/mois).
-      </span>
-    {% endif %}
+    <a href="/scan/{{ scan.id }}/export/prompt" class="btn btn-primary" style="display:inline-flex; align-items:center; gap:8px;">
+      ✨ Générer le prompt LLM (.txt)
+    </a>
+    <a href="/scan/{{ scan.id }}/export/subs.txt" class="btn btn-secondary" style="display:inline-flex; align-items:center; gap:8px;">
+      📋 Liste des actifs (.txt)
+    </a>
   </div>
+  {% else %}
+  <p style="font-family:var(--font-sans); color:var(--text-secondary); font-size:14px; line-height:1.65; margin-bottom:18px;">
+    Téléchargez votre rapport sous forme de prompt structuré, prêt à coller dans ChatGPT, Claude
+    ou Gemini, pour générer instantanément une présentation PowerPoint, un rapport Word, un email
+    de synthèse ou tout autre format de votre choix.
+  </p>
+  <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center;">
+    <a href="/upgrade?plan=essentiel&from=prompt" class="btn btn-primary" style="display:inline-flex; align-items:center; gap:8px;">
+      🔓 Débloquer l'export prompt
+    </a>
+    <span class="text-dim" style="font-size: 12px;">
+      Inclus dès le plan Essentiel (29€/mois, sans engagement).
+    </span>
+  </div>
+  {% endif %}
 </section>
 {% endif %}
 

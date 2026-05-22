@@ -2211,39 +2211,55 @@ def export_subs(scan_id: int, request: Request, db: Session = Depends(get_db)):
     )
 
 
-@app.get("/scan/{scan_id}/export/pdf")
-def export_pdf(scan_id: int, request: Request, db: Session = Depends(get_db)):
-    """Export PDF du rapport — réservé aux plans payants (Essentiel et plus)."""
+@app.get("/scan/{scan_id}/export/prompt")
+def export_prompt(scan_id: int, request: Request, db: Session = Depends(get_db)):
+    """
+    Génère un prompt LLM téléchargeable (.txt) à partir du scan.
+    L'utilisateur le colle dans son IA préférée (ChatGPT, Claude, Gemini…)
+    pour générer le format livrable de son choix (PPT, Word, email, etc.).
+    Réservé aux plans payants.
+    """
     from fastapi.responses import Response
-    from app.pdf_report import generate_pdf
+    from app.llm_prompt_export import build_prompt
+    from app.surface_risk import analyze_surface as _analyze_surface
+    from app.tech_insights import analyze_techs as _analyze_techs
 
     user = get_current_user(request, db)
     if not can_see_full_results(user):
-        # Plan gratuit ou pas connecté : on redirige vers la page upgrade
-        return RedirectResponse(url=f"/upgrade?from=pdf&scan={scan_id}", status_code=303)
+        return RedirectResponse(url=f"/upgrade?from=prompt&scan={scan_id}", status_code=303)
 
     scan = db.query(Scan).filter(Scan.id == scan_id).first()
     if not scan:
         raise HTTPException(404, "Scan introuvable")
 
-    # Vérif propriétaire (ou admin)
     if scan.user_id and not user.is_admin and scan.user_id != user.id:
         raise HTTPException(403, "Accès non autorisé")
 
     if scan.status != "completed":
-        raise HTTPException(400, "Le scan doit être terminé pour exporter le rapport")
+        raise HTTPException(400, "Le scan doit être terminé")
 
-    # Génération PDF
-    try:
-        pdf_bytes = generate_pdf(scan, scan.assets, scan.vulns, scan.tls_findings)
-    except Exception as e:
-        raise HTTPException(500, f"Erreur de génération PDF : {e}")
+    # Recalcul des findings contextuels (mêmes qu'à l'affichage)
+    all_hostnames = list(set(
+        [scan.domain] + list(scan.discovered_subs or [])
+        + [a.host for a in scan.assets if a.host]
+    ))
+    all_techs = []
+    for a in scan.assets:
+        all_techs.extend(a.tech or [])
+    surface_findings = _analyze_surface(all_hostnames, scan.domain).get("findings", [])
+    tech_findings = _analyze_techs(all_techs).get("findings", [])
+    score_data = {"breakdown": scan.risk_breakdown} if scan.risk_breakdown else None
+
+    text = build_prompt(
+        scan, scan.assets, scan.vulns, scan.tls_findings,
+        surface_findings, tech_findings, score_data,
+    )
 
     safe_domain = scan.domain.replace("/", "_").replace("\\", "_")
-    filename = f"argus_{safe_domain}_{scan.id}.pdf"
+    filename = f"argus_prompt_{safe_domain}_{scan.id}.txt"
     return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
+        content=text,
+        media_type="text/plain; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 

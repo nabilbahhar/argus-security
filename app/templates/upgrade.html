@@ -140,7 +140,7 @@
   <div style="text-align:center; margin-bottom:40px;">
     <div class="mkt-section-label">Activation</div>
     <h1 style="font-size:clamp(28px, 4vw, 40px); font-weight:800; letter-spacing:-1.5px; margin-bottom:12px; font-family:var(--font-sans); color:var(--text-primary); line-height:1.15;">
-      {% if from_source == 'pdf' %}
+      {% if from_source in ('pdf', 'prompt') %}
       Téléchargez le rapport complet avec
       {% else %}
       Passez au plan
@@ -150,10 +150,10 @@
       </span>
     </h1>
     <p style="color:var(--text-secondary); font-size:15px; font-family:var(--font-sans); line-height:1.6;">
-      {% if from_source == 'pdf' %}
-        L'export PDF est inclus à partir du plan Essentiel.
+      {% if from_source in ('pdf', 'prompt') %}
+        L'export prompt LLM (à coller dans ChatGPT, Claude ou Gemini) est inclus à partir du plan Essentiel.
       {% else %}
-        Débloquez 100% des résultats, l'export PDF et l'audit complet de votre sécurité.
+        Débloquez 100% des résultats, l'export prompt LLM et l'audit complet de votre sécurité.
       {% endif %}
     </p>
   </div>
@@ -181,7 +181,7 @@
       {% for f in [
         '3 domaines simultanés', 'Scans illimités', '100% des résultats',
         'Audit SSL/TLS complet', 'Audit SPF/DKIM/DMARC',
-        'Export du rapport en PDF', 'Export des données (.txt)'
+        'Export prompt LLM (.txt)', 'Export des actifs (.txt)'
       ] %}
       <div style="font-size:14px; color:var(--text-secondary); font-family:var(--font-sans); display:flex; align-items:center; gap:8px;">
         <span style="color:var(--neon-cyan); font-weight:700;">✓</span> {{ f }}
