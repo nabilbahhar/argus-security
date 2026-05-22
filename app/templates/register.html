@@ -8,10 +8,16 @@
 
   {# Colonne gauche — valeur proposition #}
   <div style="display:flex; flex-direction:column; justify-content:center;">
-    <div class="mkt-badge" style="display:inline-flex; width:fit-content; margin-bottom:32px;">
+    <div class="mkt-badge" style="display:inline-flex; width:fit-content; margin-bottom:{% if referral_code %}14px{% else %}32px{% endif %};">
       <span class="mkt-badge-dot"></span>
       Experts en cybersécurité depuis 2015
     </div>
+
+    {% if referral_code %}
+    <div style="margin-bottom:24px; padding:12px 16px; background:rgba(0,255,136,0.06); border:1px solid rgba(0,255,136,0.25); border-radius:8px; font-size:13px; color:var(--text-secondary); line-height:1.5;">
+      🎁 Vous êtes invité par un parrain — code <code style="color:var(--neon-green, #00ff88); font-weight:700; font-family:var(--font-mono);">{{ referral_code }}</code>. Dès votre passage à Essentiel, il recevra 10 crédits.
+    </div>
+    {% endif %}
 
     <h1 style="font-size:clamp(28px, 3vw, 42px); font-weight:800; letter-spacing:-1.5px; line-height:1.15; margin-bottom:20px; font-family:var(--font-sans);">
       Rejoignez des centaines d'entreprises qui

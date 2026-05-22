@@ -2996,6 +2996,54 @@ body.marketing .faq-section-title {
   color: #ff8a96;
 }
 
+/* Referral — box dans /account */
+.referral-box {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.referral-code-display {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.referral-code-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  font-weight: 600;
+}
+.referral-code-value {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--neon-cyan);
+  letter-spacing: 2px;
+}
+.referral-link-display {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.referral-link-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+.referral-link-input:focus { outline: none; border-color: var(--neon-cyan); }
+
 /* CTA upgrade en vert — réutilisable partout */
 .btn-upgrade-green {
   display: inline-block;

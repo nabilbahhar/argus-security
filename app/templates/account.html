@@ -60,6 +60,51 @@
     </p>
   </section>
 
+  {# ── PARRAINAGE / REFERRAL ─────────────────────────────────────── #}
+  {% if current_user.referral_code %}
+  {% set ref_link = (request.url_for('index') | string).rstrip('/') ~ '/register?ref=' ~ current_user.referral_code %}
+  <section class="account-panel">
+    <div class="account-panel-title">
+      <h2>Programme parrainage</h2>
+      <span class="account-link" style="cursor:default;">Solde : <strong style="color:var(--neon-green, #00ff88); font-size:15px;">{{ current_user.credits or 0 }} crédits</strong></span>
+    </div>
+    <p class="account-panel-desc" style="margin-bottom:14px;">
+      Partagez votre lien à des connaissances. À chaque inscription <strong>+ activation du plan Essentiel</strong>,
+      vous gagnez <strong>10 crédits</strong>. <strong>5 crédits</strong> débloquent l'action corrective détaillée
+      d'un finding (normalement réservée au plan Entreprise).
+    </p>
+    <div class="referral-box">
+      <div class="referral-code-display">
+        <span class="referral-code-label">Votre code</span>
+        <code class="referral-code-value">{{ current_user.referral_code }}</code>
+      </div>
+      <div class="referral-link-display">
+        <input type="text" readonly value="{{ ref_link }}" id="referral-link-input" class="referral-link-input">
+        <button type="button" onclick="copyReferralLink()" class="account-link-btn" id="referral-copy-btn">📋 Copier</button>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <script>
+    function copyReferralLink() {
+      var input = document.getElementById('referral-link-input');
+      var btn = document.getElementById('referral-copy-btn');
+      if (!input || !btn) return;
+      input.select();
+      input.setSelectionRange(0, 99999);
+      try {
+        navigator.clipboard.writeText(input.value).then(function() {
+          var orig = btn.innerHTML;
+          btn.innerHTML = '✓ Copié !';
+          setTimeout(function() { btn.innerHTML = orig; }, 2000);
+        });
+      } catch (e) {
+        document.execCommand('copy');
+      }
+    }
+  </script>
+
   {# ── SÉCURITÉ ──────────────────────────────────────────────────── #}
   <section class="account-panel">
     <h2 class="account-h2-solo">Sécurité du compte</h2>

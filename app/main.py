@@ -99,6 +99,70 @@ app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET, https_only=_htt
 @app.on_event("startup")
 def _startup():
     init_db()
+    _ensure_referral_columns()
+
+
+def _ensure_referral_columns():
+    """
+    Migration légère : ajoute referral_code, referred_by_user_id, credits sur users
+    si pas déjà présents (cas DB pré-existante).
+    """
+    from sqlalchemy import text, inspect
+    from app.database import engine
+    with engine.connect() as conn:
+        inspector = inspect(conn)
+        cols = {c["name"] for c in inspector.get_columns("users")}
+        if "referral_code" not in cols:
+            conn.execute(text("ALTER TABLE users ADD COLUMN referral_code VARCHAR(16)"))
+            conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code)"))
+        if "referred_by_user_id" not in cols:
+            conn.execute(text("ALTER TABLE users ADD COLUMN referred_by_user_id INTEGER"))
+        if "credits" not in cols:
+            conn.execute(text("ALTER TABLE users ADD COLUMN credits INTEGER DEFAULT 0"))
+        conn.commit()
+    # Génère un code pour les users qui n'en ont pas
+    db = next(get_db())
+    try:
+        users_no_code = db.query(User).filter(User.referral_code.is_(None)).all()
+        for u in users_no_code:
+            u.referral_code = _generate_referral_code(db)
+        if users_no_code:
+            db.commit()
+    finally:
+        db.close()
+
+
+def _generate_referral_code(db: Session, length: int = 8) -> str:
+    """Code referral unique : 8 chars alphanumériques (sans confusion 0/O, I/l/1)."""
+    import string, random
+    alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+    for _ in range(40):
+        code = "".join(random.choices(alphabet, k=length))
+        existing = db.query(User).filter(User.referral_code == code).first()
+        if not existing:
+            return code
+    # Fallback : on rallonge si tous les codes courts sont pris
+    return _generate_referral_code(db, length=length + 2)
+
+
+# Récompenses referral — valeurs centralisées pour ajustement facile
+REFERRAL_CREDITS_REWARD = 10   # crédits gagnés par le parrain à chaque filleul converti
+REFERRAL_CREDITS_PER_UNLOCK = 5  # coût pour débloquer 1 action recommandée d'un finding
+
+
+def _credit_referrer(db: Session, filleul: "User") -> None:
+    """
+    Quand un filleul passe de free à un plan payant pour la 1ère fois,
+    crédite son parrain. Idempotent si appelé plusieurs fois sans transition free→paid.
+    """
+    if not filleul.referred_by_user_id:
+        return
+    parrain = db.query(User).filter(User.id == filleul.referred_by_user_id).first()
+    if not parrain:
+        return
+    parrain.credits = (parrain.credits or 0) + REFERRAL_CREDITS_REWARD
+    db.commit()
+    print(f"[REFERRAL] {filleul.email} a converti → {parrain.email} reçoit +{REFERRAL_CREDITS_REWARD} crédits (total: {parrain.credits})", flush=True)
 
 
 @app.get("/healthz")
@@ -633,8 +697,18 @@ def register_page(request: Request, db: Session = Depends(get_db)):
     prefill_domain = request.query_params.get("domain", "").strip()
     if prefill_domain and _is_valid_domain(_normalize_domain(prefill_domain)):
         request.session["pending_scan_domain"] = _normalize_domain(prefill_domain)
+    # Capter le code referral en query string et le mettre en session pour le réutiliser au POST
+    ref_code = (request.query_params.get("ref", "") or "").strip().upper()[:16]
+    if ref_code:
+        # Vérifie que le code existe avant de le stocker
+        parrain = db.query(User).filter(User.referral_code == ref_code).first()
+        if parrain:
+            request.session["referral_code"] = ref_code
     return templates.TemplateResponse("register.html", _ctx(request, db,
-        error=None, prefill_domain=request.session.get("pending_scan_domain", "")))
+        error=None,
+        prefill_domain=request.session.get("pending_scan_domain", ""),
+        referral_code=request.session.get("referral_code", ""),
+    ))
 
 
 @app.post("/register", response_class=HTMLResponse)
@@ -692,6 +766,14 @@ def register_post(
         return _err("Un compte existe déjà avec cet email. Connectez-vous plutôt.")
 
     # 4. Création
+    # Résolution du parrain éventuel (via session capturée à l'arrivée sur /register?ref=XXX)
+    referred_by_id = None
+    ref_code_session = request.session.pop("referral_code", "")
+    if ref_code_session:
+        parrain = db.query(User).filter(User.referral_code == ref_code_session).first()
+        if parrain:
+            referred_by_id = parrain.id
+
     user = User(
         email=email,
         password_hash=hash_password(password),
@@ -702,6 +784,8 @@ def register_post(
         tos_accepted=True,
         tos_accepted_at=datetime.utcnow(),
         is_admin=(email == ADMIN_EMAIL),
+        referral_code=_generate_referral_code(db),
+        referred_by_user_id=referred_by_id,
     )
     db.add(user)
     db.commit()
@@ -2467,9 +2551,12 @@ def billing_success(request: Request, db: Session = Depends(get_db)):
             stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
             sess = stripe.checkout.Session.retrieve(session_id)
             if sess.payment_status == "paid" and sess.subscription:
+                was_free = user.plan == "free"
                 user.plan = plan
                 user.stripe_subscription_id = sess.subscription
                 db.commit()
+                if was_free and user.referred_by_user_id:
+                    _credit_referrer(db, user)
         except Exception as e:
             print(f"[STRIPE SUCCESS CHECK ERROR] {e}", flush=True)
 
@@ -2513,10 +2600,14 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
             if user_id:
                 user = db.query(User).filter(User.id == int(user_id)).first()
                 if user:
+                    # Premier upgrade payant ? → crédite le parrain s'il existe
+                    was_free = user.plan == "free"
                     user.plan = plan
                     user.stripe_subscription_id = subscription_id
                     db.commit()
                     print(f"[STRIPE] user {user.email} activé sur plan {plan}", flush=True)
+                    if was_free and user.referred_by_user_id:
+                        _credit_referrer(db, user)
 
         # customer.subscription.deleted → retour au plan free
         elif event_type == "customer.subscription.deleted":

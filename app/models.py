@@ -53,6 +53,11 @@ class User(Base):
     stripe_customer_id = Column(String(80), nullable=True)
     stripe_subscription_id = Column(String(80), nullable=True)
 
+    # Referral : chaque user a un code unique partageable + peut être parrainé
+    referral_code = Column(String(16), unique=True, nullable=True, index=True)
+    referred_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    credits = Column(Integer, default=0)  # crédits gagnés par referral
+
     # Admin
     is_admin = Column(Boolean, default=False)
 
