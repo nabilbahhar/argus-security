@@ -71,7 +71,7 @@ def _wrap_html(title: str, body_html: str, cta_label: str = "", cta_url: str = "
               <line x1="82" y1="50" x2="96" y2="50" stroke="#00d9ff" stroke-width="3" stroke-linecap="round"/>
             </svg>ARGUS
           </div>
-          <div style="font-size:11px;color:#8b9cad;text-transform:uppercase;letter-spacing:1.5px;margin-top:2px;">Security by Exasys</div>
+          <div style="font-size:11px;color:#8b9cad;text-transform:uppercase;letter-spacing:1.5px;margin-top:2px;">Attack Surface Recon</div>
         </td></tr>
         <!-- Body -->
         <tr><td style="padding:36px 32px;">
@@ -81,7 +81,7 @@ def _wrap_html(title: str, body_html: str, cta_label: str = "", cta_url: str = "
         </td></tr>
         <!-- Footer -->
         <tr><td style="background:#fafbfc;padding:20px 32px;border-top:1px solid #e8eaed;font-size:12px;color:#8b9cad;text-align:center;">
-          ARGUS by Exasys · Experts en cybersécurité depuis 2015<br>
+          ARGUS Security · Experts en cybersécurité depuis 2015<br>
           Données chiffrées · Jamais revendues
         </td></tr>
       </table>
@@ -292,7 +292,7 @@ def send_sales_autoreply_email(to: str, name: str) -> bool:
     <p>Merci d'avoir réservé un <strong>audit gratuit</strong> dans le cadre du plan
     <strong>Entreprise</strong> d'ARGUS Security.</p>
 
-    <p>Nos experts Exasys étudient votre contexte et reviendront vers vous sous
+    <p>Nos experts ARGUS étudient votre contexte et reviendront vers vous sous
     <strong>24h ouvrées</strong> pour planifier l'audit et préparer un partenariat
     adapté à votre infrastructure.</p>
 
@@ -304,7 +304,7 @@ def send_sales_autoreply_email(to: str, name: str) -> bool:
     </ul>
 
     <p style="margin-top:24px;color:#666;font-size:13px;">
-      À très vite,<br>L'équipe Exasys
+      À très vite,<br>L'équipe ARGUS
     </p>
     """
     html = _wrap_html(title, body)

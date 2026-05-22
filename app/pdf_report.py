@@ -161,7 +161,7 @@ class ArgusReport(FPDF):
         # Texte footer
         self.set_font("dv", "I", 8)
         self.set_text_color(*COL_TEXT_DIM)
-        self.cell(90, 4, "ARGUS by Exasys · Document confidentiel")
+        self.cell(90, 4, "ARGUS Security · Document confidentiel")
         self.cell(90, 4, f"Page {self.page_no()}/{{nb}}", align="R")
 
     # ── Primitives ─────────────────────────────────────────────
