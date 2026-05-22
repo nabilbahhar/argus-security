@@ -1,192 +1,279 @@
 {% extends "base.html" %}
 {% set active = "history" %}
 {% block body_class %}marketing{% endblock %}
-{% block title %}Mes scans · ARGUS Security{% endblock %}
+{% block title %}Dashboard · ARGUS Security{% endblock %}
 
 {% block content %}
-<div class="dashboard-container">
+<div class="dash-wrap">
 
-  {# ── HEADER ───────────────────────────────────────────────────── #}
-  <header class="dashboard-header">
+  {# ── HEADER : titre + actions ─────────────────────────────── #}
+  <header class="dash-top">
     <div>
-      <h1>Tableau de bord</h1>
-      <p>Vue d'ensemble de votre activité de reconnaissance.</p>
+      <div class="dash-eyebrow">› RECONNAISSANCE · TABLEAU DE BORD</div>
+      <h1 class="dash-h1">Surveillance de surface</h1>
+      <p class="dash-sub">Vue d'ensemble de votre exposition externe. Données calculées à partir de {{ completed_count or 0 }} scan{{ 's' if (completed_count or 0) > 1 }} terminé{{ 's' if (completed_count or 0) > 1 }}.</p>
     </div>
-    <a href="/" class="btn-upgrade-green" style="background:var(--neon-cyan); color:#0a0e1a;">+ Nouveau scan</a>
+    <div class="dash-actions">
+      <a href="/" class="dash-btn-cyan">＋ Nouveau scan</a>
+    </div>
   </header>
 
   {% if not scans %}
 
-  {# ── ÉTAT VIDE ───────────────────────────────────────────────── #}
-  <div class="dashboard-empty">
-    <div class="dashboard-empty-icon">🔍</div>
-    <h2>Aucun scan pour le moment</h2>
-    <p>Entrez un nom de domaine pour découvrir vos actifs web exposés en 60 secondes.</p>
-    <a href="/" class="btn-upgrade-green" style="background:var(--neon-cyan); color:#0a0e1a;">Lancer mon premier scan →</a>
+  <div class="dash-empty">
+    <div class="dash-empty-eye">◉</div>
+    <h2>Aucun scan dans votre périmètre</h2>
+    <p>Initiez votre première reconnaissance pour cartographier votre surface d'attaque externe.</p>
+    <a href="/" class="dash-btn-cyan">Lancer un scan →</a>
   </div>
 
   {% else %}
 
-  {# ── KPI CARDS ───────────────────────────────────────────────── #}
-  <div class="dashboard-kpis">
-    <div class="kpi-card">
-      <div class="kpi-label">Scans totaux</div>
-      <div class="kpi-value">{{ total_scans }}</div>
-      <div class="kpi-sub">{{ completed_count }} terminé{{ 's' if completed_count > 1 }} · {{ unique_domains }} domaine{{ 's' if unique_domains > 1 }}</div>
-    </div>
-
-    {% if avg_score is not none %}
-    <div class="kpi-card">
-      <div class="kpi-label">Score moyen</div>
-      <div class="kpi-value">{{ avg_score|int }}<span class="kpi-unit">/100</span></div>
-      <div class="kpi-sub">
-        {% if avg_score >= 90 %}Posture exemplaire
-        {% elif avg_score >= 75 %}Correct, points à corriger
-        {% elif avg_score >= 60 %}Action recommandée
-        {% elif avg_score >= 40 %}Action urgente
-        {% else %}Critique
-        {% endif %}
-      </div>
-    </div>
-    {% endif %}
-
-    <div class="kpi-card">
-      <div class="kpi-label">Findings critiques</div>
-      <div class="kpi-value kpi-{% if total_critical > 0 %}red{% else %}muted{% endif %}">{{ total_critical }}</div>
-      <div class="kpi-sub">P1 + vulns activement exploitées</div>
-    </div>
-
-    <div class="kpi-card">
-      <div class="kpi-label">Findings élevés</div>
-      <div class="kpi-value kpi-{% if total_high > 0 %}orange{% else %}muted{% endif %}">{{ total_high }}</div>
-      <div class="kpi-sub">Sévérité haute (P2)</div>
-    </div>
-
-    {% if last_scan %}
-    <div class="kpi-card">
-      <div class="kpi-label">Dernier scan</div>
-      <div class="kpi-value kpi-small">{{ last_scan.started_at.strftime('%d/%m') }}</div>
-      <div class="kpi-sub">
-        <a href="/scan/{{ last_scan.id }}" style="color:var(--neon-cyan); text-decoration:none;">{{ last_scan.domain[:24] }}{% if last_scan.domain|length > 24 %}…{% endif %} →</a>
-      </div>
-    </div>
-    {% endif %}
-  </div>
-
-  {# ── DISTRIBUTION DES GRADES (mini-graph) ─────────────────────── #}
-  {% if completed_count > 0 %}
-  <section class="dashboard-panel">
-    <h2 class="dashboard-panel-title">Distribution des grades</h2>
-    <div class="grade-bars">
-      {% for grade in ['A', 'B', 'C', 'D', 'F'] %}
-      {% set count = grade_dist[grade] %}
-      {% set pct = (count / completed_count * 100) if completed_count > 0 else 0 %}
-      <div class="grade-bar">
-        <div class="grade-bar-label">
-          <span class="grade-letter grade-{{ grade|lower }}">{{ grade }}</span>
-          <span class="grade-count">{{ count }}</span>
+  {# ── KPI CARDS (6 cards) ─────────────────────────────────── #}
+  <section class="dash-kpis">
+    {# Scans totaux #}
+    <article class="kpic" data-accent="cyan">
+      <div class="kpic-topbar"></div>
+      <div class="kpic-body">
+        <div class="kpic-head">
+          <div class="kpic-icon kpic-icon-cyan">◎</div>
+          <span class="kpic-badge kpic-badge-muted">{{ unique_domains }} dom.</span>
         </div>
-        <div class="grade-bar-track">
-          <div class="grade-bar-fill grade-{{ grade|lower }}" style="width:{{ pct }}%;"></div>
-        </div>
+        <div class="kpic-value">{{ total_scans }}</div>
+        <div class="kpic-label">Scans lancés</div>
+        <div class="kpic-sub">{{ completed_count }} terminé{{ 's' if completed_count > 1 }} · {{ total_scans - completed_count }} en cours/échec</div>
       </div>
-      {% endfor %}
-    </div>
-  </section>
-  {% endif %}
+    </article>
 
-  {# ── TOP DOMAINES (si plusieurs scans du même) ─────────────────── #}
-  {% if top_domains|length > 1 and total_scans > top_domains|length %}
-  <section class="dashboard-panel">
-    <h2 class="dashboard-panel-title">Domaines les plus scannés</h2>
-    <ul class="top-domains-list">
-      {% for dom, n in top_domains %}
-      <li>
-        <span class="top-domain-name">{{ dom }}</span>
-        <span class="top-domain-count">{{ n }} scan{{ 's' if n > 1 }}</span>
-      </li>
-      {% endfor %}
-    </ul>
-  </section>
-  {% endif %}
-
-  {# ── LISTE DES SCANS ─────────────────────────────────────────── #}
-  <section class="dashboard-panel">
-    <h2 class="dashboard-panel-title">Tous mes scans <span class="dashboard-panel-count">({{ total_scans }})</span></h2>
-    <div class="scans-table">
-      {% for s in scans %}
-      <a href="/scan/{{ s.id }}" class="scan-row scan-row-link">
-        {# Grade circle #}
-        {% if s.status == 'completed' and s.risk_grade %}
-          {% set grade_class = 'a' if s.risk_grade == 'A' else 'b' if s.risk_grade == 'B' else 'c' if s.risk_grade == 'C' else 'd' if s.risk_grade == 'D' else 'f' %}
-          <div class="scan-grade grade-{{ grade_class }}">{{ s.risk_grade }}</div>
-        {% elif s.status == 'running' %}
-          <div class="scan-grade scan-grade-spinning"><span class="scan-spinner"></span></div>
-        {% else %}
-          <div class="scan-grade scan-grade-muted">—</div>
-        {% endif %}
-
-        {# Domaine + date #}
-        <div class="scan-info">
-          <div class="scan-domain">{{ s.domain }}</div>
-          <div class="scan-meta">
-            {{ s.started_at.strftime("%d %b %Y · %H:%M") }}
-            {% if s.completed_at %}
-              {% set delta = (s.completed_at - s.started_at).total_seconds() | int %}
-              · en {% if delta < 60 %}{{ delta }}s{% else %}{{ (delta // 60) }}min {{ (delta % 60) }}s{% endif %}
-            {% elif s.status == 'running' %}
-              · en cours
-            {% endif %}
-          </div>
-        </div>
-
-        {# Mini stats #}
-        <div class="scan-stats">
-          <div class="scan-stat">
-            <span class="scan-stat-v">{{ s.alive_count or 0 }}</span>
-            <span class="scan-stat-l">actifs</span>
-          </div>
-          <div class="scan-stat">
-            <span class="scan-stat-v scan-stat-{% if s.critical_count or s.kev_count %}red{% elif s.high_count %}orange{% else %}muted{% endif %}">
-              {{ (s.critical_count or 0) + (s.kev_count or 0) + (s.high_count or 0) }}
-            </span>
-            <span class="scan-stat-l">findings</span>
-          </div>
-          {% if s.risk_score is not none and s.status == 'completed' %}
-          <div class="scan-stat">
-            <span class="scan-stat-v">{{ s.risk_score }}</span>
-            <span class="scan-stat-l">/100</span>
-          </div>
+    {# Score moyen #}
+    {% set avg_color = 'green' if (avg_score or 0) >= 75 else 'yellow' if (avg_score or 0) >= 60 else 'orange' if (avg_score or 0) >= 40 else 'red' %}
+    <article class="kpic" data-accent="{{ avg_color }}">
+      <div class="kpic-topbar"></div>
+      <div class="kpic-body">
+        <div class="kpic-head">
+          <div class="kpic-icon kpic-icon-{{ avg_color }}">⊕</div>
+          {% if avg_score is not none %}
+          <span class="kpic-badge kpic-badge-{{ avg_color }}">
+            {% if avg_score >= 90 %}A{% elif avg_score >= 75 %}B{% elif avg_score >= 60 %}C{% elif avg_score >= 40 %}D{% else %}F{% endif %}
+          </span>
           {% endif %}
         </div>
+        <div class="kpic-value">{% if avg_score is not none %}{{ avg_score|int }}<span class="kpic-unit">/100</span>{% else %}—{% endif %}</div>
+        <div class="kpic-label">Score de risque moyen</div>
+        <div class="kpic-sub">
+          {% if avg_score is none %}Pas encore de scan terminé
+          {% elif avg_score >= 90 %}Posture exemplaire
+          {% elif avg_score >= 75 %}Correct, points à durcir
+          {% elif avg_score >= 60 %}Action recommandée
+          {% elif avg_score >= 40 %}Action urgente
+          {% else %}Critique
+          {% endif %}
+        </div>
+      </div>
+    </article>
 
-        {# Action delete (séparée du lien parent) #}
-        <form action="/scan/{{ s.id }}/delete" method="post" class="scan-delete-form"
-              onsubmit="event.stopPropagation(); return confirm('Supprimer le scan de {{ s.domain }} ?')">
-          <button type="submit" class="scan-delete-btn" title="Supprimer" onclick="event.stopPropagation();">✕</button>
-        </form>
-      </a>
-      {% endfor %}
-    </div>
+    {# Findings critiques (P1 + KEV) #}
+    <article class="kpic" data-accent="{% if total_critical > 0 %}red{% else %}muted{% endif %}">
+      <div class="kpic-topbar"></div>
+      <div class="kpic-body">
+        <div class="kpic-head">
+          <div class="kpic-icon kpic-icon-{% if total_critical > 0 %}red{% else %}muted{% endif %}">▲</div>
+          {% if total_critical > 0 %}<span class="kpic-badge kpic-badge-red">ACTION</span>{% endif %}
+        </div>
+        <div class="kpic-value kpic-{% if total_critical > 0 %}red{% else %}muted{% endif %}">{{ total_critical }}</div>
+        <div class="kpic-label">Findings critiques (P1)</div>
+        <div class="kpic-sub">CVE actives (KEV) + sévérité critique</div>
+      </div>
+    </article>
+
+    {# Findings élevés (P2) #}
+    <article class="kpic" data-accent="{% if total_high > 0 %}orange{% else %}muted{% endif %}">
+      <div class="kpic-topbar"></div>
+      <div class="kpic-body">
+        <div class="kpic-head">
+          <div class="kpic-icon kpic-icon-{% if total_high > 0 %}orange{% else %}muted{% endif %}">▼</div>
+        </div>
+        <div class="kpic-value kpic-{% if total_high > 0 %}orange{% else %}muted{% endif %}">{{ total_high }}</div>
+        <div class="kpic-label">Findings élevés (P2)</div>
+        <div class="kpic-sub">Sévérité haute à corriger</div>
+      </div>
+    </article>
+
+    {# Domaines uniques #}
+    <article class="kpic" data-accent="violet">
+      <div class="kpic-topbar"></div>
+      <div class="kpic-body">
+        <div class="kpic-head">
+          <div class="kpic-icon kpic-icon-violet">⬡</div>
+        </div>
+        <div class="kpic-value">{{ unique_domains }}</div>
+        <div class="kpic-label">Domaines surveillés</div>
+        <div class="kpic-sub">Périmètre de votre surveillance</div>
+      </div>
+    </article>
+
+    {# Dernier scan #}
+    {% if last_scan %}
+    <article class="kpic" data-accent="cyan">
+      <div class="kpic-topbar"></div>
+      <div class="kpic-body">
+        <div class="kpic-head">
+          <div class="kpic-icon kpic-icon-cyan">⟳</div>
+          <span class="kpic-badge kpic-badge-muted">{{ last_scan.started_at.strftime('%d/%m') }}</span>
+        </div>
+        <div class="kpic-value kpic-small">{{ last_scan.domain[:18] }}{% if last_scan.domain|length > 18 %}…{% endif %}</div>
+        <div class="kpic-label">Dernier scan</div>
+        <div class="kpic-sub"><a href="/scan/{{ last_scan.id }}" class="dash-inline-link">Voir le rapport →</a></div>
+      </div>
+    </article>
+    {% endif %}
   </section>
 
-  {# ── PAYWALL FREE ──────────────────────────────────────────── #}
+  {# ── PANELS GRID : Distribution + Top domaines ──────────── #}
+  {% if completed_count > 0 %}
+  <section class="dash-grid">
+
+    {# Panel : Distribution des grades #}
+    <article class="dash-panel">
+      <header class="dash-panel-head">
+        <span class="dash-panel-bar"></span>
+        <div>
+          <div class="dash-panel-title">Distribution des grades</div>
+          <div class="dash-panel-sub">Répartition de vos {{ completed_count }} scans terminés</div>
+        </div>
+      </header>
+      <div class="dash-panel-body">
+        <div class="dash-grade-rows">
+          {% for grade in ['A', 'B', 'C', 'D', 'F'] %}
+          {% set count = grade_dist[grade] %}
+          {% set pct = (count / completed_count * 100) if completed_count > 0 else 0 %}
+          <div class="dash-grade-row">
+            <span class="dash-grade-letter dash-grade-{{ grade|lower }}">{{ grade }}</span>
+            <div class="dash-grade-track">
+              <div class="dash-grade-fill dash-grade-fill-{{ grade|lower }}" style="width:{{ pct }}%;"></div>
+            </div>
+            <span class="dash-grade-val">{{ count }}</span>
+            <span class="dash-grade-pct">{{ pct|int }}%</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </article>
+
+    {# Panel : Top domaines #}
+    {% if top_domains|length > 0 %}
+    <article class="dash-panel">
+      <header class="dash-panel-head">
+        <span class="dash-panel-bar"></span>
+        <div>
+          <div class="dash-panel-title">Domaines les plus scannés</div>
+          <div class="dash-panel-sub">{{ unique_domains }} domaine{{ 's' if unique_domains > 1 }} surveillé{{ 's' if unique_domains > 1 }}</div>
+        </div>
+      </header>
+      <div class="dash-panel-body">
+        <ul class="dash-top-list">
+          {% for dom, n in top_domains %}
+          <li>
+            <code class="dash-top-name">{{ dom }}</code>
+            <span class="dash-top-count">{{ n }} scan{{ 's' if n > 1 }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </article>
+    {% endif %}
+
+  </section>
+  {% endif %}
+
+  {# ── PANEL : Tous les scans (liste dense) ──────────────── #}
+  <article class="dash-panel">
+    <header class="dash-panel-head">
+      <span class="dash-panel-bar"></span>
+      <div>
+        <div class="dash-panel-title">Historique des rapports <span class="dash-panel-count">({{ total_scans }})</span></div>
+        <div class="dash-panel-sub">Cliquez sur un scan pour voir le rapport complet</div>
+      </div>
+    </header>
+    <div class="dash-panel-body dash-panel-body-flush">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th class="dash-th-grade">Grade</th>
+            <th>Domaine</th>
+            <th class="dash-th-num">Actifs</th>
+            <th class="dash-th-num">Findings</th>
+            <th class="dash-th-num">Score</th>
+            <th>Date</th>
+            <th class="dash-th-act"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in scans %}
+          <tr class="dash-row" onclick="location.href='/scan/{{ s.id }}'">
+            <td>
+              {% if s.status == 'completed' and s.risk_grade %}
+                {% set gc = s.risk_grade|lower %}
+                <span class="dash-grade-mini dash-grade-{{ gc }}">{{ s.risk_grade }}</span>
+              {% elif s.status == 'running' %}
+                <span class="dash-grade-mini dash-grade-spin"><span class="dash-spinner"></span></span>
+              {% else %}
+                <span class="dash-grade-mini dash-grade-muted">—</span>
+              {% endif %}
+            </td>
+            <td><code class="dash-cell-domain">{{ s.domain }}</code></td>
+            <td class="dash-td-num">{{ s.alive_count or 0 }}<span class="dash-td-unit">/{{ s.assets_count or 0 }}</span></td>
+            <td class="dash-td-num">
+              {% set crit = (s.critical_count or 0) + (s.kev_count or 0) %}
+              {% set hi = s.high_count or 0 %}
+              {% if crit + hi > 0 %}
+                <span class="dash-td-{% if crit %}red{% else %}orange{% endif %}">{{ crit + hi }}</span>
+              {% else %}
+                <span class="dash-td-muted">0</span>
+              {% endif %}
+            </td>
+            <td class="dash-td-num">
+              {% if s.risk_score is not none and s.status == 'completed' %}
+                {{ s.risk_score }}<span class="dash-td-unit">/100</span>
+              {% else %}<span class="dash-td-muted">—</span>{% endif %}
+            </td>
+            <td class="dash-td-date">{{ s.started_at.strftime("%d %b · %H:%M") }}</td>
+            <td class="dash-td-act">
+              <form action="/scan/{{ s.id }}/delete" method="post" onclick="event.stopPropagation();"
+                    onsubmit="return confirm('Supprimer le scan de {{ s.domain }} ?')">
+                <button type="submit" class="dash-del-btn" title="Supprimer">✕</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  {# ── UPSELL EN BAS ──────────────────────────────────────── #}
   {% if current_user.plan == 'free' %}
-  <div class="dashboard-upsell">
-    <div>
-      <strong>Vous voyez 20% des résultats sur chaque rapport.</strong>
-      <span>Passez à Essentiel pour débloquer 100% des résultats + l'export prompt LLM.</span>
+  <article class="dash-upsell">
+    <div class="dash-upsell-body">
+      <div class="dash-upsell-icon">🔒</div>
+      <div>
+        <strong>Vous voyez 20% des résultats sur chaque rapport.</strong>
+        <span>Débloquez 100% des résultats, l'export prompt LLM et le scoring complet avec le plan Essentiel.</span>
+      </div>
     </div>
-    <a href="/upgrade?plan=essentiel" class="btn-upgrade-green">Activer Essentiel — 29€/mois →</a>
-  </div>
+    <a href="/upgrade?plan=essentiel" class="dash-btn-green">Activer Essentiel — 29€/mois →</a>
+  </article>
   {% elif current_user.plan == 'essentiel' %}
-  <div class="dashboard-upsell">
-    <div>
-      <strong>Allez plus loin avec le plan Entreprise.</strong>
-      <span>Action corrective détaillée pour chaque finding + walk-through technique + accès à nos experts.</span>
+  <article class="dash-upsell">
+    <div class="dash-upsell-body">
+      <div class="dash-upsell-icon">⚡</div>
+      <div>
+        <strong>Allez plus loin avec le plan Entreprise.</strong>
+        <span>Actions correctives détaillées, walk-through technique par finding, accompagnement par nos experts.</span>
+      </div>
     </div>
-    <a href="/upgrade?plan=pro" class="btn-upgrade-green">Réserver un audit gratuit →</a>
-  </div>
+    <a href="/upgrade?plan=pro" class="dash-btn-green">Réserver un audit gratuit →</a>
+  </article>
   {% endif %}
 
   {% endif %}

@@ -4,11 +4,12 @@
 {% block title %}Paramètres — ARGUS Security{% endblock %}
 
 {% block content %}
-<div class="settings-container">
-  <div class="settings-header">
+<div class="account-container">
+
+  <header class="account-header">
     <h1>Paramètres</h1>
     <p>Gérez votre profil, votre sécurité et vos préférences.</p>
-  </div>
+  </header>
 
   {% if success %}
   <div class="settings-success">✓ {{ success }}</div>
@@ -17,151 +18,135 @@
   <div class="settings-error">⚠ {{ error }}</div>
   {% endif %}
 
-  {# ──────────────────────────────────────────────────────────────────
-     1. PROFIL — Photo + nom + entreprise + WhatsApp
-  ──────────────────────────────────────────────────────────────────── #}
-  <div class="settings-panel" id="profile">
-    <h2>Profil</h2>
-    <p class="panel-desc">Vos informations publiques visibles dans votre espace ARGUS.</p>
+  {# ── PROFIL ────────────────────────────────────────────────── #}
+  <section class="account-panel" id="profile">
+    <div class="account-panel-title">
+      <h2>Profil</h2>
+    </div>
+    <p class="account-panel-desc" style="margin-bottom:20px;">Vos informations visibles dans votre espace ARGUS.</p>
 
-    {# Avatar editor #}
-    <div class="avatar-edit-container">
-      <div class="avatar-edit-preview" id="avatar-preview">
+    {# Avatar editor — design dense #}
+    <div class="settings-avatar-row">
+      <div class="settings-avatar-preview" id="avatar-preview">
         {% if current_user.avatar_url %}
           <img src="{{ current_user.avatar_url }}" alt="Avatar" id="avatar-current-img">
         {% else %}
           <span id="avatar-initials">{{ ((current_user.name or current_user.email)[0]) | upper }}</span>
         {% endif %}
       </div>
-      <div class="avatar-edit-actions">
+      <div class="settings-avatar-actions">
         <input type="file" id="avatar-file-input" accept="image/png,image/jpeg,image/webp" style="display:none;">
-        <button type="button" class="avatar-upload-btn" id="avatar-upload-btn">
-          📷 Changer la photo
-        </button>
+        <button type="button" class="account-link-btn" id="avatar-upload-btn">📷 Changer la photo</button>
         {% if current_user.avatar_url %}
         <form action="/settings/avatar/remove" method="post" style="margin:0;">
-          <button type="submit" class="avatar-upload-btn" style="background:transparent;color:var(--sev-critical);border-color:rgba(255,51,85,0.3);">
-            ✕ Supprimer
-          </button>
+          <button type="submit" class="account-link-btn account-link-danger">✕ Supprimer</button>
         </form>
         {% endif %}
-        <span class="avatar-upload-hint">JPG/PNG, max 5 MB · sera recadrée en cercle</span>
+        <span style="font-size:12px; color:var(--text-dim);">JPG/PNG, max 5 MB · recadrage circulaire</span>
       </div>
     </div>
 
-    {# Form profil #}
-    <form action="/settings/profile" method="post">
-      <div class="settings-form-group">
-        <label class="settings-input-label" for="set-name">Nom complet</label>
-        <input id="set-name" type="text" name="name" class="settings-input"
-               value="{{ current_user.name or '' }}" required minlength="2">
+    <form action="/settings/profile" method="post" class="settings-form">
+      <div class="settings-row">
+        <label for="set-name">Nom complet</label>
+        <input id="set-name" type="text" name="name" value="{{ current_user.name or '' }}" required minlength="2">
       </div>
 
-      <div class="settings-form-group">
-        <label class="settings-input-label" for="set-email">Adresse email</label>
-        <input id="set-email" type="email" class="settings-input"
-               value="{{ current_user.email }}" disabled>
-        <div class="settings-form-hint">L'adresse email ne peut pas être modifiée. Pour en changer, contactez-nous.</div>
+      <div class="settings-row">
+        <label for="set-email">Adresse email</label>
+        <input id="set-email" type="email" value="{{ current_user.email }}" disabled>
+        <div class="settings-hint">Pour changer d'email, contactez-nous.</div>
       </div>
 
-      <div class="settings-form-group">
-        <label class="settings-input-label" for="set-company">Entreprise</label>
-        <input id="set-company" type="text" name="company" class="settings-input"
-               value="{{ current_user.company or '' }}" placeholder="Ma Société SAS">
+      <div class="settings-row">
+        <label for="set-company">Entreprise</label>
+        <input id="set-company" type="text" name="company" value="{{ current_user.company or '' }}" placeholder="Ma Société SAS">
       </div>
 
-      <div class="settings-form-group">
-        <label class="settings-input-label" for="set-phone">Numéro WhatsApp</label>
-        <input id="set-phone" type="tel" name="phone_whatsapp" class="settings-input"
-               value="{{ current_user.phone_whatsapp or '' }}"
+      <div class="settings-row">
+        <label for="set-phone">Numéro WhatsApp</label>
+        <input id="set-phone" type="tel" name="phone_whatsapp" value="{{ current_user.phone_whatsapp or '' }}"
                placeholder="+33612345678 ou +212661234567"
                pattern="^\+[1-9][0-9\s\-]{7,18}$">
-        <div class="settings-form-hint">Format international : commence par + suivi de l'indicatif pays.</div>
+        <div class="settings-hint">Format international (+ indicatif).</div>
       </div>
 
-      <div class="settings-form-group">
-        <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-family:var(--font-sans); font-size:13px; color:var(--text-secondary);">
+      <div class="settings-row">
+        <label class="settings-check">
           <input type="checkbox" name="whatsapp_opt_in" value="true" id="set-wa-opt"
-                 {% if current_user.whatsapp_opt_in %}checked{% endif %}
-                 style="width:16px;height:16px;accent-color:var(--neon-cyan);">
+                 {% if current_user.whatsapp_opt_in %}checked{% endif %}>
           Recevoir mes résultats de scan par WhatsApp
         </label>
       </div>
 
-      <button type="submit" class="settings-save-btn">Enregistrer le profil</button>
+      <button type="submit" class="dash-btn-cyan" style="margin-top:6px;">Enregistrer le profil</button>
     </form>
-  </div>
+  </section>
 
-  {# ──────────────────────────────────────────────────────────────────
-     2. SÉCURITÉ — Mot de passe
-  ──────────────────────────────────────────────────────────────────── #}
-  <div class="settings-panel" id="security">
-    <h2>Sécurité</h2>
-    <p class="panel-desc">Modifiez votre mot de passe régulièrement pour garder votre compte sûr.</p>
+  {# ── SÉCURITÉ — Mot de passe ──────────────────────────────── #}
+  <section class="account-panel" id="security">
+    <div class="account-panel-title">
+      <h2>Sécurité — Mot de passe</h2>
+    </div>
+    <p class="account-panel-desc" style="margin-bottom:20px;">Modifiez votre mot de passe régulièrement.</p>
 
-    <form action="/settings/password" method="post">
-      <div class="settings-form-group">
-        <label class="settings-input-label" for="pw-current">Mot de passe actuel</label>
-        <input id="pw-current" type="password" name="current_password" class="settings-input" required>
+    <form action="/settings/password" method="post" class="settings-form">
+      <div class="settings-row">
+        <label for="pw-current">Mot de passe actuel</label>
+        <input id="pw-current" type="password" name="current_password" required>
       </div>
 
-      <div class="settings-form-group">
-        <label class="settings-input-label" for="pw-new">Nouveau mot de passe</label>
-        <input id="pw-new" type="password" name="new_password" class="settings-input" required minlength="8">
-        <div class="settings-form-hint">Au moins 8 caractères. Mélangez lettres, chiffres et symboles pour plus de sécurité.</div>
+      <div class="settings-row">
+        <label for="pw-new">Nouveau mot de passe</label>
+        <input id="pw-new" type="password" name="new_password" required minlength="8">
+        <div class="settings-hint">Au moins 8 caractères. Mélangez lettres, chiffres et symboles.</div>
       </div>
 
-      <div class="settings-form-group">
-        <label class="settings-input-label" for="pw-new-confirm">Confirmation du nouveau mot de passe</label>
-        <input id="pw-new-confirm" type="password" name="new_password_confirm" class="settings-input" required minlength="8">
+      <div class="settings-row">
+        <label for="pw-new-confirm">Confirmation du nouveau mot de passe</label>
+        <input id="pw-new-confirm" type="password" name="new_password_confirm" required minlength="8">
       </div>
 
-      <button type="submit" class="settings-save-btn">Changer le mot de passe</button>
+      <button type="submit" class="dash-btn-cyan" style="margin-top:6px;">Changer le mot de passe</button>
     </form>
-  </div>
+  </section>
 
-  {# ──────────────────────────────────────────────────────────────────
-     3. PLAN
-  ──────────────────────────────────────────────────────────────────── #}
-  <div class="settings-panel" id="plan">
-    <h2>Abonnement</h2>
-    <p class="panel-desc">Votre plan actuel et les options disponibles.</p>
-
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;">
+  {# ── PLAN ─────────────────────────────────────────────────── #}
+  <section class="account-panel" id="plan">
+    <div class="account-panel-title">
+      <h2>Abonnement</h2>
+      <a href="/account" class="account-link">Voir mon compte →</a>
+    </div>
+    <div class="account-panel-row">
       <div>
-        <div style="font-family:var(--font-sans); font-size:13px; color:var(--text-dim); margin-bottom:4px;">Plan actif</div>
-        <div style="font-family:var(--font-sans); font-size:22px; font-weight:800; color:var(--neon-cyan);">
-          {{ (current_user.plan or 'free') | capitalize }}
-        </div>
+        <div class="account-eyebrow">Plan actif</div>
+        <div class="account-plan-name">{{ (current_user.plan or 'free') | capitalize }}</div>
       </div>
       {% if current_user.plan == 'free' %}
-      <a href="/upgrade?plan=essentiel" class="settings-save-btn">
-        ⚡ Passer à Essentiel — 29€/mois
-      </a>
+      <a href="/upgrade?plan=essentiel" class="btn-upgrade-green">Passer à Essentiel — 29€/mois →</a>
       {% elif current_user.plan == 'essentiel' %}
-      <a href="/upgrade?plan=pro" class="avatar-upload-btn">Passer à Pro</a>
+      <a href="/upgrade?plan=pro" class="btn-upgrade-green">Découvrir Entreprise →</a>
       {% endif %}
     </div>
-  </div>
+  </section>
 
-  {# ──────────────────────────────────────────────────────────────────
-     4. ZONE DANGEREUSE
-  ──────────────────────────────────────────────────────────────────── #}
-  <div class="settings-panel" id="danger" style="border-color: rgba(255,51,85,0.2);">
-    <h2 style="color:var(--sev-critical);">Zone dangereuse</h2>
-    <p class="panel-desc">Actions irréversibles. À utiliser avec précaution.</p>
-
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; padding:12px 0;">
-      <div>
-        <div style="font-family:var(--font-sans); font-size:14px; color:var(--text-primary); margin-bottom:4px;">Supprimer mon compte</div>
-        <div style="font-family:var(--font-sans); font-size:12px; color:var(--text-dim);">Suppression définitive de votre compte et de toutes vos données.</div>
-      </div>
-      <a href="mailto:contact@argusanalyzer.com?subject=Suppression%20de%20mon%20compte%20ARGUS&body=Bonjour,%0A%0AJe%20demande%20la%20suppression%20de%20mon%20compte%20et%20de%20toutes%20mes%20donn%C3%A9es%20ARGUS.%0A%0AEmail%20du%20compte%20:%20{{ current_user.email }}"
-         class="avatar-upload-btn" style="color:var(--sev-critical); border-color:rgba(255,51,85,0.3);">
-        Demander la suppression →
-      </a>
+  {# ── ZONE DANGEREUSE ──────────────────────────────────────── #}
+  <section class="account-panel" id="danger" style="border-color: rgba(255,71,87,0.15);">
+    <div class="account-panel-title">
+      <h2 style="color:#ff8a96;">Zone dangereuse</h2>
     </div>
-  </div>
+    <ul class="account-actions">
+      <li>
+        <div>
+          <strong>Supprimer mon compte</strong>
+          <span>Suppression définitive de votre compte et de toutes vos données. Action irréversible.</span>
+        </div>
+        <a href="mailto:contact@argusanalyzer.com?subject=Suppression%20de%20mon%20compte%20ARGUS&body=Bonjour,%0A%0AJe%20demande%20la%20suppression%20de%20mon%20compte%20ARGUS%20(email%20:%20{{ current_user.email }})%20et%20de%20toutes%20mes%20donn%C3%A9es%20associ%C3%A9es."
+           class="account-link-btn account-link-danger">Demander la suppression</a>
+      </li>
+    </ul>
+  </section>
+
 </div>
 {% endblock %}
 
@@ -198,7 +183,6 @@
   const saveBtn = document.getElementById('crop-save');
   const form = document.getElementById('avatar-form');
   const dataInput = document.getElementById('avatar-data');
-
   let cropper = null;
 
   uploadBtn.addEventListener('click', () => fileInput.click());
@@ -206,30 +190,20 @@
   fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     if (file.size > 5 * 1024 * 1024) {
-      alert("L'image est trop volumineuse (max 5 MB). Réessayez avec une image plus petite.");
+      alert("L'image est trop volumineuse (max 5 MB).");
       fileInput.value = '';
       return;
     }
-
     const reader = new FileReader();
     reader.onload = (ev) => {
       cropImg.src = ev.target.result;
       modal.classList.add('open');
-
-      // Lance Cropper.js sur l'image
       if (cropper) cropper.destroy();
       cropper = new Cropper(cropImg, {
-        aspectRatio: 1,
-        viewMode: 1,
-        autoCropArea: 0.85,
-        responsive: true,
-        background: false,
-        zoomable: true,
-        scalable: false,
-        rotatable: false,
-        cropBoxResizable: true,
+        aspectRatio: 1, viewMode: 1, autoCropArea: 0.85,
+        responsive: true, background: false, zoomable: true,
+        scalable: false, rotatable: false, cropBoxResizable: true,
       });
     };
     reader.readAsDataURL(file);
@@ -243,21 +217,13 @@
 
   saveBtn.addEventListener('click', () => {
     if (!cropper) return;
-    // Crop carré 256x256 → data URL JPEG qualité 0.85 (~ 60-150 KB)
-    const canvas = cropper.getCroppedCanvas({
-      width: 256,
-      height: 256,
-      imageSmoothingQuality: 'high',
-    });
+    const canvas = cropper.getCroppedCanvas({ width: 256, height: 256, imageSmoothingQuality: 'high' });
     const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
     dataInput.value = dataUrl;
     form.submit();
   });
 
-  // Close modal au click outside
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) cancelBtn.click();
-  });
+  modal.addEventListener('click', (e) => { if (e.target === modal) cancelBtn.click(); });
 })();
 </script>
 {% endblock %}
