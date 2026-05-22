@@ -165,6 +165,59 @@ def _credit_referrer(db: Session, filleul: "User") -> None:
     print(f"[REFERRAL] {filleul.email} a converti → {parrain.email} reçoit +{REFERRAL_CREDITS_REWARD} crédits (total: {parrain.credits})", flush=True)
 
 
+def _session_unlocked_set(request: Request, scan_id: int) -> set:
+    """Liste des finding_keys débloqués via crédits pour ce scan dans la session."""
+    all_unlocks = request.session.get("unlocked_findings", {})
+    return set(all_unlocks.get(str(scan_id), []))
+
+
+@app.post("/scan/{scan_id}/credits/unlock")
+def credits_unlock_finding(
+    scan_id: int,
+    request: Request,
+    finding_key: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    """
+    Débite 5 crédits du user et débloque l'action recommandée d'1 finding
+    pour ce scan. L'unlock est persisté en session (pas en DB pour rester simple).
+    """
+    user = get_current_user(request, db)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    # Validation finding_key — format attendu : "kind:identifier" (ex: "surface:bo.pam.ma" ou "tech:wordpress")
+    finding_key = (finding_key or "").strip()[:120]
+    if ":" not in finding_key or len(finding_key) < 4:
+        return RedirectResponse(f"/scan/{scan_id}", status_code=303)
+
+    # Vérifie que le scan existe et appartient bien à ce user (ou admin)
+    scan = db.query(Scan).filter(Scan.id == scan_id).first()
+    if not scan:
+        raise HTTPException(404)
+    if scan.user_id and scan.user_id != user.id and not user.is_admin:
+        raise HTTPException(403)
+
+    # Vérifie le solde
+    if (user.credits or 0) < REFERRAL_CREDITS_PER_UNLOCK:
+        request.session["flash_error"] = f"Solde insuffisant. Il vous faut {REFERRAL_CREDITS_PER_UNLOCK} crédits."
+        return RedirectResponse(f"/scan/{scan_id}", status_code=303)
+
+    # Stocke l'unlock dans la session
+    all_unlocks = request.session.get("unlocked_findings", {})
+    scan_unlocks = list(all_unlocks.get(str(scan_id), []))
+    if finding_key not in scan_unlocks:
+        # Premier unlock de ce finding : on débite
+        user.credits = (user.credits or 0) - REFERRAL_CREDITS_PER_UNLOCK
+        db.commit()
+        scan_unlocks.append(finding_key)
+        all_unlocks[str(scan_id)] = scan_unlocks
+        request.session["unlocked_findings"] = all_unlocks
+        print(f"[CREDITS] {user.email} débloque {finding_key} sur scan {scan_id} (-{REFERRAL_CREDITS_PER_UNLOCK} crédits, reste: {user.credits})", flush=True)
+
+    return RedirectResponse(f"/scan/{scan_id}#unlock-{finding_key.replace(':', '-')}", status_code=303)
+
+
 @app.get("/healthz")
 def healthz():
     """Health check minimal pour Coolify / Traefik / load balancer."""
@@ -321,6 +374,16 @@ def scan_view(scan_id: int, request: Request, db: Session = Depends(get_db)):
         surface_findings = surface_findings_full[:1]
         tech_findings = tech_findings_full[:1]
 
+    # Ajoute finding_key stable à chaque finding (pour le système crédits)
+    for f in surface_findings:
+        f["finding_key"] = f"surface:{f.get('host', '')}"
+    for f in tech_findings:
+        tech_id = (f.get("tech", "") + ":" + (f.get("version") or "any")).lower().replace(" ", "")
+        f["finding_key"] = f"tech:{tech_id}"
+
+    # Set des findings déjà débloqués via crédits pour ce scan
+    unlocked_set = _session_unlocked_set(request, scan.id)
+
     return templates.TemplateResponse("scan.html", _ctx(
         request, db,
         scan=scan,
@@ -341,6 +404,8 @@ def scan_view(scan_id: int, request: Request, db: Session = Depends(get_db)):
         tech_findings=tech_findings,
         locked_surface=max(0, len(surface_findings_full) - len(surface_findings)),
         locked_tech=max(0, len(tech_findings_full) - len(tech_findings)),
+        unlocked_set=unlocked_set,
+        credits_per_unlock=REFERRAL_CREDITS_PER_UNLOCK,
     ))
 
 

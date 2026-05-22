@@ -236,8 +236,12 @@
 {% endif %}
 
 {# ─── Macro : finding card en accordéon (collapse par défaut) ─── #}
-{% macro finding_accordion(title_html, severity, label_short, explanation, scenario, recommendation, is_enterprise) %}
-<details class="finding-accordion finding-{{ severity }}">
+{% macro finding_accordion(title_html, severity, label_short, explanation, scenario, recommendation, is_enterprise, finding_key='', unlocked_set=None, user=None, scan_id=None, credits_per_unlock=5) %}
+{% set is_unlocked = finding_key and unlocked_set and finding_key in unlocked_set %}
+{% set show_action = is_enterprise or is_unlocked %}
+{% set user_credits = (user.credits or 0) if user else 0 %}
+{% set can_credit_unlock = not is_enterprise and not is_unlocked and finding_key and user_credits >= credits_per_unlock %}
+<details class="finding-accordion finding-{{ severity }}" id="unlock-{{ finding_key|replace(':','-') }}">
   <summary>
     <span class="finding-sev sev-{{ severity }}">{{ severity|upper }}</span>
     <span class="finding-title">{{ title_html|safe }}</span>
@@ -253,9 +257,9 @@
       <strong class="finding-block-label finding-scenario-label">🎯 Scénario d'exploitation</strong>
       {{ scenario }}
     </div>
-    {% if is_enterprise %}
+    {% if show_action %}
     <div class="finding-block">
-      <strong class="finding-block-label finding-action-label">✅ Action recommandée par nos experts</strong>
+      <strong class="finding-block-label finding-action-label">✅ Action recommandée{% if is_unlocked and not is_enterprise %} <span style="color:var(--neon-green, #00ff88); font-weight:700; font-size:11px; letter-spacing:1px;">· DÉBLOQUÉ AVEC CRÉDITS</span>{% endif %}</strong>
       {{ recommendation }}
     </div>
     {% else %}
@@ -263,7 +267,18 @@
       <div class="finding-locked-overlay">
         <strong>🔒 Action recommandée + walk-through technique</strong>
         <span>Réservé au plan Entreprise — accompagnement personnalisé par nos experts pour vérifier et corriger.</span>
-        <a href="/upgrade?plan=pro" class="finding-locked-cta">Réserver un audit gratuit →</a>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:6px;">
+          <a href="/upgrade?plan=pro" class="finding-locked-cta">Réserver un audit gratuit →</a>
+          {% if can_credit_unlock %}
+          <form action="/scan/{{ scan_id }}/credits/unlock" method="post" style="margin:0;">
+            <input type="hidden" name="finding_key" value="{{ finding_key }}">
+            <button type="submit" class="finding-credit-unlock"
+                    onclick="return confirm('Débloquer pour {{ credits_per_unlock }} crédits ? (Solde actuel : {{ user_credits }} crédits)')">
+              🎁 Débloquer pour {{ credits_per_unlock }} crédits
+            </button>
+          </form>
+          {% endif %}
+        </div>
       </div>
       <div class="finding-locked-blur">{{ recommendation }}</div>
     </div>
@@ -288,7 +303,8 @@
     {% for f in surface_findings[:MAX_VISIBLE] %}
       {{ finding_accordion(
         '<code class="finding-host">' ~ f.host ~ '</code>',
-        f.severity, f.label_short, f.explanation, f.scenario, f.recommendation, ent
+        f.severity, f.label_short, f.explanation, f.scenario, f.recommendation, ent,
+        f.get('finding_key', ''), unlocked_set, current_user, scan.id, credits_per_unlock
       ) }}
     {% endfor %}
     {% if surface_findings|length > MAX_VISIBLE %}
@@ -328,7 +344,8 @@
       {% set title_html %}<code class="finding-host">{{ f.tech }}{% if f.version %} <span style="color:var(--text-dim); font-weight:400;">v{{ f.version }}</span>{% endif %}</code>{% if f.is_eol %} <span class="finding-eol">⚠ FIN DE VIE</span>{% endif %}{% endset %}
       {{ finding_accordion(
         title_html,
-        f.severity, f.label_short, f.explanation, f.scenario, f.recommendation, ent
+        f.severity, f.label_short, f.explanation, f.scenario, f.recommendation, ent,
+        f.get('finding_key', ''), unlocked_set, current_user, scan.id, credits_per_unlock
       ) }}
     {% endfor %}
     {% if tech_findings|length > MAX_VISIBLE %}

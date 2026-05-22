@@ -3923,6 +3923,27 @@ body.marketing .faq-section-title {
   transform: translateY(-1px);
 }
 
+/* Bouton "Débloquer pour 5 crédits" — alternative au CTA Entreprise */
+.finding-credit-unlock {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 8px 18px;
+  background: transparent;
+  color: var(--neon-cyan) !important;
+  border: 1px solid var(--neon-cyan);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  letter-spacing: 0.2px;
+  transition: background 0.15s, transform 0.15s;
+}
+.finding-credit-unlock:hover {
+  background: rgba(0, 217, 255, 0.08);
+  transform: translateY(-1px);
+}
+
 /* Bouton "+ voir N autres" — sobre */
 .findings-more summary {
   cursor: pointer;
