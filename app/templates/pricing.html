@@ -74,26 +74,26 @@
     {% endif %}
   </div>
 
-  {# PRO (sur devis) #}
+  {# ENTREPRISE (partenariat Exasys) #}
   <div class="mkt-pricing-card">
-    <div class="mkt-pricing-plan">Pro</div>
-    <div class="mkt-pricing-price" style="font-size:32px;">Sur devis</div>
+    <div class="mkt-pricing-plan">Entreprise</div>
+    <div class="mkt-pricing-price" style="font-size:30px;">Sur mesure</div>
     <div class="mkt-pricing-desc">
-      Pour les organisations qui veulent un accompagnement humain et une sécurité sur mesure.
+      Partenariat avec nos experts Exasys pour sécuriser durablement votre infrastructure.
     </div>
     <ul class="mkt-pricing-features">
       <li class="ok">Tout Essentiel inclus</li>
+      <li class="ok">Audit infra complet par nos experts</li>
+      <li class="ok">Plan de remédiation pas-à-pas</li>
+      <li class="ok">Accompagnement humain dédié</li>
+      <li class="ok">Suivi des actions correctives</li>
       <li class="ok">Domaines illimités</li>
-      <li class="ok">Actions correctives pas-à-pas</li>
-      <li class="ok">Support premium dédié</li>
-      <li class="ok">Audit complet par nos experts</li>
-      <li class="ok">Suivi des remédiations</li>
       <li class="ok">Notifications WhatsApp</li>
     </ul>
     {% if current_user and current_user.plan in ['pro','agency'] %}
     <a href="/account" class="mkt-pricing-btn outline">Votre plan actuel ✓</a>
     {% else %}
-    <a href="/upgrade?plan=pro" class="mkt-pricing-btn primary">Demander un devis →</a>
+    <a href="/upgrade?plan=pro" class="mkt-pricing-btn primary">Réserver un audit gratuit →</a>
     {% endif %}
   </div>
 
@@ -112,7 +112,7 @@
           <th style="text-align:left; padding:16px 20px; font-size:13px; color:var(--text-dim); font-weight:500;">Fonctionnalité</th>
           <th style="padding:16px 20px; font-size:13px; color:var(--text-dim); font-weight:500; text-align:center;">Gratuit</th>
           <th style="padding:16px 20px; font-size:13px; color:var(--neon-cyan); font-weight:700; text-align:center; background:rgba(0,217,255,0.04);">Essentiel</th>
-          <th style="padding:16px 20px; font-size:13px; color:var(--neon-violet); font-weight:700; text-align:center;">Pro</th>
+          <th style="padding:16px 20px; font-size:13px; color:var(--neon-violet); font-weight:700; text-align:center;">Entreprise</th>
         </tr>
       </thead>
       <tbody>
@@ -154,7 +154,7 @@
           <td style="padding:20px; font-weight:700; font-size:14px; color:var(--text-primary); font-family:var(--font-sans);">Tarif mensuel</td>
           <td style="padding:20px; text-align:center; font-weight:800; font-size:18px; color:var(--text-primary);">0€</td>
           <td style="padding:20px; text-align:center; font-weight:800; font-size:18px; color:var(--neon-cyan); background:rgba(0,217,255,0.05);">29€</td>
-          <td style="padding:20px; text-align:center; font-weight:800; font-size:18px; color:var(--neon-violet);">Sur devis</td>
+          <td style="padding:20px; text-align:center; font-weight:800; font-size:18px; color:var(--neon-violet);">Sur mesure</td>
         </tr>
       </tbody>
     </table>

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% set active = "terms" %}
+{% block body_class %}marketing{% endblock %}
+{% block title %}Conditions Générales d'Utilisation — ARGUS Security{% endblock %}
+
+{% block content %}
+<div style="max-width:820px; margin:0 auto; padding:60px 24px 80px; font-family:var(--font-sans);">
+
+  <div style="text-align:center; margin-bottom:48px;">
+    <div class="mkt-section-label">Légal</div>
+    <h1 style="font-size:clamp(28px, 4vw, 40px); font-weight:800; letter-spacing:-1px; color:var(--text-primary); line-height:1.15;">
+      Conditions Générales d'Utilisation
+    </h1>
+    <p style="color:var(--text-dim); font-size:13px; margin-top:8px;">Dernière mise à jour : 22 mai 2026</p>
+  </div>
+
+  <div style="color:var(--text-secondary); font-size:15px; line-height:1.75;">
+
+    <h2 style="color:var(--text-primary); font-size:22px; font-weight:700; margin:32px 0 12px; letter-spacing:-0.5px;">1. Objet</h2>
+    <p>Les présentes Conditions Générales d'Utilisation (« CGU ») régissent l'utilisation du service ARGUS Security (« le Service », « ARGUS »), édité par Exasys (« nous », « notre »), accessible à l'adresse <a href="https://argusanalyzer.com" style="color:var(--neon-cyan);">argusanalyzer.com</a>.</p>
+    <p>ARGUS est un outil <strong>défensif</strong> de reconnaissance de surface d'attaque externe (Web Attack Surface Management). Il permet à un utilisateur authentifié de cartographier les actifs web exposés d'un nom de domaine, d'identifier les vulnérabilités connues, et de générer un rapport de sécurité accessible.</p>
+
+    <h2 style="color:var(--text-primary); font-size:22px; font-weight:700; margin:32px 0 12px; letter-spacing:-0.5px;">2. Acceptation</h2>
+    <p>En créant un compte, en cochant la case d'acceptation à l'inscription, et en utilisant le Service, vous reconnaissez avoir lu, compris et accepté l'intégralité des présentes CGU sans réserve. Si vous n'acceptez pas ces conditions, vous ne devez pas utiliser le Service.</p>
+
+    <h2 style="color:var(--text-primary); font-size:22px; font-weight:700; margin:32px 0 12px; letter-spacing:-0.5px;">3. Autorisation de scan — RESPONSABILITÉ DE L'UTILISATEUR</h2>
+    <div style="background:rgba(255,71,87,0.08); border-left:3px solid #ff6b7a; padding:16px 20px; border-radius:0 8px 8px 0; margin:16px 0;">
+      <p style="margin:0;"><strong>⚠ Vous certifiez et garantissez, pour chaque scan que vous lancez via ARGUS :</strong></p>
+      <ul style="margin:12px 0 0; padding-left:24px;">
+        <li>être le <strong>propriétaire légitime</strong> du domaine analysé ; <strong>OU</strong></li>
+        <li>disposer d'une <strong>autorisation écrite et préalable</strong> du propriétaire légitime ; <strong>OU</strong></li>
+        <li>agir dans le cadre d'un mandat professionnel explicite (pentest autorisé, audit contractuel).</li>
+      </ul>
+    </div>
+    <p>Toute utilisation du Service en dehors de ce cadre constitue une infraction susceptible de poursuites pénales selon la législation applicable dans votre juridiction.</p>
+    <p><strong>Vous assumez l'entière responsabilité légale, civile et pénale</strong> de l'utilisation que vous faites du Service. Vous tenez Exasys et ARGUS Security quittes et indemnes de toute conséquence liée à un usage non autorisé.</p>
+
+    <h2 style="color:var(--text-primary); font-size:22px; font-weight:700; margin:32px 0 12px; letter-spacing:-0.5px;">4. Mode pentest</h2>
+    <p>Le mode pentest avancé (disponible sur les plans payants) génère du trafic actif vers la cible. Son activation est conditionnée à un <strong>double consentement horodaté</strong> par lequel vous réitérez votre autorisation légale.</p>
+    <p>Sans ce double consentement, seul le mode passif (reconnaissance par sources OSINT publiques) est accessible.</p>
+
+    <h2 style="color:var(--text-primary); font-size:22px; font-weight:700; margin:32px 0 12px; letter-spacing:-0.5px;">5. Logs et traçabilité</h2>
+    <p>Pour des raisons de sécurité et de conformité légale, nous conservons les logs d'utilisation (adresse IP, horodatage, domaine scanné, identifiant utilisateur) pour une durée de <strong>12 mois</strong>.</p>
+    <p>Ces logs peuvent être transmis aux autorités compétentes sur réquisition légale (juge, procureur, autorité de régulation) ou dans le cadre d'une enquête judiciaire.</p>
+
+    <h2 style="color:var(--text-primary); font-size:22px; font-weight:700; margin:32px 0 12px; letter-spacing:-0.5px;">6. Comptes et plans</h2>
+    <p>L'utilisation du Service requiert la création d'un compte avec vérification de l'adresse email. Vous êtes seul responsable de la confidentialité de vos identifiants.</p>
+    <p>Le Service est proposé en trois plans : <strong>Gratuit</strong> (limité), <strong>Essentiel</strong> (29€/mois, sans engagement) et <strong>Entreprise</strong> (sur mesure, avec accompagnement humain). Les conditions tarifaires sont détaillées sur la <a href="/pricing" style="color:var(--neon-cyan);">page tarifs</a>.</p>
+    <p>Les abonnements payants sont sans engagement et résiliables à tout moment depuis votre espace personnel.</p>
+
+    <h2 style="color:var(--text-primary); font-size:22px; font-weight:700; margin:32px 0 12px; letter-spacing:-0.5px;">7. Limites de responsabilité</h2>
+    <p>Le Service est fourni « en l'état ». Nous nous efforçons d'assurer son bon fonctionnement et la pertinence des informations restituées, mais nous ne pouvons garantir l'exhaustivité ni l'absence d'erreurs des résultats. Les rapports fournis sont indicatifs et ne constituent pas un audit de sécurité réglementaire ou certifié.</p>
+    <p>En aucun cas Exasys ne saurait être tenu responsable des dommages directs ou indirects résultant de l'utilisation ou de l'impossibilité d'utiliser le Service.</p>
+
+    <h2 style="color:var(--text-primary); font-size:22px; font-weight:700; margin:32px 0 12px; letter-spacing:-0.5px;">8. Propriété intellectuelle</h2>
+    <p>Le Service, son interface, son code source, ses méthodes d'analyse et l'ensemble des éléments qui le composent sont la propriété exclusive d'Exasys. Toute reproduction, modification ou exploitation non autorisée est interdite.</p>
+    <p>Les rapports générés vous appartiennent et peuvent être exploités librement dans le cadre légal.</p>
+
+    <h2 style="color:var(--text-primary); font-size:22px; font-weight:700; margin:32px 0 12px; letter-spacing:-0.5px;">9. Suspension / résiliation</h2>
+    <p>Nous nous réservons le droit de suspendre ou de clôturer tout compte qui présenterait un usage abusif, frauduleux ou non conforme aux présentes CGU, sans préavis ni indemnité.</p>
+
+    <h2 style="color:var(--text-primary); font-size:22px; font-weight:700; margin:32px 0 12px; letter-spacing:-0.5px;">10. Modifications</h2>
+    <p>Nous nous réservons le droit de modifier les présentes CGU à tout moment. Les utilisateurs seront informés des modifications substantielles par email. L'utilisation continue du Service après modification vaut acceptation des nouvelles CGU.</p>
+
+    <h2 style="color:var(--text-primary); font-size:22px; font-weight:700; margin:32px 0 12px; letter-spacing:-0.5px;">11. Droit applicable</h2>
+    <p>Les présentes CGU sont régies par la législation applicable dans la juridiction de l'éditeur. Tout litige sera soumis aux tribunaux compétents de cette juridiction, après tentative de résolution amiable.</p>
+
+    <h2 style="color:var(--text-primary); font-size:22px; font-weight:700; margin:32px 0 12px; letter-spacing:-0.5px;">12. Contact</h2>
+    <p>Pour toute question relative aux présentes CGU : <a href="mailto:contact@argusanalyzer.com" style="color:var(--neon-cyan);">contact@argusanalyzer.com</a></p>
+  </div>
+
+  <div style="text-align:center; margin-top:60px; padding-top:32px; border-top:1px solid var(--border);">
+    <a href="/" class="mkt-btn-secondary">← Retour à l'accueil</a>
+  </div>
+</div>
+{% endblock %}

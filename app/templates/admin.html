@@ -33,8 +33,7 @@
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:10px;">
       <a href="/admin/export/users.csv" class="admin-export-btn">👥 Tous les utilisateurs</a>
       <a href="/admin/export/users.csv?plan=essentiel" class="admin-export-btn">⭐ Plan Essentiel</a>
-      <a href="/admin/export/users.csv?plan=pro" class="admin-export-btn">🚀 Plan Pro</a>
-      <a href="/admin/export/users.csv?plan=agency" class="admin-export-btn">🏢 Plan Agency</a>
+      <a href="/admin/export/users.csv?plan=pro" class="admin-export-btn">🏢 Plan Entreprise</a>
       <a href="/admin/export/emails.csv?verified_only=true" class="admin-export-btn">✉️ Emails vérifiés (marketing)</a>
       <a href="/admin/export/whatsapp.csv" class="admin-export-btn">📱 Leads WhatsApp opt-in</a>
       <a href="/admin/export/scans.csv" class="admin-export-btn">🔍 Tous les scans</a>
@@ -47,8 +46,7 @@
       ("Utilisateurs", total_users, "neon-cyan"),
       ("Scans totaux", total_scans, "neon-green"),
       ("Plan Essentiel", users_by_plan.get('essentiel', 0), "neon-cyan"),
-      ("Plan Pro", users_by_plan.get('pro', 0), "neon-violet"),
-      ("Plan Agency", users_by_plan.get('agency', 0), "sev-high"),
+      ("Plan Entreprise", users_by_plan.get('pro', 0) + users_by_plan.get('agency', 0), "neon-violet"),
       ("MRR estimé (€)", mrr, "neon-green"),
     ] %}
     {% for label, value, color in kpis %}
@@ -153,8 +151,7 @@
                 <select name="plan" style="background:var(--bg-elevated); color:var(--text-primary); border:1px solid var(--border-glow); padding:5px 8px; border-radius:6px; font-size:11px; font-family:var(--font-sans);">
                   <option value="free" {% if u.plan == 'free' %}selected{% endif %}>Free</option>
                   <option value="essentiel" {% if u.plan == 'essentiel' %}selected{% endif %}>Essentiel</option>
-                  <option value="pro" {% if u.plan == 'pro' %}selected{% endif %}>Pro</option>
-                  <option value="agency" {% if u.plan == 'agency' %}selected{% endif %}>Agency</option>
+                  <option value="pro" {% if u.plan in ['pro','agency'] %}selected{% endif %}>Entreprise</option>
                 </select>
                 <button type="submit" style="background:var(--neon-cyan); border:none; color:white; padding:5px 10px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer;">✓</button>
               </form>

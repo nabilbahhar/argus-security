@@ -247,7 +247,7 @@ def send_sales_contact_email(sales_to: str, prospect: dict) -> bool:
     Notifie l'équipe commerciale qu'un prospect a demandé un devis pour le plan Pro.
     `prospect` doit contenir : name, email, phone, company, company_size, message.
     """
-    title = "Nouvelle demande de devis — Plan Pro"
+    title = "Nouvelle demande d'audit — Plan Entreprise"
     rows = [
         ("Nom", prospect.get("name", "")),
         ("Email", prospect.get("email", "")),
@@ -262,7 +262,7 @@ def send_sales_contact_email(sales_to: str, prospect: dict) -> bool:
     )
     msg = (prospect.get("message", "") or "").replace("\n", "<br>")
     body = f"""
-    <p>Un prospect vient de demander un devis pour le plan <strong>Pro</strong>.</p>
+    <p>Un prospect vient de réserver un <strong>audit gratuit</strong> dans le cadre du plan <strong>Entreprise</strong>.</p>
 
     <table style="width:100%;border-collapse:collapse;background:#fafbfc;border-radius:8px;margin:20px 0;">
       {rows_html}
@@ -279,21 +279,22 @@ def send_sales_contact_email(sales_to: str, prospect: dict) -> bool:
     </p>
     """
     html = _wrap_html(title, body)
-    return send_email(sales_to, f"[Sales] Demande Pro — {prospect.get('name', 'Anonyme')}", html)
+    return send_email(sales_to, f"[Sales] Audit Entreprise — {prospect.get('name', 'Anonyme')}", html)
 
 
 def send_sales_autoreply_email(to: str, name: str) -> bool:
     """Auto-reply au prospect qui vient de soumettre une demande Pro."""
-    title = "Demande reçue — On vous recontacte"
+    title = "Audit réservé — On vous recontacte"
     first_name = (name.split(" ")[0] if name else "").strip() or "bonjour"
     body = f"""
     <p>Bonjour {first_name},</p>
 
-    <p>Merci pour votre demande concernant le plan <strong>Pro</strong> d'ARGUS Security.</p>
+    <p>Merci d'avoir réservé un <strong>audit gratuit</strong> dans le cadre du plan
+    <strong>Entreprise</strong> d'ARGUS Security.</p>
 
-    <p>Notre équipe commerciale étudie votre besoin et reviendra vers vous sous
-    <strong>24h ouvrées</strong> pour planifier un échange et préparer une proposition
-    adaptée à votre infrastructure.</p>
+    <p>Nos experts Exasys étudient votre contexte et reviendront vers vous sous
+    <strong>24h ouvrées</strong> pour planifier l'audit et préparer un partenariat
+    adapté à votre infrastructure.</p>
 
     <p>En attendant, vous pouvez :</p>
     <ul style="padding-left:20px;line-height:1.8;">
@@ -303,11 +304,11 @@ def send_sales_autoreply_email(to: str, name: str) -> bool:
     </ul>
 
     <p style="margin-top:24px;color:#666;font-size:13px;">
-      À très vite,<br>L'équipe commerciale ARGUS
+      À très vite,<br>L'équipe Exasys
     </p>
     """
     html = _wrap_html(title, body)
-    return send_email(to, "Votre demande ARGUS Pro — On vous recontacte", html)
+    return send_email(to, "Audit ARGUS Entreprise réservé — On vous recontacte", html)
 
 
 def send_plan_activated_email(to: str, name: str, plan_label: str, base_url: str) -> bool:

@@ -990,6 +990,65 @@ def admin_change_plan(user_id: int, plan: str = Form(...), request: Request = No
     return RedirectResponse("/admin", 302)
 
 
+@app.post("/admin/danger/cleanup-users")
+def admin_cleanup_users(request: Request, db: Session = Depends(get_db)):
+    """
+    Migration one-shot : réaffecte tous les scans à l'admin (ADMIN_EMAIL),
+    puis supprime tous les autres users. Garde l'historique des scans intact.
+    """
+    admin = get_current_user(request, db)
+    if not admin or not admin.is_admin:
+        raise HTTPException(403)
+
+    admin_email = (os.getenv("ADMIN_EMAIL", "") or "").strip().lower()
+    if not admin_email:
+        return {"error": "ADMIN_EMAIL env var not set"}
+
+    target = db.query(User).filter(User.email == admin_email).first()
+    if not target:
+        return {"error": f"Admin user '{admin_email}' not found in DB"}
+
+    # 1. Réaffecter tous les scans des autres users à l'admin
+    other_users = db.query(User).filter(User.id != target.id).all()
+    scans_migrated = 0
+    for u in other_users:
+        for s in u.scans:
+            s.user_id = target.id
+            scans_migrated += 1
+    db.commit()
+
+    # 2. Supprimer tous les autres users (cascade pour password_reset_tokens)
+    deleted_count = 0
+    for u in list(other_users):
+        # Cascade manuelle pour email_verification_tokens (pas de cascade auto)
+        for t in list(getattr(u, "email_verification_tokens", []) or []):
+            db.delete(t)
+        db.delete(u)
+        deleted_count += 1
+    db.commit()
+
+    return {
+        "admin_kept": admin_email,
+        "admin_user_id": target.id,
+        "scans_migrated": scans_migrated,
+        "users_deleted": deleted_count,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Pages légales — CGU + Confidentialité
+# ─────────────────────────────────────────────────────────────────────
+
+@app.get("/terms", response_class=HTMLResponse)
+def terms_page(request: Request, db: Session = Depends(get_db)):
+    return templates.TemplateResponse("terms.html", _ctx(request, db, active="terms"))
+
+
+@app.get("/privacy", response_class=HTMLResponse)
+def privacy_page(request: Request, db: Session = Depends(get_db)):
+    return templates.TemplateResponse("privacy.html", _ctx(request, db, active="privacy"))
+
+
 # ─────────────────────────────────────────────────────────────────────
 # Admin — Exports CSV
 # ─────────────────────────────────────────────────────────────────────

@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% set active = "privacy" %}
+{% block body_class %}marketing{% endblock %}
+{% block title %}Politique de Confidentialité — ARGUS Security{% endblock %}
+
+{% block content %}
+<div style="max-width:820px; margin:0 auto; padding:60px 24px 80px; font-family:var(--font-sans);">
+
+  <div style="text-align:center; margin-bottom:48px;">
+    <div class="mkt-section-label">Légal</div>
+    <h1 style="font-size:clamp(28px, 4vw, 40px); font-weight:800; letter-spacing:-1px; color:var(--text-primary); line-height:1.15;">
+      Politique de Confidentialité
+    </h1>
+    <p style="color:var(--text-dim); font-size:13px; margin-top:8px;">Dernière mise à jour : 22 mai 2026</p>
+  </div>
+
+  <div style="color:var(--text-secondary); font-size:15px; line-height:1.75;">
+
+    <div style="background:rgba(0,217,255,0.05); border-left:3px solid var(--neon-cyan); padding:16px 20px; border-radius:0 8px 8px 0; margin-bottom:32px;">
+      <p style="margin:0;"><strong>Notre engagement en une phrase :</strong> vos données vous appartiennent, nous ne les vendons jamais, et elles sont chiffrées au repos comme en transit.</p>
+    </div>
+
+    <h2 style="color:var(--text-primary); font-size:22px; font-weight:700; margin:32px 0 12px; letter-spacing:-0.5px;">1. Qui sommes-nous</h2>
+    <p>ARGUS Security est édité par <strong>Exasys</strong>, société spécialisée en cybersécurité et technologies depuis 2015. Vous pouvez nous contacter à <a href="mailto:contact@argusanalyzer.com" style="color:var(--neon-cyan);">contact@argusanalyzer.com</a>.</p>
+
+    <h2 style="color:var(--text-primary); font-size:22px; font-weight:700; margin:32px 0 12px; letter-spacing:-0.5px;">2. Quelles données nous collectons</h2>
+
+    <h3 style="color:var(--text-primary); font-size:16px; font-weight:700; margin:20px 0 8px;">Données de compte</h3>
+    <ul style="padding-left:24px;">
+      <li>Adresse email (obligatoire, vérifiée à l'inscription)</li>
+      <li>Mot de passe (stocké sous forme de hash bcrypt, jamais en clair)</li>
+      <li>Nom et nom d'entreprise (optionnels)</li>
+      <li>Photo de profil (optionnelle, stockée en base64 dans notre base)</li>
+      <li>Numéro WhatsApp (optionnel, opt-in explicite)</li>
+    </ul>
+
+    <h3 style="color:var(--text-primary); font-size:16px; font-weight:700; margin:20px 0 8px;">Données techniques d'usage</h3>
+    <ul style="padding-left:24px;">
+      <li>Adresse IP (utilisée pour rate-limiting et logs de sécurité)</li>
+      <li>Horodatages de connexion et d'action</li>
+      <li>Domaines scannés et résultats associés</li>
+      <li>Cookies de session signés (pour vous garder connecté)</li>
+    </ul>
+
+    <h3 style="color:var(--text-primary); font-size:16px; font-weight:700; margin:20px 0 8px;">Données de paiement</h3>
+    <p>Les paiements sont gérés par <strong>Stripe</strong>. Nous ne stockons <strong>aucune donnée bancaire</strong> sur nos serveurs. Stripe est certifié PCI-DSS Niveau 1. Nous conservons uniquement un identifiant client Stripe pour gérer votre abonnement.</p>
+
+    <h2 style="color:var(--text-primary); font-size:22px; font-weight:700; margin:32px 0 12px; letter-spacing:-0.5px;">3. Pourquoi nous collectons ces données</h2>
+    <ul style="padding-left:24px;">
+      <li><strong>Fournir le service</strong> : exécuter les scans, stocker l'historique, générer les rapports.</li>
+      <li><strong>Sécurité</strong> : rate-limiting anti-brute force, détection d'usage abusif, traçabilité légale.</li>
+      <li><strong>Facturation</strong> : gérer votre abonnement et émettre des reçus.</li>
+      <li><strong>Communication</strong> : vous envoyer les emails transactionnels (vérification, reset mdp, confirmation paiement).</li>
+      <li><strong>Conformité légale</strong> : répondre aux réquisitions judiciaires éventuelles.</li>
+    </ul>
+
+    <h2 style="color:var(--text-primary); font-size:22px; font-weight:700; margin:32px 0 12px; letter-spacing:-0.5px;">4. Combien de temps nous conservons vos données</h2>
+    <ul style="padding-left:24px;">
+      <li><strong>Compte et historique de scans</strong> : tant que votre compte est actif. Suppression sous 30 jours après clôture du compte.</li>
+      <li><strong>Logs d'usage et de sécurité</strong> : 12 mois (obligation de traçabilité).</li>
+      <li><strong>Factures et données comptables</strong> : 10 ans (obligation légale).</li>
+      <li><strong>Données de paiement</strong> : zéro (gérées par Stripe).</li>
+    </ul>
+
+    <h2 style="color:var(--text-primary); font-size:22px; font-weight:700; margin:32px 0 12px; letter-spacing:-0.5px;">5. Avec qui nous partageons</h2>
+    <p>Nous <strong>ne vendons jamais</strong> vos données à des tiers. Nous partageons uniquement avec :</p>
+    <ul style="padding-left:24px;">
+      <li><strong>Stripe</strong> (paiements) — adresse email + identifiant client.</li>
+      <li><strong>Resend</strong> (envoi d'emails transactionnels) — adresse email + contenu du mail.</li>
+      <li><strong>Google Workspace</strong> (boîte mail support) — quand vous nous écrivez.</li>
+      <li><strong>Autorités compétentes</strong> — sur réquisition légale uniquement.</li>
+    </ul>
+
+    <h2 style="color:var(--text-primary); font-size:22px; font-weight:700; margin:32px 0 12px; letter-spacing:-0.5px;">6. Sécurité</h2>
+    <ul style="padding-left:24px;">
+      <li>Mots de passe hashés en bcrypt (rounds=12)</li>
+      <li>Connexion HTTPS obligatoire (TLS 1.2+)</li>
+      <li>Sessions cookies signés cryptographiquement</li>
+      <li>Rate-limiting sur les endpoints sensibles (login, reset mdp)</li>
+      <li>Vérification email obligatoire à l'inscription</li>
+      <li>Anti-énumération sur les flows de récupération</li>
+      <li>Logs d'accès chiffrés au repos</li>
+    </ul>
+
+    <h2 style="color:var(--text-primary); font-size:22px; font-weight:700; margin:32px 0 12px; letter-spacing:-0.5px;">7. Vos droits</h2>
+    <p>Conformément à la législation applicable dans votre juridiction, vous disposez d'un droit de :</p>
+    <ul style="padding-left:24px;">
+      <li><strong>Accès</strong> aux données personnelles que nous détenons sur vous.</li>
+      <li><strong>Rectification</strong> de toute donnée inexacte.</li>
+      <li><strong>Effacement</strong> de votre compte et de toutes vos données (sauf obligations légales).</li>
+      <li><strong>Portabilité</strong> de vos données dans un format structuré lisible.</li>
+      <li><strong>Opposition</strong> à certains traitements (marketing, etc.).</li>
+    </ul>
+    <p>Pour exercer ces droits, écrivez-nous à <a href="mailto:contact@argusanalyzer.com" style="color:var(--neon-cyan);">contact@argusanalyzer.com</a> en précisant l'email de votre compte. Nous répondrons sous 30 jours.</p>
+
+    <h2 style="color:var(--text-primary); font-size:22px; font-weight:700; margin:32px 0 12px; letter-spacing:-0.5px;">8. Cookies</h2>
+    <p>Nous utilisons uniquement des <strong>cookies fonctionnels essentiels</strong> :</p>
+    <ul style="padding-left:24px;">
+      <li>Cookie de session (pour vous garder connecté)</li>
+      <li>Cookie CSRF (protection contre les attaques cross-site)</li>
+    </ul>
+    <p>Aucun cookie publicitaire, aucun traceur tiers, aucun pixel Facebook/Google/etc. Pas de bandeau cookies parce que pas besoin.</p>
+
+    <h2 style="color:var(--text-primary); font-size:22px; font-weight:700; margin:32px 0 12px; letter-spacing:-0.5px;">9. Modifications</h2>
+    <p>Nous pouvons mettre à jour cette politique. Les modifications substantielles vous seront notifiées par email. La date de dernière mise à jour figure en haut de cette page.</p>
+
+    <h2 style="color:var(--text-primary); font-size:22px; font-weight:700; margin:32px 0 12px; letter-spacing:-0.5px;">10. Contact</h2>
+    <p>Question sur vos données ? Demande d'exercice de vos droits ? <a href="mailto:contact@argusanalyzer.com" style="color:var(--neon-cyan);">contact@argusanalyzer.com</a></p>
+  </div>
+
+  <div style="text-align:center; margin-top:60px; padding-top:32px; border-top:1px solid var(--border);">
+    <a href="/" class="mkt-btn-secondary">← Retour à l'accueil</a>
+  </div>
+</div>
+{% endblock %}
