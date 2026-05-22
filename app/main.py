@@ -1291,6 +1291,17 @@ def google_site_verification():
     )
 
 
+@app.get("/BingSiteAuth.xml")
+def bing_site_auth():
+    """Fichier de vérification de propriété pour Bing Webmaster Tools."""
+    from fastapi.responses import Response
+    xml = '''<?xml version="1.0"?>
+<users>
+  <user>B5D14CBEB5740B9C840545708AEBD870</user>
+</users>'''
+    return Response(content=xml, media_type="application/xml")
+
+
 @app.get("/robots.txt")
 def robots_txt():
     """robots.txt — autorise tous les crawlers + pointe vers sitemap."""
