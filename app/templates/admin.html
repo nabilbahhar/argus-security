@@ -40,6 +40,25 @@
     </div>
   </div>
 
+  {# ── ZONE DANGEREUSE ───────────────────────────────────────────── #}
+  <details style="background:rgba(255,71,87,0.05); border:1px solid rgba(255,71,87,0.2); border-radius:14px; padding:0; margin-bottom:24px;">
+    <summary style="cursor:pointer; padding:18px 24px; font-family:var(--font-sans); font-size:14px; font-weight:700; color:#ff8a96; user-select:none;">
+      🚨 Zone dangereuse — actions destructives
+    </summary>
+    <div style="padding:0 24px 20px;">
+      <form action="/admin/danger/cleanup-users" method="post"
+            onsubmit="return confirm('CERTAIN ? Cette action va :\n\n1) Réaffecter TOUS les scans à l\\'admin\n2) SUPPRIMER tous les autres users (sauf admin)\n\nCette action est IRRÉVERSIBLE.\n\nContinuer ?')"
+            style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <button type="submit" style="background:#ff4757; border:none; color:white; padding:10px 18px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; font-family:var(--font-sans);">
+          🧹 Cleanup users — migrer scans vers admin + supprimer autres users
+        </button>
+        <span style="font-family:var(--font-sans); font-size:12px; color:var(--text-dim);">
+          Action one-shot. Préserve l'historique des scans (réaffectés à l'admin).
+        </span>
+      </form>
+    </div>
+  </details>
+
   {# ── KPIs ────────────────────────────────────────────────────────── #}
   <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:14px; margin-bottom:32px;">
     {% set kpis = [
