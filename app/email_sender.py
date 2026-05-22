@@ -242,6 +242,74 @@ L'équipe ARGUS Security
     return send_email(to, "Confirmez votre email — ARGUS Security", html, text)
 
 
+def send_sales_contact_email(sales_to: str, prospect: dict) -> bool:
+    """
+    Notifie l'équipe commerciale qu'un prospect a demandé un devis pour le plan Pro.
+    `prospect` doit contenir : name, email, phone, company, company_size, message.
+    """
+    title = "Nouvelle demande de devis — Plan Pro"
+    rows = [
+        ("Nom", prospect.get("name", "")),
+        ("Email", prospect.get("email", "")),
+        ("Téléphone", prospect.get("phone", "") or "—"),
+        ("Entreprise", prospect.get("company", "") or "—"),
+        ("Taille", prospect.get("company_size", "") or "—"),
+    ]
+    rows_html = "".join(
+        f'<tr><td style="padding:8px 12px;color:#666;font-size:13px;width:30%;">{k}</td>'
+        f'<td style="padding:8px 12px;color:#1a1f2e;font-size:14px;font-weight:600;">{v}</td></tr>'
+        for k, v in rows
+    )
+    msg = (prospect.get("message", "") or "").replace("\n", "<br>")
+    body = f"""
+    <p>Un prospect vient de demander un devis pour le plan <strong>Pro</strong>.</p>
+
+    <table style="width:100%;border-collapse:collapse;background:#fafbfc;border-radius:8px;margin:20px 0;">
+      {rows_html}
+    </table>
+
+    <p style="font-size:13px;color:#666;margin-bottom:6px;">Message :</p>
+    <div style="background:#fafbfc;border-left:3px solid #00d9ff;padding:14px 16px;border-radius:0 8px 8px 0;font-size:14px;line-height:1.6;color:#333;">
+      {msg or '<em style="color:#999;">(aucun message)</em>'}
+    </div>
+
+    <p style="margin-top:24px;font-size:13px;color:#666;">
+      → Répondre directement au prospect :
+      <a href="mailto:{prospect.get('email', '')}" style="color:#00d9ff;font-weight:600;">{prospect.get('email', '')}</a>
+    </p>
+    """
+    html = _wrap_html(title, body)
+    return send_email(sales_to, f"[Sales] Demande Pro — {prospect.get('name', 'Anonyme')}", html)
+
+
+def send_sales_autoreply_email(to: str, name: str) -> bool:
+    """Auto-reply au prospect qui vient de soumettre une demande Pro."""
+    title = "Demande reçue — On vous recontacte"
+    first_name = (name.split(" ")[0] if name else "").strip() or "bonjour"
+    body = f"""
+    <p>Bonjour {first_name},</p>
+
+    <p>Merci pour votre demande concernant le plan <strong>Pro</strong> d'ARGUS Security.</p>
+
+    <p>Notre équipe commerciale étudie votre besoin et reviendra vers vous sous
+    <strong>24h ouvrées</strong> pour planifier un échange et préparer une proposition
+    adaptée à votre infrastructure.</p>
+
+    <p>En attendant, vous pouvez :</p>
+    <ul style="padding-left:20px;line-height:1.8;">
+      <li>Lancer un scan gratuit pour découvrir votre surface d'attaque</li>
+      <li>Essayer le plan Essentiel (29€/mois, sans engagement)</li>
+      <li>Nous écrire directement à <a href="mailto:sales@argusanalyzer.com" style="color:#00d9ff;">sales@argusanalyzer.com</a></li>
+    </ul>
+
+    <p style="margin-top:24px;color:#666;font-size:13px;">
+      À très vite,<br>L'équipe commerciale ARGUS
+    </p>
+    """
+    html = _wrap_html(title, body)
+    return send_email(to, "Votre demande ARGUS Pro — On vous recontacte", html)
+
+
 def send_plan_activated_email(to: str, name: str, plan_label: str, base_url: str) -> bool:
     """Email envoyé après activation d'un plan payant."""
     title = f"Votre plan {plan_label} est activé"

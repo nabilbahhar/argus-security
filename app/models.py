@@ -24,8 +24,8 @@ PLAN_LIMITS = {
 PLAN_NAMES = {
     "free":      "Gratuit",
     "essentiel": "Essentiel — 29€/mois",
-    "pro":       "Pro — 79€/mois",
-    "agency":    "Agency — 249€/mois",
+    "pro":       "Pro — Sur devis",
+    "agency":    "Pro — Sur devis",  # legacy alias : anciens users agency = nouveaux pro
 }
 
 

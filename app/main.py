@@ -2208,14 +2208,17 @@ def export_pdf(scan_id: int, request: Request, db: Session = Depends(get_db)):
 
 @app.get("/upgrade", response_class=HTMLResponse)
 def upgrade_page(request: Request, db: Session = Depends(get_db)):
-    """Page intermédiaire d'upgrade — Stripe arrive bientôt, en attendant on collecte la demande."""
+    """Page d'upgrade : Essentiel = Stripe Checkout, Pro = formulaire de contact sales."""
     target_plan = request.query_params.get("plan", "essentiel")
     from_source = request.query_params.get("from", "")
     confirmed = request.query_params.get("confirmed") == "1"
+    cancelled = request.query_params.get("cancelled") == "1"
     return templates.TemplateResponse(
         "upgrade.html",
         _ctx(request, db, active="upgrade",
-             target_plan=target_plan, from_source=from_source, confirmed=confirmed)
+             target_plan=target_plan, from_source=from_source,
+             confirmed=confirmed, cancelled=cancelled,
+             form_data=None, form_error=None)
     )
 
 
@@ -2223,38 +2226,86 @@ def upgrade_page(request: Request, db: Session = Depends(get_db)):
 def upgrade_request(request: Request, db: Session = Depends(get_db),
                     plan: str = Form("essentiel")):
     """
-    Point d'entrée d'upgrade.
-    - Si Stripe est configuré (STRIPE_SECRET_KEY présent) → redirige vers Stripe Checkout
-    - Sinon → enregistre la demande (mode demande de contact)
+    Demande d'upgrade.
+    - plan=essentiel + Stripe configuré → Stripe Checkout
+    - plan=pro / agency → redirige vers le formulaire de contact sales
+    - sinon → page de confirmation manuelle
     """
     user = get_current_user(request, db)
     if not user:
         return RedirectResponse(url="/login?next=/upgrade", status_code=303)
 
-    if plan not in ("essentiel", "pro", "agency"):
+    # Pro et Agency passent par le formulaire de contact, jamais Stripe
+    if plan in ("pro", "agency"):
+        return RedirectResponse(url="/upgrade?plan=pro", status_code=303)
+
+    if plan != "essentiel":
         plan = "essentiel"
 
-    # Stripe activé ?
     stripe_key = os.getenv("STRIPE_SECRET_KEY", "").strip()
     if stripe_key:
-        # On crée une session de checkout
         return _stripe_create_checkout(request, db, user, plan)
 
-    # Mode fallback : log + page de confirmation manuelle
+    # Fallback si Stripe pas configuré
     print(f"[UPGRADE REQUEST] user={user.email} (id={user.id}) plan_demande={plan}", flush=True)
     request.session["upgrade_requested"] = plan
     return RedirectResponse(url=f"/upgrade?confirmed=1&plan={plan}", status_code=303)
+
+
+@app.post("/upgrade/contact")
+def upgrade_contact(
+    request: Request,
+    db: Session = Depends(get_db),
+    name: str = Form(""),
+    email: str = Form(""),
+    phone: str = Form(""),
+    company: str = Form(""),
+    company_size: str = Form(""),
+    message: str = Form(""),
+):
+    """Formulaire de contact pour le plan Pro (sur devis) → envoie email à sales@."""
+    from app.email_sender import send_sales_contact_email, send_sales_autoreply_email
+
+    name = (name or "").strip()[:120]
+    email = (email or "").strip().lower()[:200]
+    phone = (phone or "").strip()[:50]
+    company = (company or "").strip()[:200]
+    company_size = (company_size or "").strip()[:20]
+    message = (message or "").strip()[:4000]
+
+    # Validation minimale
+    if not name or not email or "@" not in email or "." not in email or not message:
+        return templates.TemplateResponse("upgrade.html", _ctx(
+            request, db, active="upgrade",
+            target_plan="pro", from_source="", confirmed=False, cancelled=False,
+            form_data={"name": name, "email": email, "phone": phone,
+                       "company": company, "company_size": company_size, "message": message},
+            form_error="Merci de renseigner au moins votre nom, un email valide et un message décrivant votre besoin."
+        ))
+
+    sales_to = os.getenv("SALES_EMAIL", "sales@argusanalyzer.com").strip() or "sales@argusanalyzer.com"
+    prospect = {"name": name, "email": email, "phone": phone,
+                "company": company, "company_size": company_size, "message": message}
+
+    try:
+        send_sales_contact_email(sales_to, prospect)
+        send_sales_autoreply_email(email, name)
+    except Exception as e:
+        print(f"[SALES CONTACT ERROR] {e}", flush=True)
+
+    print(f"[SALES CONTACT] {email} ({company or 'no company'}) — {len(message)} chars", flush=True)
+
+    return RedirectResponse(url="/upgrade?confirmed=1&plan=pro", status_code=303)
 
 
 # ─────────────────────────────────────────────────────────────────────
 # Stripe Checkout — désactivé tant que STRIPE_SECRET_KEY n'est pas dans .env
 # ─────────────────────────────────────────────────────────────────────
 
-# Prix Stripe par plan (à créer dans le dashboard Stripe puis mettre les IDs ici ou en env)
+# Stripe Checkout actif uniquement pour Essentiel.
+# Pro = sur devis (formulaire contact sales, pas de prix Stripe).
 STRIPE_PRICES = {
     "essentiel": os.getenv("STRIPE_PRICE_ESSENTIEL", ""),
-    "pro":       os.getenv("STRIPE_PRICE_PRO", ""),
-    "agency":    os.getenv("STRIPE_PRICE_AGENCY", ""),
 }
 
 

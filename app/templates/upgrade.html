@@ -6,32 +6,136 @@
 {% block content %}
 <div style="max-width:720px; margin:0 auto; padding:60px 24px 80px;">
 
-  {# ── CONFIRMATION POST-DEMANDE ─────────────────────────────────── #}
+  {# ── CONFIRMATION POST-DEMANDE (formulaire Pro envoyé) ─────────── #}
   {% if confirmed %}
   <div style="background:linear-gradient(135deg, rgba(0,255,136,0.08), rgba(0,217,255,0.05)); border:1px solid rgba(0,255,136,0.3); border-radius:16px; padding:32px; text-align:center; margin-bottom:32px;">
     <div style="font-size:48px; margin-bottom:12px;">✅</div>
     <h2 style="font-size:24px; font-weight:800; margin-bottom:12px; font-family:var(--font-sans); color:var(--text-primary); letter-spacing:-0.5px;">
-      Demande enregistrée
+      Demande envoyée
     </h2>
     <p style="color:var(--text-secondary); font-family:var(--font-sans); font-size:15px; line-height:1.6; margin-bottom:8px;">
-      Notre équipe vous contactera sous <strong>24h</strong> pour finaliser votre abonnement
-      {% if target_plan == 'pro' %}<strong style="color:var(--neon-violet);">Pro</strong>
-      {% elif target_plan == 'agency' %}<strong style="color:var(--neon-violet);">Agency</strong>
-      {% else %}<strong style="color:var(--neon-cyan);">Essentiel</strong>{% endif %}.
+      Notre équipe commerciale vous contactera sous <strong>24h ouvrées</strong> pour discuter
+      de votre besoin et préparer une proposition adaptée à votre infrastructure.
     </p>
     <p style="color:var(--text-dim); font-family:var(--font-sans); font-size:13px;">
       Vous pouvez aussi nous joindre directement :
-      <a href="mailto:contact@argus-security.com?subject=Activation%20plan%20{{ target_plan }}" style="color:var(--neon-cyan); font-weight:600;">
-        contact@argus-security.com
+      <a href="mailto:sales@argusanalyzer.com" style="color:var(--neon-cyan); font-weight:600;">
+        sales@argusanalyzer.com
       </a>
     </p>
     <div style="margin-top:24px;">
       <a href="/" class="mkt-btn-secondary">Retour au scanner</a>
     </div>
   </div>
+
+  {# ── PLAN PRO : FORMULAIRE DE CONTACT ─────────────────────────── #}
+  {% elif target_plan in ('pro', 'agency') %}
+  <div style="text-align:center; margin-bottom:32px;">
+    <div class="mkt-section-label">Plan Pro · Sur devis</div>
+    <h1 style="font-size:clamp(28px, 4vw, 40px); font-weight:800; letter-spacing:-1.5px; margin-bottom:12px; font-family:var(--font-sans); color:var(--text-primary); line-height:1.15;">
+      Sécurisons
+      <span style="background:linear-gradient(135deg,#00d9ff,#b06aff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+        ensemble
+      </span>
+      votre infrastructure
+    </h1>
+    <p style="color:var(--text-secondary); font-size:15px; font-family:var(--font-sans); line-height:1.6; max-width:560px; margin:0 auto;">
+      Le plan Pro inclut un accompagnement humain par nos experts. Décrivez-nous brièvement
+      votre contexte, on revient vers vous sous 24h ouvrées avec une proposition adaptée.
+    </p>
+  </div>
+
+  {# Mini-récap du plan Pro #}
+  <div style="background:var(--bg-surface); border:1px solid rgba(176,106,255,0.25); border-radius:14px; padding:24px; margin-bottom:24px;">
+    <div style="font-size:12px; color:var(--neon-violet); letter-spacing:1.5px; text-transform:uppercase; font-weight:700; margin-bottom:14px; font-family:var(--font-sans);">Ce que vous obtenez avec Pro</div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+      {% for f in [
+        'Tout Essentiel inclus',
+        'Actions correctives pas-à-pas',
+        'Support premium dédié',
+        'Accompagnement direct par nos experts',
+        'Audit complet de surface d\'attaque',
+        'Suivi des remédiations dans le temps'
+      ] %}
+      <div style="font-size:14px; color:var(--text-secondary); font-family:var(--font-sans); display:flex; align-items:center; gap:8px;">
+        <span style="color:var(--neon-violet); font-weight:700;">✓</span> {{ f }}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# Formulaire #}
+  <div style="background:var(--bg-surface); border:1px solid rgba(0,217,255,0.3); border-radius:16px; padding:32px;">
+    {% if form_error %}
+    <div style="background:rgba(255,71,87,0.1); border:1px solid rgba(255,71,87,0.3); color:#ff6b7a; padding:12px 16px; border-radius:8px; margin-bottom:20px; font-size:14px; font-family:var(--font-sans);">
+      {{ form_error }}
+    </div>
+    {% endif %}
+
+    <form action="/upgrade/contact" method="post" style="display:flex; flex-direction:column; gap:16px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div>
+          <label style="display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px; font-family:var(--font-sans); text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Votre nom *</label>
+          <input type="text" name="name" required value="{{ form_data.name if form_data else (current_user.name if current_user else '') }}"
+                 style="width:100%; padding:12px 14px; background:var(--bg-input, #0e1320); border:1px solid var(--border); border-radius:8px; color:var(--text-primary); font-family:var(--font-sans); font-size:14px;">
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px; font-family:var(--font-sans); text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Email pro *</label>
+          <input type="email" name="email" required value="{{ form_data.email if form_data else (current_user.email if current_user else '') }}"
+                 style="width:100%; padding:12px 14px; background:var(--bg-input, #0e1320); border:1px solid var(--border); border-radius:8px; color:var(--text-primary); font-family:var(--font-sans); font-size:14px;">
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div>
+          <label style="display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px; font-family:var(--font-sans); text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Téléphone</label>
+          <input type="tel" name="phone" value="{{ form_data.phone if form_data else '' }}" placeholder="+212 6 12 34 56 78"
+                 style="width:100%; padding:12px 14px; background:var(--bg-input, #0e1320); border:1px solid var(--border); border-radius:8px; color:var(--text-primary); font-family:var(--font-sans); font-size:14px;">
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px; font-family:var(--font-sans); text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Taille de l'entreprise</label>
+          <select name="company_size"
+                  style="width:100%; padding:12px 14px; background:var(--bg-input, #0e1320); border:1px solid var(--border); border-radius:8px; color:var(--text-primary); font-family:var(--font-sans); font-size:14px;">
+            <option value="">— Sélectionner —</option>
+            <option value="1-10" {% if form_data and form_data.company_size == '1-10' %}selected{% endif %}>1-10 personnes</option>
+            <option value="11-50" {% if form_data and form_data.company_size == '11-50' %}selected{% endif %}>11-50 personnes</option>
+            <option value="51-200" {% if form_data and form_data.company_size == '51-200' %}selected{% endif %}>51-200 personnes</option>
+            <option value="201-1000" {% if form_data and form_data.company_size == '201-1000' %}selected{% endif %}>201-1000 personnes</option>
+            <option value="1000+" {% if form_data and form_data.company_size == '1000+' %}selected{% endif %}>Plus de 1000 personnes</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label style="display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px; font-family:var(--font-sans); text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Entreprise / Organisation</label>
+        <input type="text" name="company" value="{{ form_data.company if form_data else (current_user.company if current_user else '') }}"
+               style="width:100%; padding:12px 14px; background:var(--bg-input, #0e1320); border:1px solid var(--border); border-radius:8px; color:var(--text-primary); font-family:var(--font-sans); font-size:14px;">
+      </div>
+
+      <div>
+        <label style="display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px; font-family:var(--font-sans); text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Votre besoin *</label>
+        <textarea name="message" required rows="5" placeholder="Combien de domaines à surveiller ? Quelles préoccupations sécurité ? Avez-vous déjà été audités ?"
+                  style="width:100%; padding:12px 14px; background:var(--bg-input, #0e1320); border:1px solid var(--border); border-radius:8px; color:var(--text-primary); font-family:var(--font-sans); font-size:14px; resize:vertical; line-height:1.5;">{{ form_data.message if form_data else '' }}</textarea>
+      </div>
+
+      <button type="submit" class="mkt-btn-primary" style="margin-top:8px;">
+        Envoyer ma demande →
+      </button>
+      <p style="font-size:12px; color:var(--text-dim); font-family:var(--font-sans); text-align:center; margin-top:4px;">
+        🔒 Vos informations restent confidentielles · Réponse sous 24h ouvrées
+      </p>
+    </form>
+  </div>
+
+  <div style="text-align:center; margin-top:24px;">
+    <p style="color:var(--text-dim); font-size:13px; font-family:var(--font-sans);">
+      Plan plus simple ? <a href="/upgrade?plan=essentiel" style="color:var(--neon-cyan);">Voir Essentiel à 29€/mois</a>
+    </p>
+  </div>
+
+  {# ── PLAN ESSENTIEL : STRIPE CHECKOUT ─────────────────────────── #}
   {% else %}
 
-  {# ── HEADER ──────────────────────────────────────────────────────── #}
   <div style="text-align:center; margin-bottom:40px;">
     <div class="mkt-section-label">Activation</div>
     <h1 style="font-size:clamp(28px, 4vw, 40px); font-weight:800; letter-spacing:-1.5px; margin-bottom:12px; font-family:var(--font-sans); color:var(--text-primary); line-height:1.15;">
@@ -41,46 +145,30 @@
       Passez au plan
       {% endif %}
       <span style="background:linear-gradient(135deg,#00d9ff,#b06aff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
-        {% if target_plan == 'pro' %}Pro
-        {% elif target_plan == 'agency' %}Agency
-        {% else %}Essentiel{% endif %}
+        Essentiel
       </span>
     </h1>
     <p style="color:var(--text-secondary); font-size:15px; font-family:var(--font-sans); line-height:1.6;">
       {% if from_source == 'pdf' %}
-        L'export PDF est inclus dans tous les plans payants, à partir du plan Essentiel.
+        L'export PDF est inclus à partir du plan Essentiel.
       {% else %}
         Débloquez 100% des résultats, l'export PDF et l'audit complet de votre sécurité.
       {% endif %}
     </p>
   </div>
 
-  {# ── PLAN CARD ───────────────────────────────────────────────────── #}
-  {% set plan_data = {
-    'essentiel': {'name': 'Essentiel', 'price': '29', 'color': 'cyan', 'features': [
-        '3 domaines simultanés', 'Scans illimités', '100% des résultats',
-        'Audit SSL/TLS complet', 'Audit SPF/DKIM/DMARC',
-        'Export du rapport en PDF', 'Export des données (.txt)'
-    ]},
-    'pro': {'name': 'Pro', 'price': '79', 'color': 'violet', 'features': [
-        '10 domaines simultanés', 'Tout Essentiel inclus',
-        'Mode Pentest (audit actif)', 'Rapport de remédiation',
-        'Notifications WhatsApp', 'Support prioritaire 24h'
-    ]},
-    'agency': {'name': 'Agency', 'price': '249', 'color': 'violet', 'features': [
-        '50 domaines simultanés', 'Tout Pro inclus',
-        'Gestion multi-clients', 'Rapports personnalisés',
-        'Accès API', 'SLA garanti'
-    ]}
-  } %}
-  {% set p = plan_data.get(target_plan, plan_data['essentiel']) %}
+  {% if cancelled %}
+  <div style="background:rgba(255,180,0,0.08); border:1px solid rgba(255,180,0,0.3); color:#ffc857; padding:12px 16px; border-radius:8px; margin-bottom:24px; font-size:14px; font-family:var(--font-sans); text-align:center;">
+    Paiement annulé. Vous pouvez réessayer quand vous voulez.
+  </div>
+  {% endif %}
 
   <div style="background:var(--bg-surface); border:1px solid rgba(0,217,255,0.3); border-radius:16px; padding:36px; margin-bottom:32px; box-shadow:0 0 40px rgba(0,217,255,0.05);">
     <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
       <div>
-        <div style="font-size:11px; color:var(--text-dim); letter-spacing:2px; text-transform:uppercase; font-weight:600; margin-bottom:8px; font-family:var(--font-sans);">Plan {{ p.name }}</div>
+        <div style="font-size:11px; color:var(--text-dim); letter-spacing:2px; text-transform:uppercase; font-weight:600; margin-bottom:8px; font-family:var(--font-sans);">Plan Essentiel</div>
         <div style="font-size:42px; font-weight:800; color:var(--text-primary); font-family:var(--font-sans); letter-spacing:-1px;">
-          {{ p.price }}€<span style="font-size:18px; color:var(--text-dim); font-weight:500;">/mois</span>
+          29€<span style="font-size:18px; color:var(--text-dim); font-weight:500;">/mois</span>
         </div>
       </div>
       <div style="font-size:13px; color:var(--text-dim); font-family:var(--font-sans);">
@@ -89,7 +177,11 @@
     </div>
 
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:32px;">
-      {% for f in p.features %}
+      {% for f in [
+        '3 domaines simultanés', 'Scans illimités', '100% des résultats',
+        'Audit SSL/TLS complet', 'Audit SPF/DKIM/DMARC',
+        'Export du rapport en PDF', 'Export des données (.txt)'
+      ] %}
       <div style="font-size:14px; color:var(--text-secondary); font-family:var(--font-sans); display:flex; align-items:center; gap:8px;">
         <span style="color:var(--neon-cyan); font-weight:700;">✓</span> {{ f }}
       </div>
@@ -97,18 +189,14 @@
     </div>
 
     {% if current_user %}
-    <form action="/upgrade/request" method="post" style="display:flex; gap:12px; flex-wrap:wrap;">
-      <input type="hidden" name="plan" value="{{ target_plan }}">
-      <button type="submit" class="mkt-btn-primary" style="flex:1; min-width:240px;">
-        Activer {{ p.name }} — {{ p.price }}€/mois →
+    <form action="/upgrade/request" method="post">
+      <input type="hidden" name="plan" value="essentiel">
+      <button type="submit" class="mkt-btn-primary" style="width:100%;">
+        Activer Essentiel — 29€/mois →
       </button>
-      <a href="mailto:contact@argus-security.com?subject=Plan%20{{ p.name }}%20ARGUS" class="mkt-btn-secondary" style="min-width:160px; text-align:center;">
-        Nous contacter
-      </a>
     </form>
-    <p style="margin-top:16px; font-size:12px; color:var(--text-dim); font-family:var(--font-sans); text-align:center;">
-      🔒 Paiement par carte bancaire arrive très bientôt. En attendant,
-      notre équipe vous contacte sous 24h pour activer votre plan.
+    <p style="margin-top:14px; font-size:12px; color:var(--text-dim); font-family:var(--font-sans); text-align:center;">
+      🔒 Paiement sécurisé par carte bancaire · Annulez à tout moment
     </p>
     {% else %}
     <a href="/register" class="mkt-btn-primary" style="display:block; text-align:center;">
@@ -117,12 +205,10 @@
     {% endif %}
   </div>
 
-  {# ── ALTERNATIVE PLANS ────────────────────────────────────────────── #}
   <div style="text-align:center;">
     <p style="color:var(--text-dim); font-size:13px; font-family:var(--font-sans);">
-      Besoin de plus ?
-      {% if target_plan != 'pro' %}<a href="/upgrade?plan=pro" style="color:var(--neon-violet);">Voir le plan Pro</a> · {% endif %}
-      {% if target_plan != 'agency' %}<a href="/upgrade?plan=agency" style="color:var(--neon-violet);">Voir le plan Agency</a> · {% endif %}
+      Besoin d'un accompagnement sur-mesure ?
+      <a href="/upgrade?plan=pro" style="color:var(--neon-violet); font-weight:600;">Découvrir le plan Pro</a> ·
       <a href="/pricing" style="color:var(--neon-cyan);">Comparer les plans</a>
     </p>
   </div>
