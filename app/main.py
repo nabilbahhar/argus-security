@@ -2403,28 +2403,38 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     event_type = event["type"] if isinstance(event, dict) else event.type
     data = event["data"]["object"] if isinstance(event, dict) else event.data.object
 
-    # checkout.session.completed → activation du plan
-    if event_type == "checkout.session.completed":
-        user_id = (data.get("metadata") or {}).get("user_id")
-        plan = (data.get("metadata") or {}).get("plan", "essentiel")
-        subscription_id = data.get("subscription")
-        if user_id:
-            user = db.query(User).filter(User.id == int(user_id)).first()
-            if user:
-                user.plan = plan
-                user.stripe_subscription_id = subscription_id
-                db.commit()
-                print(f"[STRIPE] user {user.email} activé sur plan {plan}", flush=True)
+    # Normaliser data en dict standard (StripeObject n'a pas .get directement)
+    if not isinstance(data, dict):
+        data = data.to_dict() if hasattr(data, "to_dict") else dict(data)
 
-    # customer.subscription.deleted → retour au plan free
-    elif event_type == "customer.subscription.deleted":
-        sub_id = data.get("id")
-        user = db.query(User).filter(User.stripe_subscription_id == sub_id).first()
-        if user:
-            user.plan = "free"
-            user.stripe_subscription_id = None
-            db.commit()
-            print(f"[STRIPE] user {user.email} downgradé sur free (abonnement annulé)", flush=True)
+    try:
+        # checkout.session.completed → activation du plan
+        if event_type == "checkout.session.completed":
+            user_id = (data.get("metadata") or {}).get("user_id")
+            plan = (data.get("metadata") or {}).get("plan", "essentiel")
+            subscription_id = data.get("subscription")
+            if user_id:
+                user = db.query(User).filter(User.id == int(user_id)).first()
+                if user:
+                    user.plan = plan
+                    user.stripe_subscription_id = subscription_id
+                    db.commit()
+                    print(f"[STRIPE] user {user.email} activé sur plan {plan}", flush=True)
+
+        # customer.subscription.deleted → retour au plan free
+        elif event_type == "customer.subscription.deleted":
+            sub_id = data.get("id")
+            user = db.query(User).filter(User.stripe_subscription_id == sub_id).first()
+            if user:
+                user.plan = "free"
+                user.stripe_subscription_id = None
+                db.commit()
+                print(f"[STRIPE] user {user.email} downgradé sur free (abonnement annulé)", flush=True)
+
+        # Autres events ignorés silencieusement (subscription.updated, etc.)
+    except Exception as e:
+        # On log mais on retourne 200 pour que Stripe arrête de retry indéfiniment
+        print(f"[STRIPE WEBHOOK HANDLER ERROR] event={event_type} : {e}", flush=True)
 
     return {"received": True}
 
