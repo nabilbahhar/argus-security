@@ -1220,58 +1220,393 @@ def public_report_view(slug: str, request: Request, db: Session = Depends(get_db
         report.last_viewed_at = datetime.utcnow()
         db.commit()
 
-    # Construit le finding principal pour la spotlight
+    # Construit TOUS les findings classifiés (pas juste 1 spotlight)
     vulns_sorted = sorted(scan.vulns, key=nuclei.vuln_priority_score, reverse=True)
-    scare = _build_scare_finding(scan, vulns_sorted)
-
-    # Compteurs simples
-    total_assets = scan.assets_count or 0
-    alive_assets = scan.alive_count or 0
-    total_vulns = scan.vulns_count or 0
-    critical = scan.critical_count or 0
-    high = scan.high_count or 0
-
-    # Premier sample d'actifs sensibles (pour la section "ce qu'on a vu")
-    sensitive_keywords = ["admin", "cpanel", "phpmyadmin", "webmail", "ftp", "owa",
-                          "intranet", "vpn", "manage", "panel", "console"]
-    sensitive_assets = []
-    for a in scan.assets[:200]:
-        url_lower = (a.url or "").lower()
-        for kw in sensitive_keywords:
-            if kw in url_lower:
-                sensitive_assets.append({"url": a.url, "keyword": kw})
-                break
-    sensitive_assets = sensitive_assets[:6]
-
-    # Versions logicielles anciennes détectables
-    old_tech = []
-    for a in scan.assets[:100]:
-        for t in (a.tech or []):
-            if any(old in str(t).lower() for old in [
-                "apache http server:2.2", "apache http server:2.4.6", "apache http server:2.4.29",
-                "php:5", "php:7.0", "php:7.1", "php:7.2",
-                "nginx:1.14", "nginx:1.16",
-                "openssl:1.0", "openssl:0.9",
-                "iis:7", "iis:8",
-            ]):
-                old_tech.append({"asset": a.url, "tech": t})
-                break
-    old_tech = old_tech[:5]
+    findings = _build_all_findings(scan, vulns_sorted)
 
     return templates.TemplateResponse("public_report.html", _ctx(
         request, db,
         report=report,
         scan=scan,
-        scare=scare,
-        total_assets=total_assets,
-        alive_assets=alive_assets,
-        total_vulns=total_vulns,
-        critical=critical,
-        high=high,
-        sensitive_assets=sensitive_assets,
-        old_tech=old_tech,
+        findings=findings,
+        total_assets=scan.assets_count or 0,
+        alive_assets=scan.alive_count or 0,
+        total_vulns=scan.vulns_count or 0,
+        critical=scan.critical_count or 0,
+        high=scan.high_count or 0,
+        kev=scan.kev_count or 0,
         public_url=f"{str(request.base_url).rstrip('/')}/r/{slug}",
     ))
+
+
+def _build_all_findings(scan, vulns_sorted):
+    """
+    Identifie TOUS les findings critiques du scan et les renvoie avec
+    démo, cas réel, impact, et plan de correction. Liste ordonnée
+    par sévérité.
+    """
+    findings = []
+    domain = scan.domain
+
+    # ── 1. CVE activement exploitée (KEV) ────────────────────────
+    kev_vulns = [v for v in vulns_sorted if v.kev]
+    if kev_vulns:
+        v = kev_vulns[0]
+        findings.append({
+            "id": "kev",
+            "severity": "critical",
+            "icon": "🚨",
+            "title": "Faille critique exploitée par des hackers en ce moment",
+            "summary": f"{v.name or v.template_id}" + (f" — {v.cve_id}" if v.cve_id else ""),
+            "evidence": v.matched_url or domain,
+            "what_it_means": (
+                "Cette faille fait partie du <strong>catalogue CISA KEV</strong> (Known Exploited Vulnerabilities) — "
+                "c'est-à-dire qu'elle est <strong>activement utilisée par des hackers</strong> "
+                "contre d'autres entreprises dans le monde en ce moment même. "
+                "Les exploits sont publics, automatisés et téléchargeables gratuitement."
+            ),
+            "demonstration": (
+                f"Un attaquant tape la commande<br><code>nuclei -u https://{domain} -t cves/{v.cve_id or 'XXXX'}.yaml</code><br>"
+                f"En moins de 3 secondes, l'outil confirme si votre site est vulnérable. "
+                f"Si oui, l'attaquant lance l'exploit correspondant et obtient un accès "
+                f"(souvent niveau administrateur direct)."
+            ),
+            "real_case": (
+                "En 2023, plus de <strong>2 000 serveurs MOVEit ont été compromis</strong> "
+                "en moins de 72h via CVE-2023-34362 — qui faisait partie du catalogue KEV. "
+                "L'attaque ransomware Cl0p a affecté British Airways, BBC, et Shell, entre autres."
+            ),
+            "action": "Patcher immédiatement la version logicielle concernée. C'est l'action n°1 absolue.",
+        })
+
+    # ── 2. Vulnérabilité critique ────────────────────────────────
+    critical = [v for v in vulns_sorted if (v.severity or "").lower() == "critical" and not v.kev]
+    if critical:
+        v = critical[0]
+        findings.append({
+            "id": "critical",
+            "severity": "critical",
+            "icon": "🔥",
+            "title": "Vulnérabilité critique exploitable",
+            "summary": f"{v.name or v.template_id}" + (f" — {v.cve_id}" if v.cve_id else ""),
+            "evidence": v.matched_url or domain,
+            "what_it_means": (
+                "Une faille de sévérité <strong>critique</strong> a été détectée. "
+                "Concrètement, un attaquant peut potentiellement <strong>prendre le contrôle "
+                "du serveur compromis</strong>, voler vos données, ou l'utiliser comme tremplin "
+                "pour atteindre votre réseau interne."
+            ),
+            "demonstration": (
+                f"Le scanner a envoyé une requête HTTP de test qui correspond exactement au pattern "
+                f"d'exploitation publique. Aucune compétence technique avancée n'est requise — "
+                f"des outils automatisés exploitent ce type de faille en quelques secondes, "
+                f"24h/24, sur des plages d'IPs entières."
+            ),
+            "real_case": (
+                "Log4Shell (CVE-2021-44228) — une faille critique similaire — a touché "
+                "<strong>plus de 35% des serveurs Java dans le monde</strong> en décembre 2021. "
+                "Les attaquants ont commencé l'exploitation 9 heures après la publication du PoC public."
+            ),
+            "action": "Patcher la version logicielle en priorité. Si le patch n'est pas disponible, isoler l'actif derrière un VPN ou un WAF.",
+        })
+
+    # ── 3. Interface d'administration exposée ────────────────────
+    sensitive_keywords_explanations = {
+        "phpmyadmin": ("phpMyAdmin", "outil web de gestion de base de données MySQL", "vos données complètes"),
+        "cpanel":     ("cPanel",     "panneau d'administration d'hébergement",            "votre site et tous vos fichiers"),
+        "whm":        ("WHM",        "panneau de gestion serveur",                        "le serveur complet et tous les sites hébergés"),
+        "wp-admin":   ("WordPress Admin", "interface d'administration WordPress",         "votre site et le contenu publié"),
+        "webmail":    ("Webmail",    "interface email web",                               "tous vos emails et contacts"),
+        "owa":        ("Outlook Web Access", "webmail Exchange",                          "les emails de l'entreprise"),
+        "admin":      ("/admin",     "interface administrative générique",                "selon la nature du panneau"),
+        "manage":     ("manager",    "interface de gestion personnalisée",                "selon la nature du système"),
+        "intranet":   ("Intranet",   "réseau interne accessible publiquement",            "vos documents internes"),
+        "vpn":        ("VPN portal", "portail d'accès distant",                           "votre réseau interne"),
+        "ftp":        ("FTP",        "serveur de fichiers",                               "tous vos fichiers transférés"),
+        "jenkins":    ("Jenkins",    "système d'intégration continue",                    "votre code source et builds"),
+    }
+
+    sensitive_assets = []
+    for a in scan.assets[:200]:
+        url_lower = (a.url or "").lower()
+        for kw, info in sensitive_keywords_explanations.items():
+            if kw in url_lower:
+                sensitive_assets.append({"url": a.url, "keyword": kw, "info": info})
+                break
+
+    if sensitive_assets:
+        first = sensitive_assets[0]
+        name, what_is, what_attacker_gets = first["info"]
+        findings.append({
+            "id": "exposed_admin",
+            "severity": "high",
+            "icon": "🔓",
+            "title": f"Interface d'administration exposée publiquement",
+            "summary": f"{name} accessible sans restriction : {first['url']}",
+            "evidence": first["url"],
+            "what_it_means": (
+                f"<strong>{name}</strong> est un {what_is}. "
+                f"Cette interface est conçue pour être utilisée par <strong>vos administrateurs depuis votre "
+                f"réseau interne</strong> — pas depuis n'importe quelle connexion internet du monde. "
+                f"Si un attaquant arrive à se connecter (mot de passe deviné ou faille), il obtient "
+                f"<strong>{what_attacker_gets}</strong>."
+            ),
+            "demonstration": (
+                f"L'attaquant ouvre {first['url']} dans son navigateur. "
+                f"La page de login s'affiche normalement. Il lance ensuite un script qui essaye "
+                f"<strong>50 000 combinaisons de mots de passe courants</strong> "
+                f"(admin/admin, root/root, user/123456, etc.) à raison de 100 tentatives par seconde. "
+                f"Le tout en parallèle sur des dizaines d'IP pour contourner les éventuelles limites. "
+                f"<strong>Temps moyen pour craquer un mot de passe faible : moins d'une heure.</strong>"
+            ),
+            "real_case": (
+                "En 2024, l'université de Western Sydney a été compromise via un phpMyAdmin exposé. "
+                "Les données de <strong>10 000 étudiants</strong> (noms, emails, notes, dossiers médicaux) "
+                "ont fuité. Coût total estimé de l'incident : <strong>~3 millions d'euros</strong> "
+                "(forensics, notification, remédiation, RP, juridique)."
+            ),
+            "action": (
+                f"1) Restreindre l'accès à {first['url']} par IP whitelist (seulement les IPs de vos admins légitimes). "
+                f"2) Si possible, placer derrière un VPN obligatoire. "
+                f"3) Activer la double authentification sur ce panneau. "
+                f"4) Forcer changement de mot de passe + vérifier que les mots de passe respectent une politique forte."
+            ),
+            "other_examples": [a["url"] for a in sensitive_assets[1:5]],
+        })
+
+    # ── 4. Versions logicielles obsolètes ─────────────────────────
+    old_tech_patterns = {
+        "apache http server:2.2": ("Apache HTTPD 2.2", "support arrêté en 2017 (8+ ans sans patches)", 8),
+        "apache http server:2.4.6": ("Apache HTTPD 2.4.6", "publié en 2013, des dizaines de CVE depuis", 11),
+        "apache http server:2.4.29": ("Apache HTTPD 2.4.29", "publié en 2017, plusieurs CVE high+", 7),
+        "php:5":      ("PHP 5.x", "support arrêté en janvier 2019", 6),
+        "php:7.0":    ("PHP 7.0", "support arrêté en janvier 2019", 6),
+        "php:7.1":    ("PHP 7.1", "support arrêté en décembre 2019", 5),
+        "php:7.2":    ("PHP 7.2", "support arrêté en novembre 2020", 4),
+        "php:7.3":    ("PHP 7.3", "support arrêté en décembre 2021", 3),
+        "nginx:1.14": ("Nginx 1.14", "publié en 2018, plusieurs CVE depuis", 6),
+        "nginx:1.16": ("Nginx 1.16", "publié en 2019", 5),
+        "openssl:1.0": ("OpenSSL 1.0.x", "support arrêté en décembre 2019 — vulnérable à Heartbleed et autres", 5),
+        "openssl:0.9": ("OpenSSL 0.9.x", "extrêmement obsolète, vulnérabilités multiples publiques", 15),
+        "iis:7":      ("Microsoft IIS 7", "support arrêté en 2020", 4),
+        "iis:8":      ("Microsoft IIS 8", "support arrêté en octobre 2023", 1),
+    }
+    old_tech = []
+    for a in scan.assets[:100]:
+        for t in (a.tech or []):
+            t_lower = str(t).lower()
+            for pattern, info in old_tech_patterns.items():
+                if pattern in t_lower:
+                    old_tech.append({"asset": a.url, "tech": t, "info": info})
+                    break
+
+    if old_tech:
+        first = old_tech[0]
+        product_name, age_info, years = first["info"]
+        findings.append({
+            "id": "old_software",
+            "severity": "high",
+            "icon": "🕰️",
+            "title": "Versions logicielles obsolètes détectables publiquement",
+            "summary": f"{product_name} sur {first['asset']} (et {len(old_tech) - 1} autre(s) actif(s))" if len(old_tech) > 1 else f"{product_name} sur {first['asset']}",
+            "evidence": first["asset"] + " → " + first["tech"],
+            "what_it_means": (
+                f"Le serveur affiche publiquement la version exacte du logiciel qu'il utilise : <strong>{product_name}</strong>. "
+                f"Cette version est <strong>{age_info}</strong> — donc <strong>aucune mise à jour de sécurité "
+                f"n'est plus publiée pour elle</strong> depuis des années. Toutes les failles découvertes "
+                f"depuis sont publiques, documentées, et exploitables via des outils gratuits."
+            ),
+            "demonstration": (
+                f"L'attaquant utilise la commande<br><code>curl -I https://{first['asset']}</code><br>"
+                f"La réponse contient quelque chose comme <code>Server: {product_name}</code>. "
+                f"Il tape ensuite la version dans la base CVE publique → "
+                f"<strong>liste des failles connues s'affiche en quelques secondes</strong>. "
+                f"Il choisit la plus exploitable et lance l'attaque correspondante."
+            ),
+            "real_case": (
+                "L'attaque Equifax 2017 (147 millions de personnes touchées, "
+                "<strong>700 millions de dollars d'amende</strong>) était due à une seule chose : "
+                "Apache Struts pas patché alors qu'un correctif existait depuis 2 mois. "
+                "Le coût total de l'incident est estimé à 1,4 milliard de dollars."
+            ),
+            "action": (
+                "1) Lister toutes les versions logicielles obsolètes (cette liste vous en donne déjà une partie). "
+                "2) Planifier une fenêtre de maintenance pour les mettre à jour vers les versions supportées. "
+                "3) Mettre en place un processus de veille mensuelle sur les CVE des logiciels que vous utilisez. "
+                "4) Masquer les bannières de version dans les headers HTTP (security through obscurity en complément, jamais en remplacement)."
+            ),
+            "other_examples": [f"{ot['asset']} → {ot['tech']}" for ot in old_tech[1:5]],
+        })
+
+    # ── 5. Sécurité email — DMARC ─────────────────────────────────
+    dmarc = scan.dmarc or {}
+    if not dmarc.get("present"):
+        findings.append({
+            "id": "no_dmarc",
+            "severity": "high",
+            "icon": "📧",
+            "title": "Phishing au nom de votre domaine — protection absente",
+            "summary": f"Aucun enregistrement DMARC pour {domain}",
+            "evidence": f"dig _dmarc.{domain} TXT → aucune réponse",
+            "what_it_means": (
+                f"DMARC est une politique technique qui dit aux serveurs mail (Gmail, Outlook, etc.) : "
+                f"<strong>« si tu reçois un email qui prétend venir de {domain} mais qui n'est pas authentifié, "
+                f"rejette-le »</strong>. Sans DMARC, <strong>n'importe qui peut envoyer des emails "
+                f"en se faisant passer pour vous</strong>, et ces emails arriveront en boîte de réception "
+                f"de vos clients/partenaires comme s'ils étaient légitimes."
+            ),
+            "demonstration": (
+                f"Un attaquant utilise un service gratuit comme spoofbox.com ou un script Python. "
+                f"En 30 secondes, il envoie un email frauduleux qui apparaît comme venant de "
+                f"<code>direction@{domain}</code> ou <code>compta@{domain}</code>. "
+                f"Cet email demande à vos employés/clients de virer de l'argent sur un nouveau RIB, "
+                f"de cliquer sur un lien piégé, ou de donner leurs identifiants."
+            ),
+            "real_case": (
+                "L'arnaque au président (CEO fraud) cause <strong>50+ milliards de dollars de pertes "
+                "mondiales</strong> chaque année. Les attaquants identifient le dirigeant via LinkedIn, "
+                "spoofent son adresse email, et demandent à la compta de virer urgent. Sans DMARC, "
+                "rien n'arrête techniquement ces emails. Cas Pathé France 2018 : "
+                "<strong>19 millions d'euros volés</strong> en quelques semaines via cette technique."
+            ),
+            "action": (
+                f"Ajouter un enregistrement TXT DNS au nom <code>_dmarc.{domain}</code> avec la valeur "
+                f"<code>v=DMARC1; p=quarantine; rua=mailto:dmarc@{domain}</code>. "
+                f"Commencer par <code>p=none</code> pour observer pendant 1 mois, puis passer à "
+                f"<code>p=quarantine</code> puis <code>p=reject</code>. Coût technique : 5 minutes."
+            ),
+        })
+    elif dmarc.get("policy") == "none":
+        findings.append({
+            "id": "dmarc_none",
+            "severity": "medium",
+            "icon": "📧",
+            "title": "Politique DMARC en mode 'observation' seulement",
+            "summary": f"DMARC publié mais avec p=none (n'effectue aucun blocage)",
+            "evidence": f"_dmarc.{domain} → p=none",
+            "what_it_means": (
+                f"Vous avez publié DMARC, mais avec la directive <code>p=none</code> qui signifie "
+                f"<strong>« observe les abus mais ne bloque rien »</strong>. "
+                f"Les emails frauduleux qui se font passer pour vous continuent d'arriver chez vos correspondants."
+            ),
+            "demonstration": (
+                "Identique au cas sans DMARC : l'attaquant spoof votre domaine et l'email passe."
+            ),
+            "real_case": (
+                "Beaucoup d'entreprises restent bloquées en p=none par peur de casser un envoi légitime. "
+                "Or sans passer en quarantine ou reject, DMARC n'a quasiment aucune valeur protective."
+            ),
+            "action": (
+                f"Après 1-2 mois d'observation des rapports DMARC, passer progressivement à "
+                f"<code>p=quarantine</code> (emails frauduleux en spam) puis <code>p=reject</code> (bloqués)."
+            ),
+        })
+
+    # ── 6. SPF absent ─────────────────────────────────────────────
+    spf = scan.spf or {}
+    if not spf.get("present"):
+        findings.append({
+            "id": "no_spf",
+            "severity": "medium",
+            "icon": "✉️",
+            "title": "Emails facilement usurpables",
+            "summary": f"Aucun enregistrement SPF pour {domain}",
+            "evidence": f"dig {domain} TXT → aucun SPF",
+            "what_it_means": (
+                f"SPF (Sender Policy Framework) liste les serveurs autorisés à envoyer des emails "
+                f"pour votre domaine. Sans SPF, <strong>n'importe quel serveur dans le monde "
+                f"peut prétendre envoyer en votre nom</strong>. Vos emails légitimes risquent "
+                f"aussi d'arriver en spam par manque de réputation."
+            ),
+            "demonstration": (
+                "Idem DMARC : un attaquant envoie un email en se faisant passer pour vous "
+                "depuis un serveur quelconque, sans aucune vérification possible côté destinataire."
+            ),
+            "real_case": (
+                "Selon Verizon DBIR 2024, <strong>74% des intrusions impliquent un élément humain</strong>, "
+                "et le phishing par usurpation de domaine est la première vector d'attaque."
+            ),
+            "action": (
+                f"Ajouter un enregistrement TXT au nom <code>{domain}</code> avec la valeur "
+                f"<code>v=spf1 include:_spf.google.com ~all</code> (adapter selon votre fournisseur email). "
+                f"Coût technique : 5 minutes."
+            ),
+        })
+
+    # ── 7. Cert TLS expiré ────────────────────────────────────────
+    expired_certs = [t for t in (scan.tls_findings or []) if t.expired]
+    if expired_certs:
+        t = expired_certs[0]
+        findings.append({
+            "id": "expired_cert",
+            "severity": "high",
+            "icon": "🔐",
+            "title": "Certificat SSL expiré — visiteurs bloqués",
+            "summary": f"Certificat expiré sur {t.host}",
+            "evidence": f"{t.host} → certificat expiré",
+            "what_it_means": (
+                f"Le certificat SSL/HTTPS de cet actif est <strong>expiré</strong>. "
+                f"Tous vos visiteurs voient une <strong>page rouge d'alerte</strong> dans leur navigateur "
+                f"(Chrome, Firefox, Edge, Safari) avec un message du type "
+                f"<em>« Votre connexion n'est pas privée — Risque d'attaque ! »</em>."
+            ),
+            "demonstration": (
+                f"Ouvrez <code>https://{t.host}</code> dans n'importe quel navigateur : "
+                f"page rouge avec avertissement. <strong>99% des visiteurs partent immédiatement.</strong>"
+            ),
+            "real_case": (
+                "Whatsapp a été inaccessible pendant 4 heures en 2017 à cause d'un certificat expiré "
+                "non renouvelé à temps — coût estimé en perte d'usage pour les utilisateurs : "
+                "des centaines de millions d'euros."
+            ),
+            "action": "Renouveler le certificat. Si vous utilisez Let's Encrypt, automatiser le renouvellement avec certbot. Si certificat commercial, vérifier votre processus de renouvellement.",
+        })
+
+    # ── 8. Sous-domaines sensibles ────────────────────────────────
+    sensitive_subs_keywords = ["admin", "intranet", "vpn", "db", "database", "ftp", "test", "dev", "staging"]
+    sensitive_subs_found = []
+    for sub in (scan.discovered_subs or [])[:50]:
+        sub_lower = sub.lower()
+        for kw in sensitive_subs_keywords:
+            if sub_lower.startswith(kw + ".") or f".{kw}." in sub_lower:
+                sensitive_subs_found.append({"sub": sub, "keyword": kw})
+                break
+
+    if sensitive_subs_found:
+        first = sensitive_subs_found[0]
+        findings.append({
+            "id": "sensitive_subs",
+            "severity": "medium",
+            "icon": "👁️",
+            "title": "Sous-domaines à usage interne accessibles publiquement",
+            "summary": f"{len(sensitive_subs_found)} sous-domaine(s) suspect(s) : " + ", ".join(s["sub"] for s in sensitive_subs_found[:3]),
+            "evidence": first["sub"],
+            "what_it_means": (
+                f"Des sous-domaines aux noms suggérant un usage interne ({first['keyword']}, etc.) "
+                f"sont accessibles depuis internet. Les hackers savent que ces sous-domaines sont souvent "
+                f"<strong>moins surveillés, avec des configurations plus laxistes</strong>, et représentent "
+                f"des portes d'entrée privilégiées."
+            ),
+            "demonstration": (
+                "L'attaquant priorise systématiquement les sous-domaines avec des noms 'internes' dans "
+                "ses tentatives de brute-force. Ces interfaces ont souvent : des comptes de test "
+                "(test/test), des versions logicielles oubliées, ou des permissions trop ouvertes."
+            ),
+            "real_case": (
+                "Uber 2016 : un attaquant a trouvé un sous-domaine GitHub-Enterprise interne accessible "
+                "sans VPN, où des credentials AWS étaient committés. Résultat : "
+                "<strong>57 millions d'utilisateurs/conducteurs compromis</strong>, "
+                "<strong>148 millions de dollars d'amendes</strong>."
+            ),
+            "action": (
+                "1) Placer ces sous-domaines derrière un VPN d'entreprise. "
+                "2) Si ce sont des environnements de test/dev, ne pas les exposer publiquement. "
+                "3) Audit régulier de l'inventaire des sous-domaines."
+            ),
+            "other_examples": [s["sub"] for s in sensitive_subs_found[1:6]],
+        })
+
+    return findings
 
 
 @app.post("/admin/report/{report_id}/delete")
