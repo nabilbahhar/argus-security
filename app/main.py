@@ -2283,7 +2283,7 @@ def upgrade_contact(
             form_error="Merci de renseigner au moins votre nom, un email valide et un message décrivant votre besoin."
         ))
 
-    sales_to = os.getenv("SALES_EMAIL", "sales@argusanalyzer.com").strip() or "sales@argusanalyzer.com"
+    sales_to = os.getenv("SALES_EMAIL", "contact@argusanalyzer.com").strip() or "contact@argusanalyzer.com"
     prospect = {"name": name, "email": email, "phone": phone,
                 "company": company, "company_size": company_size, "message": message}
 
