@@ -1,8 +1,7 @@
 """
 llm_prompt_export.py — Génère un prompt LLM téléchargeable à partir d'un scan.
 
-Au lieu de générer un PDF (coûteux, rigide, peu adapté à tous les usages),
-on donne à l'utilisateur un fichier .txt prêt à coller dans son LLM préféré
+On donne à l'utilisateur un fichier .txt prêt à coller dans son LLM préféré
 (ChatGPT, Claude, Gemini, Mistral…). Il choisit lui-même le format final :
 présentation PowerPoint, rapport Word, email, post LinkedIn, etc.
 

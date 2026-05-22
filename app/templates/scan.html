@@ -3,25 +3,27 @@
 
 {% block content %}
 
-<div class="flex-between mb-16">
-  <div>
-    <div class="text-dim" style="font-size: 11px; letter-spacing: 2px; text-transform: uppercase;">
-      Rapport #{{ scan.id }} · {{ scan.started_at.strftime("%Y-%m-%d %H:%M") }}
+<div class="dash-wrap">
+
+  {# ── HEADER : eyebrow + domaine + status + actions ─────── #}
+  <header class="dash-top">
+    <div>
+      <div class="dash-eyebrow">› RAPPORT #{{ scan.id }} · {{ scan.started_at.strftime("%d %b %Y · %H:%M") }}</div>
+      <h1 class="dash-h1" style="color: var(--neon-cyan); text-shadow: 0 0 14px rgba(0,217,255,0.2);">{{ scan.domain }}</h1>
+      <p class="dash-sub">
+        Reconnaissance externe terminée — {{ scan.alive_count or 0 }} actif{{ 's' if (scan.alive_count or 0) > 1 }} vivant{{ 's' if (scan.alive_count or 0) > 1 }} sur {{ scan.assets_count or 0 }} découvert{{ 's' if (scan.assets_count or 0) > 1 }}.
+      </p>
     </div>
-    <h1 style="font-size: 32px; color: var(--neon-cyan); text-shadow: 0 0 14px rgba(0,217,255,0.3); margin-top: 4px;">
-      {{ scan.domain }}
-    </h1>
-  </div>
-  <div class="flex gap-12">
-    <span class="badge {{ scan.status }}" id="scan-status">{{ scan.status }}</span>
-    {% if current_user and (current_user.is_admin or (scan.user_id and scan.user_id == current_user.id)) %}
-    <form action="/scan/{{ scan.id }}/delete" method="post" style="display:inline;"
-          onsubmit="return confirm('Supprimer ce rapport ?')">
-      <button type="submit" class="btn btn-small btn-danger">Supprimer</button>
-    </form>
-    {% endif %}
-  </div>
-</div>
+    <div class="dash-actions">
+      <span class="badge {{ scan.status }}" id="scan-status">{{ scan.status }}</span>
+      {% if current_user and (current_user.is_admin or (scan.user_id and scan.user_id == current_user.id)) %}
+      <form action="/scan/{{ scan.id }}/delete" method="post" style="display:inline;"
+            onsubmit="return confirm('Supprimer ce rapport ?')">
+        <button type="submit" class="dash-del-btn" style="width:auto; padding:8px 14px;" title="Supprimer">✕ Supprimer</button>
+      </form>
+      {% endif %}
+    </div>
+  </header>
 
 {# === ARGUS RISK SCORE (HERO) === #}
 {% if scan.status == "completed" %}
@@ -73,56 +75,112 @@
 </div>
 {% endif %}
 
-{# === SOURCES DE DÉCOUVERTE (on masque ai_permutation + sources à 0) === #}
+{# === SOURCES DE DÉCOUVERTE (filtrées : on masque les counts à 0) === #}
 {% if scan.discovery_sources and full_access %}
-<section class="discovery-sources">
-  <div class="discovery-label">🔍 Moteurs de découverte ARGUS combinés</div>
-  <div class="discovery-grid">
-    {% for source, count in scan.discovery_sources.items() %}
-      {% if source != 'ai_permutation' and count|int > 0 %}
-      <div class="discovery-source">
-        <div class="discovery-name">
-          {% if source == 'subfinder' %}🛰 Sources OSINT publiques
-          {% elif source == 'crtsh' %}🔐 Certificats SSL/TLS publics
-          {% elif source == 'wayback' %}⏳ Archives web publiques
-          {% elif source == 'bruteforce' %}⚡ Reconnaissance DNS
-          {% else %}{{ source }}{% endif %}
+<section class="dash-panel">
+  <header class="dash-panel-head">
+    <span class="dash-panel-bar"></span>
+    <div>
+      <div class="dash-panel-title">Moteurs de découverte combinés</div>
+      <div class="dash-panel-sub">Sources OSINT + DNS croisées pour cartographier la surface</div>
+    </div>
+  </header>
+  <div class="dash-panel-body">
+    <div class="discovery-grid">
+      {% for source, count in scan.discovery_sources.items() %}
+        {% if count|int > 0 %}
+        <div class="discovery-source">
+          <div class="discovery-name">
+            {% if source == 'subfinder' %}🛰 Sources OSINT publiques
+            {% elif source == 'crtsh' %}🔐 Certificats SSL/TLS publics
+            {% elif source == 'wayback' %}⏳ Archives web publiques
+            {% elif source == 'bruteforce' %}⚡ Reconnaissance DNS
+            {% else %}{{ source }}{% endif %}
+          </div>
+          <div class="discovery-count">{{ count }}</div>
         </div>
-        <div class="discovery-count">{{ count }}</div>
-      </div>
-      {% endif %}
-    {% endfor %}
+        {% endif %}
+      {% endfor %}
+    </div>
   </div>
 </section>
 {% endif %}
 
-{# === STATS RAPIDES === #}
-<div class="stats-grid">
-  <div class="stat">
-    <div class="stat-label">Actifs découverts</div>
-    <div class="stat-value cyan" id="stat-assets">{{ scan.assets_count }}</div>
-  </div>
-  <div class="stat">
-    <div class="stat-label">En ligne (HTTP)</div>
-    <div class="stat-value green" id="stat-alive">{{ scan.alive_count }}</div>
-  </div>
-  <div class="stat">
-    <div class="stat-label">Vulnérabilités</div>
-    <div class="stat-value violet" id="stat-vulns">{{ scan.vulns_count }}</div>
-  </div>
-  <div class="stat">
-    <div class="stat-label">Exploitées actives</div>
-    <div class="stat-value danger" id="stat-kev">{{ scan.kev_count }}</div>
-  </div>
-  <div class="stat">
-    <div class="stat-label">Critiques (P1)</div>
-    <div class="stat-value danger" id="stat-critical">{{ scan.critical_count }}</div>
-  </div>
-  <div class="stat">
-    <div class="stat-label">Élevées (P2)</div>
-    <div class="stat-value warning" id="stat-high">{{ scan.high_count }}</div>
-  </div>
-</div>
+{# === KPI CARDS (homogène avec dashboard /history) === #}
+<section class="dash-kpis">
+  <article class="kpic" data-accent="cyan">
+    <div class="kpic-topbar"></div>
+    <div class="kpic-body">
+      <div class="kpic-head">
+        <div class="kpic-icon kpic-icon-cyan">◎</div>
+      </div>
+      <div class="kpic-value" id="stat-assets">{{ scan.assets_count }}</div>
+      <div class="kpic-label">Actifs découverts</div>
+      <div class="kpic-sub">Surface totale identifiée</div>
+    </div>
+  </article>
+
+  <article class="kpic" data-accent="green">
+    <div class="kpic-topbar"></div>
+    <div class="kpic-body">
+      <div class="kpic-head">
+        <div class="kpic-icon kpic-icon-green">⊕</div>
+      </div>
+      <div class="kpic-value" id="stat-alive">{{ scan.alive_count }}</div>
+      <div class="kpic-label">En ligne (HTTP)</div>
+      <div class="kpic-sub">Actifs répondant aux requêtes web</div>
+    </div>
+  </article>
+
+  <article class="kpic" data-accent="{% if (scan.vulns_count or 0) > 0 %}violet{% else %}muted{% endif %}">
+    <div class="kpic-topbar"></div>
+    <div class="kpic-body">
+      <div class="kpic-head">
+        <div class="kpic-icon kpic-icon-{% if (scan.vulns_count or 0) > 0 %}violet{% else %}muted{% endif %}">⬡</div>
+      </div>
+      <div class="kpic-value{% if (scan.vulns_count or 0) == 0 %} kpic-muted{% endif %}" id="stat-vulns">{{ scan.vulns_count }}</div>
+      <div class="kpic-label">Vulnérabilités</div>
+      <div class="kpic-sub">Failles détectées (toutes sévérités)</div>
+    </div>
+  </article>
+
+  <article class="kpic" data-accent="{% if (scan.kev_count or 0) > 0 %}red{% else %}muted{% endif %}">
+    <div class="kpic-topbar"></div>
+    <div class="kpic-body">
+      <div class="kpic-head">
+        <div class="kpic-icon kpic-icon-{% if (scan.kev_count or 0) > 0 %}red{% else %}muted{% endif %}">▲</div>
+        {% if (scan.kev_count or 0) > 0 %}<span class="kpic-badge kpic-badge-red">URGENT</span>{% endif %}
+      </div>
+      <div class="kpic-value{% if (scan.kev_count or 0) > 0 %} kpic-red{% else %} kpic-muted{% endif %}" id="stat-kev">{{ scan.kev_count }}</div>
+      <div class="kpic-label">Exploits actifs (KEV)</div>
+      <div class="kpic-sub">CVE déjà utilisées par des attaquants</div>
+    </div>
+  </article>
+
+  <article class="kpic" data-accent="{% if (scan.critical_count or 0) > 0 %}red{% else %}muted{% endif %}">
+    <div class="kpic-topbar"></div>
+    <div class="kpic-body">
+      <div class="kpic-head">
+        <div class="kpic-icon kpic-icon-{% if (scan.critical_count or 0) > 0 %}red{% else %}muted{% endif %}">▼</div>
+      </div>
+      <div class="kpic-value{% if (scan.critical_count or 0) > 0 %} kpic-red{% else %} kpic-muted{% endif %}" id="stat-critical">{{ scan.critical_count }}</div>
+      <div class="kpic-label">Critiques (P1)</div>
+      <div class="kpic-sub">Sévérité critique à corriger</div>
+    </div>
+  </article>
+
+  <article class="kpic" data-accent="{% if (scan.high_count or 0) > 0 %}orange{% else %}muted{% endif %}">
+    <div class="kpic-topbar"></div>
+    <div class="kpic-body">
+      <div class="kpic-head">
+        <div class="kpic-icon kpic-icon-{% if (scan.high_count or 0) > 0 %}orange{% else %}muted{% endif %}">◉</div>
+      </div>
+      <div class="kpic-value{% if (scan.high_count or 0) > 0 %} kpic-orange{% else %} kpic-muted{% endif %}" id="stat-high">{{ scan.high_count }}</div>
+      <div class="kpic-label">Élevées (P2)</div>
+      <div class="kpic-sub">À traiter dans les 30 jours</div>
+    </div>
+  </article>
+</section>
 
 {# === BARRE DE PROGRESSION (pendant le scan) === #}
 {% if scan.status == "running" %}
@@ -793,6 +851,7 @@ function copySubs() {
 </section>
 {% endif %}
 
+</div>{# /.dash-wrap #}
 {% endblock %}
 
 {% block scripts %}

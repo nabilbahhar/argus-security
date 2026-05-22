@@ -2730,7 +2730,6 @@ def _run_scan(scan_id: int, do_nuclei: bool, do_tls: bool, deep_discovery: bool 
             "crtsh":         (25, 35, "🔐 Certificats publics SSL/TLS"),
             "wayback":       (35, 42, "⏳ Archives web publiques"),
             "bruteforce":    (42, 50, "⚡ Reconnaissance DNS — top 200"),
-            "ai_permutation":(50, 55, "⚡ Recherche de patterns dérivés"),
         }
         def on_progress(source: str, count: int):
             _, end_pct, label = STEP_WEIGHTS.get(source, (0, 50, source))

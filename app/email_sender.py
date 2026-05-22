@@ -164,7 +164,7 @@ def send_welcome_email(to: str, name: str, base_url: str) -> bool:
       <li>Aucune carte bancaire requise</li>
     </ul>
 
-    <p>Pour débloquer 100% des résultats, l'export PDF et l'audit complet,
+    <p>Pour débloquer 100% des résultats, l'export pour votre IA (ChatGPT/Claude/Gemini) et l'audit complet,
     passez au plan <strong>Essentiel (29€/mois)</strong> — sans engagement.</p>
     """
     cta_url = f"{base_url}/"

@@ -206,76 +206,6 @@ def dns_bruteforce(
 
 
 # ─────────────────────────────────────────────────────────────
-# Source 4 : IA permutation (Claude analyse + génère)
-# ─────────────────────────────────────────────────────────────
-
-def ai_permutation(
-    domain: str,
-    known_subs: list[str],
-    max_candidates: int = 80,
-) -> set[str]:
-    """
-    Demande à Claude d'analyser les patterns dans les sous-domaines déjà trouvés
-    et de générer des variantes probables.
-
-    Ex : trouvé "api-staging.x.com, api-dev.x.com" → Claude génère "api-prod, api-qa,
-         api-eu, api-v2", etc.
-
-    DIFFÉRENTIATEUR UNIQUE : aucun concurrent ne fait ça.
-    """
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key or api_key.startswith("sk-ant-..."):
-        return set()
-    if not known_subs:
-        return set()
-
-    from anthropic import Anthropic
-
-    # On garde les 40 plus significatifs (= avec un préfixe avant le domaine racine)
-    sample = sorted({s for s in known_subs if s.endswith("." + domain)})[:40]
-
-    prompt = f"""Tu analyses des sous-domaines déjà trouvés sur {domain}.
-
-Sous-domaines connus (échantillon) :
-{chr(10).join(sample)}
-
-Analyse les PATTERNS de nommage (préfixes, suffixes, séparateurs, conventions) et génère {max_candidates} sous-domaines PROBABLES qui n'apparaissent PAS dans la liste mais qui suivent les mêmes conventions.
-
-Exemples de patterns à reconnaître :
-- "api, api-v2" → suggère "api-v3, api-staging, api-prod, api-dev, api-internal"
-- "mail, mail1" → suggère "mail2, mail3, mail-eu, mail-backup"
-- "admin.x.com" → suggère "admin1, admin-old, admin-new, admin-dev, sso-admin"
-- env-séparateurs (prod, dev, staging, uat) si tu vois 1 → essaie les autres
-
-Rends UNIQUEMENT une liste de sous-domaines complets (un par ligne, sans tiret/numéro de liste, sans backticks, sans commentaire). N'inclus PAS de sous-domaines déjà dans la liste. Sois créatif mais reste cohérent avec les patterns observés."""
-
-    try:
-        client = Anthropic(api_key=api_key)
-        response = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=2000,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        raw = response.content[0].text.strip()
-    except Exception:
-        return set()
-
-    candidates: set[str] = set()
-    for line in raw.splitlines():
-        s = line.strip().lstrip("-•* 0123456789.").strip().lower()
-        if not s:
-            continue
-        # Doit terminer par le domaine
-        if s.endswith("." + domain) and s != domain:
-            candidates.add(s)
-
-    # Filtre : on valide en DNS pour ne garder que ceux qui existent vraiment
-    if not candidates:
-        return set()
-    return dns_bruteforce(domain, wordlist=[c.replace("." + domain, "") for c in candidates], threads=50)
-
-
-# ─────────────────────────────────────────────────────────────
 # ORCHESTRATEUR
 # ─────────────────────────────────────────────────────────────
 
@@ -326,12 +256,6 @@ def discover_all(
         sources["bruteforce"] = dns_bruteforce(domain)
         if on_progress:
             on_progress("bruteforce", len(sources["bruteforce"]))
-
-        # IA permutation (basée sur ce qu'on a déjà)
-        union_so_far = set().union(*sources.values())
-        sources["ai_permutation"] = ai_permutation(domain, list(union_so_far))
-        if on_progress:
-            on_progress("ai_permutation", len(sources["ai_permutation"]))
 
     # Merge final
     merged = sorted(set().union(*sources.values()))

@@ -3,7 +3,7 @@
    Usage : {% include '_logo.html' with context %} (size optionnel : "small" | "medium" | "large")
 ─────────────────────────────────────────────────────────────── #}
 {% set _size = logo_size | default('medium') %}
-{% set _dim = {'small': 22, 'medium': 36, 'large': 64}[_size] %}
+{% set _dim = {'small': 32, 'medium': 48, 'large': 88}[_size] %}
 <svg class="argus-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"
      width="{{ _dim }}" height="{{ _dim }}" style="display:inline-block; vertical-align:middle;">
   <!-- Onde radar : 2 cercles qui pulsent (décalés) -->
