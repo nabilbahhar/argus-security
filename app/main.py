@@ -150,7 +150,41 @@ def history(request: Request, db: Session = Depends(get_db)):
         scans = db.query(Scan).order_by(Scan.started_at.desc()).all()
     else:
         scans = db.query(Scan).filter(Scan.user_id == user.id).order_by(Scan.started_at.desc()).all()
-    return templates.TemplateResponse("history.html", _ctx(request, db, scans=scans, active="history"))
+
+    # ── Calcul des KPIs dashboard ────────────────────────────────
+    completed_scans = [s for s in scans if s.status == "completed"]
+    total_scans = len(scans)
+    avg_score = round(sum(s.risk_score or 0 for s in completed_scans) / len(completed_scans), 0) if completed_scans else None
+    total_critical = sum((s.critical_count or 0) + (s.kev_count or 0) for s in completed_scans)
+    total_high = sum(s.high_count or 0 for s in completed_scans)
+    last_scan = scans[0] if scans else None
+
+    # Distribution des grades (combien A, B, C, D, F)
+    grade_dist = {"A": 0, "B": 0, "C": 0, "D": 0, "F": 0}
+    for s in completed_scans:
+        g = s.risk_grade
+        if g in grade_dist:
+            grade_dist[g] += 1
+
+    # Top domaines scannés (par nombre de scans)
+    from collections import Counter
+    domain_counter = Counter(s.domain for s in scans)
+    top_domains = domain_counter.most_common(5)
+
+    return templates.TemplateResponse("history.html", _ctx(
+        request, db,
+        scans=scans,
+        active="history",
+        total_scans=total_scans,
+        completed_count=len(completed_scans),
+        avg_score=avg_score,
+        total_critical=total_critical,
+        total_high=total_high,
+        last_scan=last_scan,
+        grade_dist=grade_dist,
+        top_domains=top_domains,
+        unique_domains=len(domain_counter),
+    ))
 
 
 @app.get("/scan/{scan_id}", response_class=HTMLResponse)

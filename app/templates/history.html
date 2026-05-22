@@ -4,143 +4,192 @@
 {% block title %}Mes scans · ARGUS Security{% endblock %}
 
 {% block content %}
-<div style="max-width:1100px; margin:0 auto; padding:48px 24px 80px;">
+<div class="dashboard-container">
 
-  {# ── HEADER ──────────────────────────────────────────────────────── #}
-  <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:20px; flex-wrap:wrap; margin-bottom:32px;">
+  {# ── HEADER ───────────────────────────────────────────────────── #}
+  <header class="dashboard-header">
     <div>
-      <h1 style="font-size:30px; font-weight:800; letter-spacing:-0.8px; font-family:var(--font-sans); margin-bottom:6px;">
-        Mes scans
-      </h1>
-      <p style="color:var(--text-dim); font-family:var(--font-sans); font-size:14px;">
-        {% if scans %}
-          {{ scans|length }} rapport{{ 's' if scans|length > 1 }} dans votre historique
-        {% else %}
-          Lancez votre premier scan pour analyser votre surface d'attaque.
-        {% endif %}
-      </p>
+      <h1>Tableau de bord</h1>
+      <p>Vue d'ensemble de votre activité de reconnaissance.</p>
     </div>
-    <a href="/" class="mkt-btn-primary" style="font-family:var(--font-sans);">+ Nouveau scan</a>
-  </div>
+    <a href="/" class="btn-upgrade-green" style="background:var(--neon-cyan); color:#0a0e1a;">+ Nouveau scan</a>
+  </header>
 
-  {# ── ÉTAT VIDE ───────────────────────────────────────────────────── #}
   {% if not scans %}
-    <div style="background:var(--bg-surface); border:1px dashed var(--border-glow); border-radius:16px; padding:60px 32px; text-align:center;">
-      <div style="font-size:48px; margin-bottom:16px;">🔍</div>
-      <h2 style="font-family:var(--font-sans); font-size:18px; font-weight:700; color:var(--text-primary); margin-bottom:8px;">
-        Aucun scan pour le moment
-      </h2>
-      <p style="font-family:var(--font-sans); font-size:14px; color:var(--text-dim); margin-bottom:24px; max-width:380px; margin-left:auto; margin-right:auto; line-height:1.6;">
-        Entrez un nom de domaine pour découvrir tous vos actifs web exposés en 60 secondes.
-      </p>
-      <a href="/" class="mkt-btn-primary">Lancer mon premier scan →</a>
-    </div>
+
+  {# ── ÉTAT VIDE ───────────────────────────────────────────────── #}
+  <div class="dashboard-empty">
+    <div class="dashboard-empty-icon">🔍</div>
+    <h2>Aucun scan pour le moment</h2>
+    <p>Entrez un nom de domaine pour découvrir vos actifs web exposés en 60 secondes.</p>
+    <a href="/" class="btn-upgrade-green" style="background:var(--neon-cyan); color:#0a0e1a;">Lancer mon premier scan →</a>
+  </div>
 
   {% else %}
 
-    {# ── CARDS DE SCANS ──────────────────────────────────────────────── #}
-    <div style="display:flex; flex-direction:column; gap:14px;">
-      {% for s in scans %}
-      <div class="scan-card" style="background:var(--bg-surface); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:20px 24px; transition:border-color 0.15s, background 0.15s;">
-        <div style="display:flex; align-items:center; gap:24px; flex-wrap:wrap;">
+  {# ── KPI CARDS ───────────────────────────────────────────────── #}
+  <div class="dashboard-kpis">
+    <div class="kpi-card">
+      <div class="kpi-label">Scans totaux</div>
+      <div class="kpi-value">{{ total_scans }}</div>
+      <div class="kpi-sub">{{ completed_count }} terminé{{ 's' if completed_count > 1 }} · {{ unique_domains }} domaine{{ 's' if unique_domains > 1 }}</div>
+    </div>
 
-          {# Grade + domaine #}
-          <div style="display:flex; align-items:center; gap:16px; flex:1; min-width:280px;">
-            {% if s.status == 'completed' and s.risk_grade %}
-              {% set grade_class = 'neon-green' if s.risk_grade == 'A' else 'neon-cyan' if s.risk_grade == 'B' else 'neon-yellow' if s.risk_grade == 'C' else 'sev-high' if s.risk_grade == 'D' else 'sev-critical' %}
-              <div style="width:48px; height:48px; border-radius:50%; border:2px solid var(--{{ grade_class }}); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                <span style="font-family:var(--font-sans); font-weight:800; font-size:20px; color:var(--{{ grade_class }});">{{ s.risk_grade }}</span>
-              </div>
-            {% elif s.status == 'running' %}
-              <div style="width:48px; height:48px; border-radius:50%; border:2px solid var(--neon-cyan); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                <span style="display:inline-block; width:14px; height:14px; border:2px solid var(--neon-cyan); border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite;"></span>
-              </div>
-            {% else %}
-              <div style="width:48px; height:48px; border-radius:50%; border:2px solid var(--text-dim); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                <span style="font-family:var(--font-sans); font-weight:800; font-size:20px; color:var(--text-dim);">—</span>
-              </div>
-            {% endif %}
+    {% if avg_score is not none %}
+    <div class="kpi-card">
+      <div class="kpi-label">Score moyen</div>
+      <div class="kpi-value">{{ avg_score|int }}<span class="kpi-unit">/100</span></div>
+      <div class="kpi-sub">
+        {% if avg_score >= 90 %}Posture exemplaire
+        {% elif avg_score >= 75 %}Correct, points à corriger
+        {% elif avg_score >= 60 %}Action recommandée
+        {% elif avg_score >= 40 %}Action urgente
+        {% else %}Critique
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
 
-            <div style="min-width:0; flex:1;">
-              <a href="/scan/{{ s.id }}" style="font-family:var(--font-sans); font-size:16px; font-weight:700; color:var(--text-primary); text-decoration:none; display:block; margin-bottom:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                {{ s.domain }}
-              </a>
-              <div style="font-family:var(--font-sans); font-size:12px; color:var(--text-dim);">
-                {{ s.started_at.strftime("%d %B %Y à %H:%M") }}
-                {% if s.completed_at %}
-                  {% set delta = (s.completed_at - s.started_at).total_seconds() | int %}
-                  · {% if delta < 60 %}{{ delta }}s{% else %}{{ (delta // 60) }} min {{ (delta % 60) }}s{% endif %}
-                {% endif %}
-              </div>
-            </div>
-          </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Findings critiques</div>
+      <div class="kpi-value kpi-{% if total_critical > 0 %}red{% else %}muted{% endif %}">{{ total_critical }}</div>
+      <div class="kpi-sub">P1 + vulns activement exploitées</div>
+    </div>
 
-          {# Stats #}
-          <div style="display:flex; gap:24px; align-items:center; flex-wrap:wrap;">
-            <div style="text-align:center; min-width:64px;">
-              <div style="font-family:var(--font-sans); font-size:20px; font-weight:700; color:var(--text-primary);">{{ s.alive_count or 0 }}</div>
-              <div style="font-family:var(--font-sans); font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px;">En ligne</div>
-            </div>
-            <div style="text-align:center; min-width:64px;">
-              <div style="font-family:var(--font-sans); font-size:20px; font-weight:700; color:{% if s.critical_count %}var(--sev-critical){% elif s.high_count %}var(--sev-high){% else %}var(--text-dim){% endif %};">
-                {% if s.critical_count or s.high_count %}{{ (s.critical_count or 0) + (s.high_count or 0) }}{% else %}—{% endif %}
-              </div>
-              <div style="font-family:var(--font-sans); font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px;">P1+P2</div>
-            </div>
-            {% if s.status == 'completed' %}
-            <div style="text-align:center; min-width:64px;">
-              <div style="font-family:var(--font-sans); font-size:20px; font-weight:700; color:var(--neon-cyan);">{{ s.risk_score or 0 }}<span style="font-size:11px; color:var(--text-dim); font-weight:500;">/100</span></div>
-              <div style="font-family:var(--font-sans); font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px;">Score</div>
-            </div>
-            {% endif %}
-          </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Findings élevés</div>
+      <div class="kpi-value kpi-{% if total_high > 0 %}orange{% else %}muted{% endif %}">{{ total_high }}</div>
+      <div class="kpi-sub">Sévérité haute (P2)</div>
+    </div>
 
-          {# Actions #}
-          <div style="display:flex; gap:8px; align-items:center;">
-            {% if s.status == 'completed' %}
-              <a href="/scan/{{ s.id }}" class="avatar-upload-btn" style="font-size:13px;">Voir le rapport →</a>
-            {% elif s.status == 'running' %}
-              <a href="/scan/{{ s.id }}" class="avatar-upload-btn" style="font-size:13px; color:var(--neon-cyan); border-color:var(--neon-cyan);">Voir en direct</a>
-            {% else %}
-              <a href="/scan/{{ s.id }}" class="avatar-upload-btn" style="font-size:13px;">Détails</a>
-            {% endif %}
-            <form action="/scan/{{ s.id }}/delete" method="post" style="margin:0;"
-                  onsubmit="return confirm('Supprimer définitivement le scan de {{ s.domain }} ?')">
-              <button type="submit" title="Supprimer" style="background:transparent; border:1px solid rgba(255,51,85,0.2); color:var(--sev-critical); width:36px; height:36px; border-radius:8px; cursor:pointer; font-size:14px;">✕</button>
-            </form>
-          </div>
+    {% if last_scan %}
+    <div class="kpi-card">
+      <div class="kpi-label">Dernier scan</div>
+      <div class="kpi-value kpi-small">{{ last_scan.started_at.strftime('%d/%m') }}</div>
+      <div class="kpi-sub">
+        <a href="/scan/{{ last_scan.id }}" style="color:var(--neon-cyan); text-decoration:none;">{{ last_scan.domain[:24] }}{% if last_scan.domain|length > 24 %}…{% endif %} →</a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
 
+  {# ── DISTRIBUTION DES GRADES (mini-graph) ─────────────────────── #}
+  {% if completed_count > 0 %}
+  <section class="dashboard-panel">
+    <h2 class="dashboard-panel-title">Distribution des grades</h2>
+    <div class="grade-bars">
+      {% for grade in ['A', 'B', 'C', 'D', 'F'] %}
+      {% set count = grade_dist[grade] %}
+      {% set pct = (count / completed_count * 100) if completed_count > 0 else 0 %}
+      <div class="grade-bar">
+        <div class="grade-bar-label">
+          <span class="grade-letter grade-{{ grade|lower }}">{{ grade }}</span>
+          <span class="grade-count">{{ count }}</span>
+        </div>
+        <div class="grade-bar-track">
+          <div class="grade-bar-fill grade-{{ grade|lower }}" style="width:{{ pct }}%;"></div>
         </div>
       </div>
       {% endfor %}
     </div>
+  </section>
+  {% endif %}
 
-    {# ── PAYWALL FREE ────────────────────────────────────────────────── #}
-    {% if current_user and current_user.plan == 'free' %}
-    <div style="margin-top:32px; background:linear-gradient(135deg, rgba(0,217,255,0.06), rgba(176,106,255,0.04)); border:1px solid rgba(0,217,255,0.2); border-radius:14px; padding:24px 28px; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;">
-      <div>
-        <div style="font-family:var(--font-sans); font-size:15px; font-weight:700; color:var(--text-primary); margin-bottom:4px;">
-          Vous voyez 20% des résultats sur chaque rapport
+  {# ── TOP DOMAINES (si plusieurs scans du même) ─────────────────── #}
+  {% if top_domains|length > 1 and total_scans > top_domains|length %}
+  <section class="dashboard-panel">
+    <h2 class="dashboard-panel-title">Domaines les plus scannés</h2>
+    <ul class="top-domains-list">
+      {% for dom, n in top_domains %}
+      <li>
+        <span class="top-domain-name">{{ dom }}</span>
+        <span class="top-domain-count">{{ n }} scan{{ 's' if n > 1 }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {# ── LISTE DES SCANS ─────────────────────────────────────────── #}
+  <section class="dashboard-panel">
+    <h2 class="dashboard-panel-title">Tous mes scans <span class="dashboard-panel-count">({{ total_scans }})</span></h2>
+    <div class="scans-table">
+      {% for s in scans %}
+      <a href="/scan/{{ s.id }}" class="scan-row scan-row-link">
+        {# Grade circle #}
+        {% if s.status == 'completed' and s.risk_grade %}
+          {% set grade_class = 'a' if s.risk_grade == 'A' else 'b' if s.risk_grade == 'B' else 'c' if s.risk_grade == 'C' else 'd' if s.risk_grade == 'D' else 'f' %}
+          <div class="scan-grade grade-{{ grade_class }}">{{ s.risk_grade }}</div>
+        {% elif s.status == 'running' %}
+          <div class="scan-grade scan-grade-spinning"><span class="scan-spinner"></span></div>
+        {% else %}
+          <div class="scan-grade scan-grade-muted">—</div>
+        {% endif %}
+
+        {# Domaine + date #}
+        <div class="scan-info">
+          <div class="scan-domain">{{ s.domain }}</div>
+          <div class="scan-meta">
+            {{ s.started_at.strftime("%d %b %Y · %H:%M") }}
+            {% if s.completed_at %}
+              {% set delta = (s.completed_at - s.started_at).total_seconds() | int %}
+              · en {% if delta < 60 %}{{ delta }}s{% else %}{{ (delta // 60) }}min {{ (delta % 60) }}s{% endif %}
+            {% elif s.status == 'running' %}
+              · en cours
+            {% endif %}
+          </div>
         </div>
-        <div style="font-family:var(--font-sans); font-size:13px; color:var(--text-secondary);">
-          Passez à Essentiel pour débloquer 100% des résultats + l'export prompt LLM.
+
+        {# Mini stats #}
+        <div class="scan-stats">
+          <div class="scan-stat">
+            <span class="scan-stat-v">{{ s.alive_count or 0 }}</span>
+            <span class="scan-stat-l">actifs</span>
+          </div>
+          <div class="scan-stat">
+            <span class="scan-stat-v scan-stat-{% if s.critical_count or s.kev_count %}red{% elif s.high_count %}orange{% else %}muted{% endif %}">
+              {{ (s.critical_count or 0) + (s.kev_count or 0) + (s.high_count or 0) }}
+            </span>
+            <span class="scan-stat-l">findings</span>
+          </div>
+          {% if s.risk_score is not none and s.status == 'completed' %}
+          <div class="scan-stat">
+            <span class="scan-stat-v">{{ s.risk_score }}</span>
+            <span class="scan-stat-l">/100</span>
+          </div>
+          {% endif %}
         </div>
-      </div>
-      <a href="/upgrade?plan=essentiel" class="mkt-btn-primary" style="white-space:nowrap;">
-        Activer Essentiel — 29€/mois →
+
+        {# Action delete (séparée du lien parent) #}
+        <form action="/scan/{{ s.id }}/delete" method="post" class="scan-delete-form"
+              onsubmit="event.stopPropagation(); return confirm('Supprimer le scan de {{ s.domain }} ?')">
+          <button type="submit" class="scan-delete-btn" title="Supprimer" onclick="event.stopPropagation();">✕</button>
+        </form>
       </a>
+      {% endfor %}
     </div>
-    {% endif %}
+  </section>
+
+  {# ── PAYWALL FREE ──────────────────────────────────────────── #}
+  {% if current_user.plan == 'free' %}
+  <div class="dashboard-upsell">
+    <div>
+      <strong>Vous voyez 20% des résultats sur chaque rapport.</strong>
+      <span>Passez à Essentiel pour débloquer 100% des résultats + l'export prompt LLM.</span>
+    </div>
+    <a href="/upgrade?plan=essentiel" class="btn-upgrade-green">Activer Essentiel — 29€/mois →</a>
+  </div>
+  {% elif current_user.plan == 'essentiel' %}
+  <div class="dashboard-upsell">
+    <div>
+      <strong>Allez plus loin avec le plan Entreprise.</strong>
+      <span>Action corrective détaillée pour chaque finding + walk-through technique + accès à nos experts.</span>
+    </div>
+    <a href="/upgrade?plan=pro" class="btn-upgrade-green">Réserver un audit gratuit →</a>
+  </div>
+  {% endif %}
 
   {% endif %}
 
 </div>
-
-<style>
-  .scan-card:hover {
-    border-color: var(--border-glow) !important;
-    background: var(--bg-elevated) !important;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-</style>
 {% endblock %}
