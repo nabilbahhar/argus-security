@@ -29,7 +29,7 @@ def _smtp_config() -> dict:
         "port": int(os.getenv("SMTP_PORT", "587") or 587),
         "user": os.getenv("SMTP_USER", "").strip(),
         "password": os.getenv("SMTP_PASSWORD", "").strip(),
-        "from_email": os.getenv("SMTP_FROM_EMAIL", "no-reply@argus-security.com").strip(),
+        "from_email": os.getenv("SMTP_FROM_EMAIL", "no-reply@argusanalyzer.com").strip(),
         "from_name": os.getenv("SMTP_FROM_NAME", "ARGUS Security").strip(),
         "use_tls": os.getenv("SMTP_USE_TLS", "1").lower() in ("1", "true", "yes"),
     }
