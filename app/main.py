@@ -199,6 +199,30 @@ def scan_view(scan_id: int, request: Request, db: Session = Depends(get_db)):
     # pour faire prendre conscience du risque (jamais inventé).
     scare = _build_scare_finding(scan, vulns_sorted) if not full_access else None
 
+    # ── Analyses contextuelles (patterns suspects + techno EOL) ──
+    # On les recalcule au render plutôt que les stocker en DB : peu coûteux,
+    # garantit que les améliorations des modules s'appliquent aux scans existants.
+    from app.surface_risk import analyze_surface as _analyze_surface
+    from app.tech_insights import analyze_techs as _analyze_techs
+    all_hostnames = list(set(
+        [scan.domain] + list(scan.discovered_subs or [])
+        + [a.host for a in scan.assets if a.host]
+    ))
+    all_techs = []
+    for a in scan.assets:
+        all_techs.extend(a.tech or [])
+    surface_analysis = _analyze_surface(all_hostnames, scan.domain)
+    tech_analysis = _analyze_techs(all_techs)
+    surface_findings_full = surface_analysis.get("findings", [])
+    tech_findings_full = tech_analysis.get("findings", [])
+    # Limit par plan : free voit 1 chaque catégorie, payant voit tout
+    if full_access:
+        surface_findings = surface_findings_full
+        tech_findings = tech_findings_full
+    else:
+        surface_findings = surface_findings_full[:1]
+        tech_findings = tech_findings_full[:1]
+
     return templates.TemplateResponse("scan.html", _ctx(
         request, db,
         scan=scan,
@@ -215,6 +239,10 @@ def scan_view(scan_id: int, request: Request, db: Session = Depends(get_db)):
         total_subs=total_subs,
         scare=scare,
         plan_limits=get_plan_limits(user),
+        surface_findings=surface_findings,
+        tech_findings=tech_findings,
+        locked_surface=max(0, len(surface_findings_full) - len(surface_findings)),
+        locked_tech=max(0, len(tech_findings_full) - len(tech_findings)),
     ))
 
 
@@ -2491,7 +2519,7 @@ def _run_scan(scan_id: int, do_nuclei: bool, do_tls: bool, deep_discovery: bool 
             "crtsh":         (25, 35, "🔐 Certificats publics SSL/TLS"),
             "wayback":       (35, 42, "⏳ Archives web publiques"),
             "bruteforce":    (42, 50, "⚡ Reconnaissance DNS — top 200"),
-            "ai_permutation":(50, 55, "🤖 Intelligence ARGUS — patterns détectés"),
+            "ai_permutation":(50, 55, "⚡ Recherche de patterns dérivés"),
         }
         def on_progress(source: str, count: int):
             _, end_pct, label = STEP_WEIGHTS.get(source, (0, 50, source))
@@ -2639,11 +2667,18 @@ def _run_scan(scan_id: int, do_nuclei: bool, do_tls: bool, deep_discovery: bool 
 
         # ─── Étape 7 : Score de risque ARGUS ────────────────────────
         _set_progress(db, scan, 93, "CALCUL DU SCORE", "score de risque A-F en cours")
+        # Liste des hostnames pour la détection de patterns à risque
+        hostnames_for_score = list(set(
+            [scan.domain] + list(scan.discovered_subs or [])
+            + [f.get("host") for f in httpx_findings if f.get("host")]
+        ))
         score_data = risk_score.compute_score({
             "assets": httpx_findings,
             "vulns": nuclei_findings,
             "dns": {"spf": scan.spf, "dmarc": scan.dmarc, "dkim": scan.dkim},
             "tls": tls_results,
+            "hostnames": hostnames_for_score,
+            "domain": scan.domain,
         })
         scan.risk_score = score_data["score"]
         scan.risk_grade = score_data["grade"]

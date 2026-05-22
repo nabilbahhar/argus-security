@@ -24,7 +24,8 @@ def compute_score(scan_data: dict) -> dict:
 
     Args:
         scan_data: dict avec clés "assets", "vulns" (enrichies EPSS/KEV),
-                   "dns" (résultat dns_scan), "tls" (liste tls_scan)
+                   "dns" (résultat dns_scan), "tls" (liste tls_scan),
+                   "hostnames" (liste subdomains découverts), "domain" (root)
 
     Returns:
         {
@@ -36,6 +37,9 @@ def compute_score(scan_data: dict) -> dict:
             ]
         }
     """
+    from app.surface_risk import analyze_surface, score_impact as surface_score_impact
+    from app.tech_insights import analyze_techs, score_impact as tech_score_impact
+
     score = 100.0
     breakdown: list[dict] = []
 
@@ -43,6 +47,8 @@ def compute_score(scan_data: dict) -> dict:
     vulns = scan_data.get("vulns") or []
     dns = scan_data.get("dns") or {}
     tls_findings = scan_data.get("tls") or []
+    hostnames = scan_data.get("hostnames") or []
+    root_domain = scan_data.get("domain") or ""
 
     # ── Vulnérabilités Nuclei ──
     critical = [v for v in vulns if (v.get("severity") or "").lower() == "critical"]
@@ -182,6 +188,31 @@ def compute_score(scan_data: dict) -> dict:
             "reason": f"{len(alive)} actifs vivants — beaucoup à surveiller",
         })
 
+    # ── Patterns de sous-domaines à risque (bo, admin, old, dev…) ──
+    surface_analysis = analyze_surface(hostnames, root_domain) if hostnames else {"findings": [], "stats": {}}
+    s_delta, s_reason = surface_score_impact(surface_analysis["stats"])
+    if s_delta < 0:
+        score += s_delta
+        breakdown.append({
+            "label": "Surfaces sensibles exposées",
+            "delta": s_delta,
+            "reason": s_reason,
+        })
+
+    # ── Technologies exposées avec versions (PHP, WordPress, nginx…) ──
+    all_techs = []
+    for a in assets:
+        all_techs.extend(a.get("tech") or [])
+    tech_analysis = analyze_techs(all_techs) if all_techs else {"findings": [], "stats": {}}
+    t_delta, t_reason = tech_score_impact(tech_analysis["stats"])
+    if t_delta < 0:
+        score += t_delta
+        breakdown.append({
+            "label": "Technologies exposées à risque",
+            "delta": t_delta,
+            "reason": t_reason,
+        })
+
     # Borne 0-100
     score = max(0, min(100, int(round(score))))
 
@@ -202,4 +233,7 @@ def compute_score(scan_data: dict) -> dict:
         "grade": grade,
         "color": color,
         "breakdown": breakdown,
+        # Findings détaillés pour le template (utilisés directement par scan.html)
+        "surface_findings": surface_analysis.get("findings", []),
+        "tech_findings": tech_analysis.get("findings", []),
     }
