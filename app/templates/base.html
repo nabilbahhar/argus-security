@@ -40,6 +40,80 @@
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+
+  {# ── Canonical URL pour éviter le duplicate content ──────────── #}
+  <link rel="canonical" href="https://argusanalyzer.com{{ request.url.path if request else '/' }}">
+
+  {# ── Schema.org JSON-LD : Organization + WebSite + SoftwareApplication
+       Aide Google à comprendre que c'est un SaaS de cybersécurité avec
+       prix, description, et rating. Améliore les rich snippets. ──── #}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://argusanalyzer.com/#organization",
+        "name": "ARGUS Security",
+        "url": "https://argusanalyzer.com",
+        "logo": "https://argusanalyzer.com/static/og-image.png",
+        "description": "Reconnaissance offensive externe pour défendre votre surface d'attaque web. Diagnostic cyber en 60 secondes.",
+        "sameAs": [],
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "email": "contact@argusanalyzer.com",
+          "contactType": "Customer Service",
+          "availableLanguage": ["French", "English"]
+        }
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://argusanalyzer.com/#website",
+        "url": "https://argusanalyzer.com",
+        "name": "ARGUS Security",
+        "description": "Scanner de surface d'attaque externe — voyez ce qu'un hacker voit de votre entreprise.",
+        "publisher": {"@id": "https://argusanalyzer.com/#organization"},
+        "inLanguage": "fr-FR"
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "ARGUS Security",
+        "applicationCategory": "SecurityApplication",
+        "applicationSubCategory": "External Attack Surface Management",
+        "operatingSystem": "Web",
+        "description": "Plateforme de reconnaissance offensive : découverte des actifs exposés, vulnérabilités, sous-domaines à risque, technologies obsolètes. Sans installation, en 60 secondes.",
+        "url": "https://argusanalyzer.com",
+        "offers": [
+          {
+            "@type": "Offer",
+            "name": "Gratuit",
+            "price": "0",
+            "priceCurrency": "EUR",
+            "description": "1 scan par session, 20% des résultats visibles"
+          },
+          {
+            "@type": "Offer",
+            "name": "Essentiel",
+            "price": "29",
+            "priceCurrency": "EUR",
+            "priceSpecification": {
+              "@type": "UnitPriceSpecification",
+              "price": "29",
+              "priceCurrency": "EUR",
+              "billingDuration": "P1M"
+            },
+            "description": "Scans illimités, 100% des résultats, export prompt LLM"
+          },
+          {
+            "@type": "Offer",
+            "name": "Entreprise",
+            "description": "Audit complet par nos experts + accompagnement personnalisé (sur devis)"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
 </head>
 {% set _can_copy = current_user and (current_user.is_admin or current_user.plan in ['essentiel', 'pro', 'agency']) %}
 <body class="{% block body_class %}{% endblock %}{% if _can_copy %} plan-paid{% endif %}">

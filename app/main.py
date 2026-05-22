@@ -1221,6 +1221,59 @@ def partners_page(request: Request, db: Session = Depends(get_db)):
 
 
 # ─────────────────────────────────────────────────────────────────────
+# SEO — sitemap.xml + robots.txt
+# ─────────────────────────────────────────────────────────────────────
+
+@app.get("/sitemap.xml")
+def sitemap_xml():
+    """Sitemap XML pour Google/Bing — toutes les pages publiques indexables."""
+    from fastapi.responses import Response
+    base = "https://argusanalyzer.com"
+    pages = [
+        ("/",          "1.0",  "weekly"),
+        ("/pricing",   "0.9",  "monthly"),
+        ("/faq",       "0.8",  "monthly"),
+        ("/partners",  "0.7",  "monthly"),
+        ("/register",  "0.7",  "monthly"),
+        ("/login",     "0.5",  "monthly"),
+        ("/terms",     "0.3",  "yearly"),
+        ("/privacy",   "0.3",  "yearly"),
+    ]
+    urls = "\n".join(
+        f'  <url>\n    <loc>{base}{path}</loc>\n    <changefreq>{freq}</changefreq>\n    <priority>{prio}</priority>\n  </url>'
+        for path, prio, freq in pages
+    )
+    xml = f'''<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{urls}
+</urlset>'''
+    return Response(content=xml, media_type="application/xml")
+
+
+@app.get("/robots.txt")
+def robots_txt():
+    """robots.txt — autorise tous les crawlers + pointe vers sitemap."""
+    from fastapi.responses import Response
+    content = """User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /settings
+Disallow: /account
+Disallow: /history
+Disallow: /scan/
+Disallow: /upgrade
+Disallow: /billing/
+Disallow: /webhook/
+Disallow: /api/
+Disallow: /verify-email/
+Disallow: /reset-password/
+
+Sitemap: https://argusanalyzer.com/sitemap.xml
+"""
+    return Response(content=content, media_type="text/plain")
+
+
+# ─────────────────────────────────────────────────────────────────────
 # Admin — Exports CSV
 # ─────────────────────────────────────────────────────────────────────
 
