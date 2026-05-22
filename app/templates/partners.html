@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% set active = "partners" %}
+{% block body_class %}marketing{% endblock %}
+{% block title %}Devenir partenaire — ARGUS Security{% endblock %}
+
+{% block content %}
+<div class="partners-container">
+
+  <header class="partners-header">
+    <h1>Devenez partenaire ARGUS</h1>
+    <p>
+      Vous êtes MSSP, intégrateur, agence digitale ou consultant cybersécurité ?
+      Revendez ARGUS à vos clients, intégrez nos analyses dans vos audits, ou positionnez-vous
+      comme point de contact local. Nous construisons un réseau de partenaires de confiance
+      dans chaque région.
+    </p>
+  </header>
+
+  <div class="partners-features">
+    <div class="partners-feature">
+      <h3>🤝 Revente avec commission</h3>
+      <p>
+        Touchez une commission récurrente sur chaque abonnement ARGUS que vous activez.
+        Conditions selon volume et engagement.
+      </p>
+    </div>
+    <div class="partners-feature">
+      <h3>🎯 Co-branding possible</h3>
+      <p>
+        Plan Entreprise sur mesure : audit livré sous co-branding avec votre cabinet,
+        rapport personnalisé à votre charte.
+      </p>
+    </div>
+    <div class="partners-feature">
+      <h3>🚀 Support commercial et technique</h3>
+      <p>
+        Accès direct à notre équipe pour préparer vos rendez-vous client, transférer
+        des leads qualifiés sur votre zone.
+      </p>
+    </div>
+    <div class="partners-feature">
+      <h3>🌍 Exclusivité géographique</h3>
+      <p>
+        Pour les premiers partenaires sur une région donnée, exclusivité possible sur
+        une zone (pays, ville, secteur).
+      </p>
+    </div>
+  </div>
+
+  <section class="account-panel" style="margin-bottom:0;">
+    <h2 class="account-h2-solo">Discutons de votre projet</h2>
+    <p class="account-panel-desc" style="margin-bottom:18px;">
+      Écrivez-nous une ligne pour présenter votre activité, votre cible et le type de
+      partenariat qui vous intéresse. Nous revenons vers vous sous 48h ouvrées.
+    </p>
+    <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center;">
+      <a href="mailto:contact@argusanalyzer.com?subject=Demande%20de%20partenariat%20ARGUS&body=Bonjour,%0A%0AJe%20souhaite%20discuter%20d'un%20partenariat%20avec%20ARGUS%20Security.%0A%0AMon%20activit%C3%A9%20:%20(MSSP,%20int%C3%A9grateur,%20consultant,%20etc.)%0AMa%20zone%20:%20(pays,%20r%C3%A9gion,%20secteurs)%0AMon%20besoin%20:%20%0A%0AMerci%20de%20me%20contacter%20pour%20en%20parler.%0A" class="btn-upgrade-green">
+        Discuter d'un partenariat →
+      </a>
+      <span style="color:var(--text-dim); font-size:13px;">
+        ou écrivez directement à <a href="mailto:contact@argusanalyzer.com" style="color:var(--neon-cyan);">contact@argusanalyzer.com</a>
+      </span>
+    </div>
+  </section>
+
+</div>
+{% endblock %}

@@ -2471,6 +2471,257 @@ body.marketing .faq-section-title {
 }
 
 /* ============================================================
+   ACCOUNT PAGE — design sobre, dense
+   ============================================================ */
+
+.account-container {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+  font-family: var(--font-sans);
+}
+
+.account-header { margin-bottom: 32px; }
+.account-header h1 {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+}
+.account-header p {
+  color: var(--text-dim);
+  font-size: 14px;
+  margin: 0;
+}
+
+.account-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px 24px;
+  margin-bottom: 16px;
+}
+
+.account-panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.account-panel-title h2,
+.account-h2-solo {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.account-h2-solo { margin-bottom: 14px; }
+
+.account-panel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.account-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.account-plan-name {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.account-plan-sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.account-panel-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.account-link {
+  font-size: 13px;
+  color: var(--neon-cyan);
+  font-weight: 600;
+  text-decoration: none;
+}
+.account-link:hover { text-decoration: underline; }
+
+.account-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.account-list > div {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  gap: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.account-list > div:last-child { border-bottom: none; }
+.account-list dt {
+  min-width: 120px;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin: 0;
+}
+.account-list dd {
+  font-size: 14px;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.account-actions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.account-actions li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  flex-wrap: wrap;
+}
+.account-actions li:last-child { border-bottom: none; }
+.account-actions li > div { flex: 1 1 auto; min-width: 200px; }
+.account-actions strong {
+  display: block;
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.account-actions span {
+  font-size: 12px;
+  color: var(--text-dim);
+  display: block;
+}
+
+.account-link-btn {
+  display: inline-block;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: border-color 0.15s, color 0.15s;
+}
+.account-link-btn:hover {
+  border-color: var(--neon-cyan);
+  color: var(--neon-cyan);
+}
+.account-link-btn.account-link-danger {
+  color: #ff6b7a;
+  border-color: rgba(255, 71, 87, 0.3);
+}
+.account-link-btn.account-link-danger:hover {
+  border-color: #ff6b7a;
+  color: #ff8a96;
+}
+
+/* CTA upgrade en vert — réutilisable partout */
+.btn-upgrade-green {
+  display: inline-block;
+  padding: 11px 22px;
+  background: var(--neon-green, #00ff88);
+  color: #0a0e1a !important;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  font-family: var(--font-sans);
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.15s;
+  white-space: nowrap;
+}
+.btn-upgrade-green:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   PARTNERS PAGE — landing reseller/MSSP
+   ============================================================ */
+
+.partners-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 60px 24px 80px;
+  font-family: var(--font-sans);
+}
+.partners-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+.partners-header h1 {
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: var(--text-primary);
+  margin: 0 0 14px;
+}
+.partners-header p {
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.6;
+  max-width: 640px;
+  margin: 0 auto;
+}
+.partners-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin: 32px 0 48px;
+}
+.partners-feature {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+}
+.partners-feature h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+}
+.partners-feature p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ============================================================
    FINDINGS ACCORDION — design sobre, dense, lisible
    Palette : neutres + 1 accent cyan + sévérités (rouge/orange/jaune/cyan/gris)
    CTA upgrade : TOUJOURS vert (=> green = débloquer)

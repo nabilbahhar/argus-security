@@ -1032,6 +1032,11 @@ def privacy_page(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse("privacy.html", _ctx(request, db, active="privacy"))
 
 
+@app.get("/partners", response_class=HTMLResponse)
+def partners_page(request: Request, db: Session = Depends(get_db)):
+    return templates.TemplateResponse("partners.html", _ctx(request, db, active="partners"))
+
+
 # ─────────────────────────────────────────────────────────────────────
 # Admin — Exports CSV
 # ─────────────────────────────────────────────────────────────────────
