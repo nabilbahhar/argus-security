@@ -244,8 +244,14 @@
               {% else %}<span style="color:var(--text-dim);">—</span>{% endif %}
             </td>
             <td style="padding:12px; color:var(--text-dim); font-size:11px;">{{ s.started_at.strftime('%d/%m %H:%M') }}</td>
-            <td style="padding:12px;">
-              <a href="/scan/{{ s.id }}" style="font-size:12px; color:var(--neon-cyan); text-decoration:none;">Voir →</a>
+            <td style="padding:12px; white-space:nowrap;">
+              <a href="/scan/{{ s.id }}" style="font-size:12px; color:var(--neon-cyan); text-decoration:none; margin-right:10px;">Voir →</a>
+              {% if s.status == 'completed' %}
+              <button type="button" class="share-scan-btn" data-scan-id="{{ s.id }}" data-domain="{{ s.domain }}"
+                      style="background:rgba(176,106,255,0.1); border:1px solid var(--neon-violet); color:var(--neon-violet); font-size:11px; padding:4px 9px; border-radius:5px; cursor:pointer; font-family:var(--font-sans);">
+                🔗 Partager
+              </button>
+              {% endif %}
             </td>
           </tr>
           {% endfor %}
@@ -254,6 +260,49 @@
     </div>
   </section>
 
+</div>
+
+{# ── MODAL — générer lien public partageable ──────────────────── #}
+<div id="share-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+  <div style="background:var(--bg-surface); border:1px solid var(--border-glow); border-radius:14px; padding:28px; max-width:520px; width:calc(100% - 40px); font-family:var(--font-sans);">
+    <h3 style="font-size:18px; font-weight:700; margin-bottom:6px; color:var(--text-primary);">🔗 Générer un lien public</h3>
+    <p style="font-size:13px; color:var(--text-dim); margin-bottom:18px;">
+      Le lien sera consultable par n'importe qui sans authentification. Idéal pour partager
+      avec un prospect par WhatsApp, LinkedIn ou email.
+    </p>
+
+    <div style="margin-bottom:14px;">
+      <label style="display:block; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--text-dim); margin-bottom:6px;">Domaine scanné</label>
+      <div id="share-domain" style="background:var(--bg-elevated); padding:9px 12px; border-radius:6px; border:1px solid var(--border); font-family:var(--font-mono); color:var(--neon-cyan); font-size:14px;">—</div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label for="share-slug" style="display:block; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--text-dim); margin-bottom:6px;">Slug URL (facultatif)</label>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <span style="font-family:var(--font-mono); font-size:13px; color:var(--text-dim);">argusanalyzer.com/r/</span>
+        <input id="share-slug" type="text" placeholder="auto" class="settings-input" style="flex:1; padding:8px 12px;">
+      </div>
+      <div style="font-size:11px; color:var(--text-dim); margin-top:5px;">Laissez vide pour génération auto (basé sur le domaine).</div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label for="share-contact-name" style="display:block; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--text-dim); margin-bottom:6px;">Nom du contact prospect (interne)</label>
+      <input id="share-contact-name" type="text" placeholder="Ex : UIR, M. Dupont, Acme SA…" class="settings-input" style="padding:8px 12px;">
+    </div>
+
+    <div id="share-result" style="display:none; margin-bottom:14px; padding:14px; background:rgba(0,255,136,0.06); border:1px solid rgba(0,255,136,0.25); border-radius:8px;">
+      <div style="font-size:12px; color:var(--neon-green); font-weight:700; margin-bottom:6px;">✓ Lien généré</div>
+      <div id="share-result-url" style="font-family:var(--font-mono); font-size:13px; color:var(--neon-cyan); word-break:break-all; margin-bottom:8px;"></div>
+      <button id="share-copy-btn" type="button" style="background:var(--neon-cyan); color:white; border:none; padding:6px 14px; border-radius:5px; font-size:12px; font-weight:600; cursor:pointer;">Copier le lien</button>
+    </div>
+
+    <div id="share-error" style="display:none; margin-bottom:14px; padding:12px; background:rgba(255,51,85,0.08); border:1px solid rgba(255,51,85,0.3); border-radius:8px; color:var(--sev-critical); font-size:13px;"></div>
+
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button type="button" id="share-cancel" style="background:transparent; border:1px solid var(--border-glow); color:var(--text-secondary); padding:9px 18px; border-radius:6px; cursor:pointer; font-size:13px;">Fermer</button>
+      <button type="button" id="share-generate" style="background:linear-gradient(135deg, var(--neon-violet), #9248db); border:none; color:white; padding:9px 18px; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600;">Générer le lien</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -267,6 +316,69 @@
       const txt = (row.dataset.search || '').toLowerCase();
       row.style.display = (!q || txt.includes(q)) ? '' : 'none';
     });
+  });
+})();
+
+// Modal "Partager scan"
+(function(){
+  const modal = document.getElementById('share-modal');
+  if (!modal) return;
+  let currentScanId = null;
+
+  function open(scanId, domain){
+    currentScanId = scanId;
+    document.getElementById('share-domain').textContent = domain;
+    document.getElementById('share-slug').value = '';
+    document.getElementById('share-contact-name').value = '';
+    document.getElementById('share-result').style.display = 'none';
+    document.getElementById('share-error').style.display = 'none';
+    modal.style.display = 'flex';
+  }
+  function close(){
+    modal.style.display = 'none';
+    currentScanId = null;
+  }
+
+  document.querySelectorAll('.share-scan-btn').forEach(btn => {
+    btn.addEventListener('click', () => open(btn.dataset.scanId, btn.dataset.domain));
+  });
+  document.getElementById('share-cancel').addEventListener('click', close);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+  document.getElementById('share-generate').addEventListener('click', async () => {
+    if (!currentScanId) return;
+    const slug = document.getElementById('share-slug').value.trim();
+    const contactName = document.getElementById('share-contact-name').value.trim();
+
+    const fd = new FormData();
+    fd.append('slug', slug);
+    fd.append('contact_name', contactName);
+
+    try {
+      const res = await fetch(`/admin/scan/${currentScanId}/share`, {
+        method: 'POST',
+        body: fd,
+      });
+      if (!res.ok) {
+        const t = await res.text();
+        document.getElementById('share-error').textContent = `Erreur : ${res.status} ${t.slice(0,200)}`;
+        document.getElementById('share-error').style.display = 'block';
+        return;
+      }
+      const data = await res.json();
+      document.getElementById('share-result-url').textContent = data.url;
+      document.getElementById('share-result').style.display = 'block';
+      document.getElementById('share-error').style.display = 'none';
+
+      document.getElementById('share-copy-btn').onclick = () => {
+        navigator.clipboard.writeText(data.url);
+        document.getElementById('share-copy-btn').textContent = '✓ Copié !';
+        setTimeout(() => { document.getElementById('share-copy-btn').textContent = 'Copier le lien'; }, 2000);
+      };
+    } catch (e) {
+      document.getElementById('share-error').textContent = `Erreur réseau : ${e.message}`;
+      document.getElementById('share-error').style.display = 'block';
+    }
   });
 })();
 </script>
