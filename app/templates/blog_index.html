@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% set active = "blog" %}
+{% block body_class %}marketing{% endblock %}
+{% block title %}Blog — ARGUS Security · Reconnaissance offensive et cybersécurité{% endblock %}
+{% block meta_description %}Articles techniques et accessibles sur la cybersécurité défensive : audits, vulnérabilités, surface d'attaque, sous-domaines exposés, WordPress, DMARC. Par ARGUS Security.{% endblock %}
+
+{% block content %}
+<div class="blog-container">
+
+  <header class="blog-header">
+    <div class="blog-eyebrow">› BLOG ARGUS</div>
+    <h1 class="blog-h1">Comprendre la cybersécurité, sans le jargon.</h1>
+    <p class="blog-sub">
+      Des articles pratiques pour les pros (devops, RSSI, freelances) et les curieux
+      (dirigeants, créateurs de sites). On parle vulnérabilités, audits, OSINT,
+      WordPress, DMARC — avec des exemples concrets et zéro bullshit.
+    </p>
+  </header>
+
+  {% if not articles %}
+  <div class="blog-empty">
+    <p>Les premiers articles arrivent très bientôt. Reviens dans quelques jours.</p>
+  </div>
+  {% else %}
+
+  <div class="blog-grid">
+    {% for art in articles %}
+    <article class="blog-card">
+      {% if art.category %}
+      <div class="blog-card-category">{{ art.category }}</div>
+      {% endif %}
+      <h2 class="blog-card-title">
+        <a href="/blog/{{ art.slug }}">{{ art.title }}</a>
+      </h2>
+      {% if art.description %}
+      <p class="blog-card-desc">{{ art.description }}</p>
+      {% endif %}
+      <div class="blog-card-meta">
+        {% if art.date %}<span>📅 {{ art.date }}</span>{% endif %}
+        {% if art.reading_time %}<span>⏱ {{ art.reading_time }}</span>{% endif %}
+      </div>
+      <a href="/blog/{{ art.slug }}" class="blog-card-cta">Lire l'article →</a>
+    </article>
+    {% endfor %}
+  </div>
+
+  {% endif %}
+
+  <section class="blog-cta-bottom">
+    <h2>Envie de voir ce qu'un hacker voit déjà de votre entreprise ?</h2>
+    <p>Lancez votre premier scan en 60 secondes. Aucune installation. Premier rapport gratuit.</p>
+    <a href="/" class="btn-upgrade-green">Scanner mon domaine →</a>
+  </section>
+
+</div>
+{% endblock %}

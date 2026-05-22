@@ -1226,12 +1226,14 @@ def partners_page(request: Request, db: Session = Depends(get_db)):
 
 @app.get("/sitemap.xml")
 def sitemap_xml():
-    """Sitemap XML pour Google/Bing — toutes les pages publiques indexables."""
+    """Sitemap XML pour Google/Bing — toutes les pages publiques indexables + articles blog."""
     from fastapi.responses import Response
+    from app.blog import get_all_articles
     base = "https://argusanalyzer.com"
     pages = [
         ("/",          "1.0",  "weekly"),
         ("/pricing",   "0.9",  "monthly"),
+        ("/blog",      "0.9",  "weekly"),
         ("/faq",       "0.8",  "monthly"),
         ("/partners",  "0.7",  "monthly"),
         ("/register",  "0.7",  "monthly"),
@@ -1239,6 +1241,10 @@ def sitemap_xml():
         ("/terms",     "0.3",  "yearly"),
         ("/privacy",   "0.3",  "yearly"),
     ]
+    # Ajoute chaque article de blog
+    for art in get_all_articles():
+        pages.append((f"/blog/{art['slug']}", "0.8", "monthly"))
+
     urls = "\n".join(
         f'  <url>\n    <loc>{base}{path}</loc>\n    <changefreq>{freq}</changefreq>\n    <priority>{prio}</priority>\n  </url>'
         for path, prio, freq in pages
@@ -1248,6 +1254,31 @@ def sitemap_xml():
 {urls}
 </urlset>'''
     return Response(content=xml, media_type="application/xml")
+
+
+@app.get("/blog", response_class=HTMLResponse)
+def blog_index(request: Request, db: Session = Depends(get_db)):
+    """Liste tous les articles de blog."""
+    from app.blog import get_all_articles
+    articles = get_all_articles()
+    return templates.TemplateResponse("blog_index.html", _ctx(
+        request, db, active="blog", articles=articles,
+    ))
+
+
+@app.get("/blog/{slug}", response_class=HTMLResponse)
+def blog_article_view(slug: str, request: Request, db: Session = Depends(get_db)):
+    """Affiche un article de blog par slug."""
+    from app.blog import get_article, get_all_articles
+    article = get_article(slug)
+    if not article:
+        raise HTTPException(404, "Article introuvable")
+    # Suggère 2 autres articles
+    all_arts = [a for a in get_all_articles() if a["slug"] != slug]
+    related = all_arts[:2]
+    return templates.TemplateResponse("blog_article.html", _ctx(
+        request, db, active="blog", article=article, related=related,
+    ))
 
 
 @app.get("/robots.txt")

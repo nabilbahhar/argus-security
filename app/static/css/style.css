@@ -2471,6 +2471,309 @@ body.marketing .faq-section-title {
 }
 
 /* ============================================================
+   BLOG — index + article lisible (prose dark cyber)
+   ============================================================ */
+
+.blog-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+  font-family: var(--font-sans);
+}
+.blog-header {
+  text-align: center;
+  margin-bottom: 48px;
+  max-width: 680px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.blog-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--neon-cyan);
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+  opacity: 0.85;
+}
+.blog-h1 {
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  line-height: 1.1;
+  color: var(--text-primary);
+  margin: 0 0 14px;
+}
+.blog-sub {
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.blog-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-dim);
+}
+
+.blog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+  margin-bottom: 60px;
+}
+
+.blog-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  transition: border-color 0.15s, transform 0.15s;
+  display: flex;
+  flex-direction: column;
+}
+.blog-card:hover {
+  border-color: var(--neon-cyan);
+  transform: translateY(-2px);
+}
+.blog-card-category {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--neon-violet, #b06aff);
+  margin-bottom: 10px;
+}
+.blog-card-title {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0 0 12px;
+  letter-spacing: -0.3px;
+}
+.blog-card-title a {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+.blog-card-title a:hover { color: var(--neon-cyan); }
+.blog-card-desc {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 16px;
+  flex: 1;
+}
+.blog-card-meta {
+  display: flex;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 14px;
+  font-family: var(--font-mono);
+}
+.blog-card-cta {
+  display: inline-block;
+  color: var(--neon-cyan);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  margin-top: auto;
+}
+.blog-card-cta:hover { text-decoration: underline; }
+
+.blog-cta-bottom {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 36px 32px;
+  text-align: center;
+  margin-top: 24px;
+}
+.blog-cta-bottom h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+  letter-spacing: -0.3px;
+}
+.blog-cta-bottom p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  margin: 0 0 22px;
+  line-height: 1.6;
+}
+
+/* ── ARTICLE INDIVIDUEL ─────────────────────────────────── */
+.blog-article {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+  font-family: var(--font-sans);
+}
+.blog-article-header {
+  margin-bottom: 36px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.blog-article-title {
+  font-size: clamp(26px, 3.6vw, 38px);
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  line-height: 1.15;
+  color: var(--text-primary);
+  margin: 14px 0 18px;
+}
+.blog-article-meta {
+  display: flex;
+  gap: 18px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+}
+.blog-article-lead {
+  margin-top: 20px;
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  border-left: 3px solid var(--neon-cyan);
+  padding-left: 16px;
+}
+
+.blog-article-body {
+  font-size: 16px;
+  line-height: 1.78;
+  color: var(--text-secondary);
+}
+.blog-article-body p {
+  margin: 0 0 18px;
+}
+.blog-article-body h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 40px 0 14px;
+  letter-spacing: -0.4px;
+}
+.blog-article-body h3 {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 28px 0 12px;
+}
+.blog-article-body h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 20px 0 10px;
+}
+.blog-article-body strong { color: var(--text-primary); }
+.blog-article-body em { color: var(--neon-cyan); font-style: italic; }
+.blog-article-body a {
+  color: var(--neon-cyan);
+  text-decoration: underline;
+}
+.blog-article-body a:hover { color: #5ce5ff; }
+.blog-article-body ul,
+.blog-article-body ol {
+  margin: 0 0 18px;
+  padding-left: 26px;
+}
+.blog-article-body li {
+  margin-bottom: 8px;
+}
+.blog-article-body code {
+  background: rgba(0, 217, 255, 0.08);
+  color: var(--neon-cyan);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+.blog-article-body pre {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 18px;
+  overflow-x: auto;
+  margin: 18px 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.blog-article-body pre code {
+  background: none;
+  color: var(--text-primary);
+  padding: 0;
+}
+.blog-article-body blockquote {
+  border-left: 3px solid var(--neon-violet, #b06aff);
+  padding: 8px 0 8px 18px;
+  margin: 18px 0;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+.blog-article-body blockquote p { margin: 0; }
+.blog-article-body hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 32px 0;
+}
+
+.blog-article-footer {
+  margin-top: 48px;
+  padding-top: 32px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.blog-article-cta {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  text-align: center;
+  margin-bottom: 32px;
+}
+.blog-article-cta h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.blog-article-cta p {
+  color: var(--text-secondary);
+  font-size: 14.5px;
+  margin: 0 0 20px;
+}
+.blog-article-related h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin: 0 0 14px;
+}
+.blog-article-related ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.blog-article-related li {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.blog-article-related li:last-child { border-bottom: none; }
+.blog-article-related a {
+  color: var(--text-primary);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14.5px;
+}
+.blog-article-related a:hover { color: var(--neon-cyan); }
+.blog-article-related span {
+  margin-left: 8px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* ============================================================
    DASHBOARD v2 — style CRM (KpiCard + Panel + Table) DARK CYBER
    ============================================================ */
 

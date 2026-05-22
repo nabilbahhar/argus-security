@@ -130,6 +130,7 @@
         <li><a href="/history" {% if active == 'history' %}class="active"{% endif %}>Mes scans</a></li>
         {% endif %}
         <li><a href="/pricing" {% if active == 'pricing' %}class="active"{% endif %}>Tarifs</a></li>
+        <li><a href="/blog" {% if active == 'blog' %}class="active"{% endif %}>Blog</a></li>
         <li><a href="/faq" {% if active == 'faq' %}class="active"{% endif %}>FAQ</a></li>
         {% if current_user %}
           {% if current_user.is_admin %}

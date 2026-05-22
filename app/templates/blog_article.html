@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% set active = "blog" %}
+{% block body_class %}marketing{% endblock %}
+{% block title %}{{ article.title }} — ARGUS Security{% endblock %}
+{% block meta_description %}{{ article.description }}{% endblock %}
+{% block og_title %}{{ article.title }}{% endblock %}
+{% block og_description %}{{ article.description }}{% endblock %}
+
+{% block content %}
+<article class="blog-article">
+
+  <header class="blog-article-header">
+    <div class="blog-eyebrow">
+      › <a href="/blog" style="color:inherit; text-decoration:none;">BLOG</a>
+      {% if article.category %} · {{ article.category }}{% endif %}
+    </div>
+    <h1 class="blog-article-title">{{ article.title }}</h1>
+    <div class="blog-article-meta">
+      {% if article.date %}<span>📅 {{ article.date }}</span>{% endif %}
+      {% if article.reading_time %}<span>⏱ {{ article.reading_time }} de lecture</span>{% endif %}
+    </div>
+    {% if article.description %}
+    <p class="blog-article-lead">{{ article.description }}</p>
+    {% endif %}
+  </header>
+
+  <div class="blog-article-body">
+    {{ article.body_html | safe }}
+  </div>
+
+  <footer class="blog-article-footer">
+    <div class="blog-article-cta">
+      <h2>Vous voulez voir ces risques sur votre propre domaine ?</h2>
+      <p>ARGUS scanne votre surface d'attaque externe en 60 secondes. Sans installation.</p>
+      <a href="/" class="btn-upgrade-green">Scanner mon domaine →</a>
+    </div>
+
+    {% if related %}
+    <div class="blog-article-related">
+      <h3>À lire ensuite</h3>
+      <ul>
+        {% for art in related %}
+        <li>
+          <a href="/blog/{{ art.slug }}">{{ art.title }}</a>
+          {% if art.reading_time %}<span>· {{ art.reading_time }}</span>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </footer>
+
+</article>
+
+{# ── Schema.org JSON-LD pour cet article (Article type) ──── #}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "{{ article.title }}",
+  "description": "{{ article.description }}",
+  {% if article.date %}"datePublished": "{{ article.date }}",{% endif %}
+  "author": {
+    "@type": "Organization",
+    "name": "ARGUS Security",
+    "url": "https://argusanalyzer.com"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ARGUS Security",
+    "url": "https://argusanalyzer.com"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://argusanalyzer.com/blog/{{ article.slug }}"
+  }
+  {% if article.keywords %},"keywords": "{{ article.keywords }}"{% endif %}
+}
+</script>
+{% endblock %}
