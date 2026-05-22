@@ -1281,6 +1281,16 @@ def blog_article_view(slug: str, request: Request, db: Session = Depends(get_db)
     ))
 
 
+@app.get("/googleb974448a928cf5be.html")
+def google_site_verification():
+    """Fichier de vérification de propriété pour Google Search Console."""
+    from fastapi.responses import Response
+    return Response(
+        content="google-site-verification: googleb974448a928cf5be.html",
+        media_type="text/html",
+    )
+
+
 @app.get("/robots.txt")
 def robots_txt():
     """robots.txt — autorise tous les crawlers + pointe vers sitemap."""
