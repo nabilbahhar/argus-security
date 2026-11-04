@@ -122,16 +122,16 @@ def severity_score(severity: str) -> int:
     }.get(severity.lower(), 0)
 
 
-def vuln_priority_score(vuln: dict) -> int:
+def vuln_priority_score(vuln) -> int:
     """
-    Score combiné pour trier les vulns :
+    Score combiné pour trier les vulns (objets models.Vuln) :
     - +1000 si KEV (= activement exploitée)
     - + EPSS * 500 (probabilité d'exploitation)
     - + severity_score (gravité statique)
 
     Ex : une medium avec KEV peut passer devant une critical sans KEV.
     """
-    sev = severity_score(vuln.get("severity") or "")
-    epss = (vuln.get("epss_score") or 0) * 500
-    kev = 1000 if vuln.get("kev") else 0
+    sev = severity_score(vuln.severity or "")
+    epss = (vuln.epss_score or 0) * 500
+    kev = 1000 if vuln.kev else 0
     return int(kev + epss + sev)
