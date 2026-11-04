@@ -100,6 +100,17 @@ app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET, https_only=_htt
 def _startup():
     init_db()
     _ensure_referral_columns()
+    _ensure_asset_probe_column()
+
+
+def _ensure_asset_probe_column():
+    from sqlalchemy import text, inspect
+    from app.database import engine
+    with engine.connect() as conn:
+        cols = {c["name"] for c in inspect(conn).get_columns("assets")}
+        if "probe" not in cols:
+            conn.execute(text("ALTER TABLE assets ADD COLUMN probe JSON"))
+            conn.commit()
 
 
 def _ensure_referral_columns():
@@ -366,13 +377,16 @@ def scan_view(scan_id: int, request: Request, db: Session = Depends(get_db)):
     tech_analysis = _analyze_techs(all_techs)
     surface_findings_full = surface_analysis.get("findings", [])
     tech_findings_full = tech_analysis.get("findings", [])
+    header_findings_full = _header_findings(scan)
     # Limit par plan : free voit 1 chaque catégorie, payant voit tout
     if full_access:
         surface_findings = surface_findings_full
         tech_findings = tech_findings_full
+        header_findings = header_findings_full
     else:
         surface_findings = surface_findings_full[:1]
         tech_findings = tech_findings_full[:1]
+        header_findings = header_findings_full[:1]
 
     # Ajoute finding_key stable à chaque finding (pour le système crédits)
     for f in surface_findings:
@@ -380,6 +394,8 @@ def scan_view(scan_id: int, request: Request, db: Session = Depends(get_db)):
     for f in tech_findings:
         tech_id = (f.get("tech", "") + ":" + (f.get("version") or "any")).lower().replace(" ", "")
         f["finding_key"] = f"tech:{tech_id}"
+    for f in header_findings:
+        f["finding_key"] = f"header:{f['issue']}"
 
     # Set des findings déjà débloqués via crédits pour ce scan
     unlocked_set = _session_unlocked_set(request, scan.id)
@@ -402,11 +418,19 @@ def scan_view(scan_id: int, request: Request, db: Session = Depends(get_db)):
         plan_limits=get_plan_limits(user),
         surface_findings=surface_findings,
         tech_findings=tech_findings,
+        header_findings=header_findings,
         locked_surface=max(0, len(surface_findings_full) - len(surface_findings)),
         locked_tech=max(0, len(tech_findings_full) - len(tech_findings)),
+        locked_headers=max(0, len(header_findings_full) - len(header_findings)),
         unlocked_set=unlocked_set,
         credits_per_unlock=REFERRAL_CREDITS_PER_UNLOCK,
     ))
+
+
+def _header_findings(scan) -> list[dict]:
+    from app.headers_scan import analyze_headers
+    assets = [{"url": a.url, "status_code": a.status_code, "probe": a.probe} for a in scan.assets]
+    return analyze_headers(assets).get("findings", [])
 
 
 def _build_scare_finding(scan, vulns_sorted):
@@ -2545,7 +2569,7 @@ def export_prompt(scan_id: int, request: Request, db: Session = Depends(get_db))
 
     text = build_prompt(
         scan, scan.assets, scan.vulns, scan.tls_findings,
-        surface_findings, tech_findings, score_data,
+        surface_findings, tech_findings, score_data, _header_findings(scan),
     )
 
     safe_domain = scan.domain.replace("/", "_").replace("\\", "_")
@@ -2860,6 +2884,7 @@ def _run_scan(scan_id: int, do_nuclei: bool, do_tls: bool, deep_discovery: bool 
                 webserver=f.get("webserver", ""),
                 content_length=f.get("content_length", 0),
                 tech=f.get("tech", []),
+                probe=f.get("probe"),
             ))
         scan.assets_count = len(subs)
         scan.alive_count = sum(1 for f in httpx_findings if f.get("status_code", 0) > 0)
@@ -2990,8 +3015,9 @@ def _run_scan(scan_id: int, do_nuclei: bool, do_tls: bool, deep_discovery: bool 
         score_data = risk_score.compute_score({
             "assets": httpx_findings,
             "vulns": nuclei_findings,
-            "dns": {"spf": scan.spf, "dmarc": scan.dmarc, "dkim": scan.dkim},
+            "dns": {"spf": scan.spf, "dmarc": scan.dmarc, "dkim": scan.dkim, "records": scan.dns_records},
             "tls": tls_results,
+            "pentest": pentest_results,
             "hostnames": hostnames_for_score,
             "domain": scan.domain,
         })
@@ -3009,7 +3035,8 @@ def _run_scan(scan_id: int, do_nuclei: bool, do_tls: bool, deep_discovery: bool 
                            for v in nuclei_findings]
             scan.ai_summary = scanner.ai_summarize(scan.domain, httpx_findings, vulns_dicts)
         except Exception as e:
-            scan.ai_summary = f"[Analyse indisponible : {e}]"
+            print(f"[SCAN {scan_id}] analyse exécutive en échec : {e}", flush=True)
+            scan.ai_summary = "Analyse exécutive indisponible pour ce scan."
 
         scan.status = "completed"
         scan.progress = 100

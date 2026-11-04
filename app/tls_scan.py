@@ -55,14 +55,7 @@ def run_tlsx(urls: list[str], timeout: int = 300) -> list[dict]:
             str(TLSX),
             "-json",
             "-silent",
-            "-cert",       # détails du certificat
-            "-cipher",     # cipher suites
-            "-tls-version",  # protocoles supportés
-            "-san",        # subject alternative names
-            "-expired",    # flag si expiré
-            "-self-signed", # flag si auto-signé
-            "-untrusted",  # flag si CA inconnue
-            "-mismatched", # flag si hostname mismatch
+            "-ve",         # énumère tous les protocoles acceptés, pas seulement le négocié
         ],
         input=input_text,
         capture_output=True,
@@ -71,6 +64,9 @@ def run_tlsx(urls: list[str], timeout: int = 300) -> list[dict]:
         encoding="utf-8",
         errors="replace",
     )
+
+    if result.returncode != 0 and not result.stdout.strip():
+        print(f"[TLS] audit en échec : {result.stderr.strip()[-200:]}", flush=True)
 
     findings = []
     for line in result.stdout.splitlines():
@@ -105,16 +101,14 @@ def run_tlsx(urls: list[str], timeout: int = 300) -> list[dict]:
             issues.append("Le nom du certificat ne correspond pas au domaine")
 
         # Protocoles faibles
-        versions = entry.get("tls_version") or entry.get("versions") or []
-        if isinstance(versions, str):
-            versions = [versions]
+        versions = entry.get("version_enum") or [entry.get("tls_version", "")]
         deprecated = [v for v in versions if v.lower() in DEPRECATED_PROTOCOLS]
         if deprecated:
             issues.append(f"Protocoles obsolètes supportés : {', '.join(deprecated)} — vulnérables MITM")
 
         findings.append({
             "host": entry.get("host", ""),
-            "port": entry.get("port", 443),
+            "port": int(entry.get("port", 443)),
             "issuer": entry.get("issuer_org", [""])[0] if isinstance(entry.get("issuer_org"), list) else entry.get("issuer_dn", ""),
             "subject_cn": entry.get("subject_cn", ""),
             "subject_an": entry.get("subject_an", []),
@@ -126,6 +120,7 @@ def run_tlsx(urls: list[str], timeout: int = 300) -> list[dict]:
             "self_signed": bool(entry.get("self_signed")),
             "expired": bool(entry.get("expired")),
             "mismatched": bool(entry.get("mismatched")),
+            "untrusted": bool(entry.get("untrusted")),
             "issues": issues,
         })
 

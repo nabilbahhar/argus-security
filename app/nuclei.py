@@ -37,7 +37,7 @@ DEFAULT_TAGS = [
 
 def run_nuclei(
     urls: list[str],
-    severity: str = "critical,high,medium",
+    severity: str = "critical,high,medium,low",
     tags: list[str] | None = None,
     timeout: int = 1800,
     rate_limit: int = 150,

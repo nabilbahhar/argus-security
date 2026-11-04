@@ -13,7 +13,7 @@ from datetime import datetime
 
 
 def build_prompt(scan, assets, vulns, tls_findings,
-                 surface_findings, tech_findings, score_data=None) -> str:
+                 surface_findings, tech_findings, score_data=None, header_findings=None) -> str:
     """
     Construit un prompt structuré qui contient toutes les données du scan
     + des instructions claires pour qu'un LLM génère un livrable propre.
@@ -116,6 +116,17 @@ def build_prompt(scan, assets, vulns, tls_findings,
             if f.get("is_eol"):
                 tech_str += " [VERSION EN FIN DE VIE]"
             lines.append(f"### {tech_str} — SÉVÉRITÉ {f['severity'].upper()}")
+            lines.append(f"Pourquoi c'est un risque : {f['explanation']}")
+            lines.append(f"Scénario d'exploitation : {f['scenario']}")
+            lines.append(f"Action recommandée : {f['recommendation']}")
+            lines.append("")
+
+    # ─── Protections HTTP ─────────────────────────────────────────
+    if header_findings:
+        lines.append("## PROTECTIONS HTTP MANQUANTES")
+        lines.append("")
+        for f in header_findings:
+            lines.append(f"### {f['title']} — SÉVÉRITÉ {f['severity'].upper()}")
             lines.append(f"Pourquoi c'est un risque : {f['explanation']}")
             lines.append(f"Scénario d'exploitation : {f['scenario']}")
             lines.append(f"Action recommandée : {f['recommendation']}")

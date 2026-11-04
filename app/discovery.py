@@ -1,16 +1,13 @@
 """
 discovery.py — Orchestrateur multi-sources de découverte de sous-domaines
 
-Sprint 2.0 "Discovery MAX" : combine 5 stratégies pour MAXIMISER la couverture.
+Sprint 2.0 "Discovery MAX" : combine 4 stratégies pour MAXIMISER la couverture.
 
 PIPELINE :
   1. subfinder        (30+ sources OSINT free de ProjectDiscovery)
   2. Certificate Transparency direct (crt.sh) — souvent + exhaustif
   3. Wayback Machine  (archive.org) — sous-domaines historiques (parfois takeover-able)
   4. DNS brute force  (wordlist 200+ noms communs : admin, vpn, api, staging, etc.)
-  5. IA permutation   (Claude analyse les patterns trouvés et génère des variantes)
-
-But : passer de ~14% du parc Purplemet à 100%+ sur le même domaine.
 
 Sources sans clé API requise (= marche dès le 1er scan).
 Les sources premium (Shodan, SecurityTrails, etc.) sont possibles via la config
@@ -21,6 +18,7 @@ ses clés.
 from __future__ import annotations
 import json
 import os
+import secrets
 import socket
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import httpx
@@ -172,14 +170,19 @@ COMMON_SUBDOMAINS = [
 ]
 
 
-def _resolves(hostname: str, timeout: float = 2.0) -> bool:
-    """Test rapide : ce hostname résout-il en DNS ?"""
-    socket.setdefaulttimeout(timeout)
+def _resolve_ips(hostname: str) -> set[str]:
     try:
-        socket.gethostbyname(hostname)
-        return True
-    except (socket.gaierror, socket.timeout, OSError):
-        return False
+        return set(socket.gethostbyname_ex(hostname)[2])
+    except OSError:
+        return set()
+
+
+def _wildcard_ips(domain: str) -> set[str]:
+    """IP servies pour des sous-domaines inexistants : non vide = DNS wildcard actif."""
+    ips: set[str] = set()
+    for _ in range(3):
+        ips |= _resolve_ips(f"{secrets.token_hex(8)}.{domain}")
+    return ips
 
 
 def dns_bruteforce(
@@ -189,14 +192,17 @@ def dns_bruteforce(
 ) -> set[str]:
     """
     Test des sous-domaines communs en DNS (rapide, en parallèle).
-    Retourne ceux qui résolvent (= existent vraiment).
+    Retourne ceux qui existent vraiment : avec un DNS wildcard, tout résout,
+    donc seuls les noms pointant ailleurs que le wildcard sont retenus.
     """
     candidates = wordlist or COMMON_SUBDOMAINS
+    wildcard = _wildcard_ips(domain)
     found: set[str] = set()
 
     def check(prefix: str) -> str | None:
         full = f"{prefix}.{domain}"
-        return full if _resolves(full) else None
+        ips = _resolve_ips(full)
+        return full if ips and not ips <= wildcard else None
 
     with ThreadPoolExecutor(max_workers=threads) as pool:
         for result in pool.map(check, candidates):
@@ -219,13 +225,13 @@ def discover_all(
 
     Args:
         domain    : domaine cible
-        deep      : si True, active wayback + bruteforce + AI permutation (plus lent)
+        deep      : si True, active wayback + bruteforce (plus lent)
         on_progress: callback(source_name, count) appelé après chaque source
 
     Returns:
         {
           "subs": [liste mergée, dédoublonnée, triée],
-          "by_source": {"crtsh": 234, "wayback": 89, "bruteforce": 47, "ai": 12}
+          "by_source": {"crtsh": 234, "wayback": 89, "bruteforce": 47}
         }
     """
     from app.scanner import run_subfinder  # import différé pour éviter cycle

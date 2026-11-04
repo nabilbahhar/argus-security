@@ -444,6 +444,33 @@
 </section>
 {% endif %}
 
+{# === PROTECTIONS HTTP === #}
+{% if header_findings %}
+<section class="card">
+  <h2 class="card-title">🛡 Protections HTTP manquantes <span style="font-size:13px; color:var(--text-dim); font-weight:500; margin-left:8px;">({{ header_findings|length }})</span></h2>
+  <p style="color:var(--text-secondary); font-size:14px; margin-bottom:18px; font-family:var(--font-sans); line-height:1.6;">
+    Ce que vos serveurs renvoient à chaque visite : headers de sécurité, cookies de session et versions annoncées.
+    Cliquez sur chaque finding pour voir le scénario d'attaque concret.
+  </p>
+  <div class="findings-list">
+    {% set ent = current_user and current_user.plan in ['pro','agency'] %}
+    {% for f in header_findings %}
+      {{ finding_accordion(
+        '<code class="finding-host">' ~ f.title ~ '</code>',
+        f.severity, f.label_short, f.explanation, f.scenario, f.recommendation, ent,
+        f.get('finding_key', ''), unlocked_set, current_user, scan.id, credits_per_unlock
+      ) }}
+    {% endfor %}
+  </div>
+  {% if locked_headers and locked_headers > 0 %}
+  <div class="findings-locked-banner">
+    🔒 <strong>{{ locked_headers }} protection(s) supplémentaire(s)</strong> détaillée(s) pour les comptes payants.
+    <a href="/pricing">Débloquer avec Essentiel — 29€/mois →</a>
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+
 {# === DNS + EMAIL SECURITY === #}
 {% if (scan.spf or scan.dmarc or scan.dkim) and full_access %}
 <section class="card">

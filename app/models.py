@@ -202,6 +202,7 @@ class Asset(Base):
     webserver = Column(String(100), nullable=True)
     content_length = Column(Integer, default=0)
     tech = Column(JSON, default=list)
+    probe = Column(JSON, nullable=True)  # ip, cname, cdn, favicon, headers de sécurité
 
     scan = relationship("Scan", back_populates="assets")
     vulns = relationship("Vuln", back_populates="asset")

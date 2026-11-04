@@ -16,6 +16,15 @@ _EXE = ".exe" if sys.platform == "win32" else ""
 SUBFINDER = TOOLS_DIR / f"subfinder{_EXE}"
 HTTPX = TOOLS_DIR / f"httpx{_EXE}"
 
+# Headers conservés en base : audit de sécurité uniquement, pour garder des lignes légères
+KEPT_HEADERS = {
+    "strict_transport_security", "content_security_policy", "x_frame_options",
+    "x_content_type_options", "referrer_policy", "permissions_policy",
+    "access_control_allow_origin", "access_control_allow_credentials",
+    "server", "x_powered_by", "x_aspnet_version", "x_aspnetmvc_version", "x_generator",
+    "set_cookie",
+}
+
 
 def run_subfinder(domain: str, timeout: int = 600) -> list[str]:
     """
@@ -50,6 +59,17 @@ def run_subfinder(domain: str, timeout: int = 600) -> list[str]:
     return subs
 
 
+def _extract_probe(entry: dict) -> dict:
+    headers = entry.get("header")
+    return {
+        "ip": entry.get("a") or [],
+        "cname": entry.get("cname") or [],
+        "cdn": entry.get("cdn_name") or "",
+        "favicon": entry.get("favicon") or "",
+        "headers": None if headers is None else {k: v for k, v in headers.items() if k in KEPT_HEADERS},
+    }
+
+
 def run_httpx(subdomains: list[str], timeout: int = 900) -> list[dict]:
     """
     Probe chaque sous-domaine + détecte techno + récupère metadata HTTP.
@@ -68,6 +88,12 @@ def run_httpx(subdomains: list[str], timeout: int = 900) -> list[dict]:
             "-title",
             "-tech-detect",
             "-status-code",
+            "-ip",
+            "-cname",
+            "-cdn",
+            "-favicon",
+            "-irh",               # headers de réponse dans le JSON
+            "-fhr",               # suit les redirections du même host seulement : jamais un tiers
             "-no-color",
             "-timeout", "10",     # timeout par requête
             "-threads", "100",    # 100 requêtes en parallèle (au lieu de 50 par défaut)
@@ -95,6 +121,7 @@ def run_httpx(subdomains: list[str], timeout: int = 900) -> list[dict]:
                 "tech": entry.get("tech", []) or [],
                 "webserver": entry.get("webserver", "") or "",
                 "content_length": int(entry.get("content_length", 0) or 0),
+                "probe": _extract_probe(entry),
             })
         except (json.JSONDecodeError, ValueError):
             continue
@@ -110,7 +137,7 @@ def ai_summarize(domain: str, assets: list[dict], vulns: list[dict] | None = Non
 
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key or api_key.startswith("sk-ant-..."):
-        return "[Résumé IA désactivé : ANTHROPIC_API_KEY manquante]"
+        return "Analyse exécutive indisponible pour ce scan."
 
     # Limite la taille des findings envoyés pour rester sous quota
     assets_compact = [
